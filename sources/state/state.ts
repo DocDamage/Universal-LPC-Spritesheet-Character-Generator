@@ -55,6 +55,9 @@ export type State = {
   enabledLicenses: Record<string, boolean>;
   enabledAnimations: Record<string, boolean>;
 
+  activeTab: "character" | "accessories";
+  editingPart: { slotLabel: string; itemId: string } | null;
+
   // transient (never saved)
   zipByAnimation: ZipMode;
   zipByItem: ZipMode;
@@ -128,6 +131,8 @@ export const state: State = {
   enabledAnimations: Object.fromEntries(
     ANIMATIONS.map((anim) => [anim.value, false]),
   ),
+  activeTab: "character",
+  editingPart: null,
 
   // Following transient state should never be saved
   zipByAnimation: { isRunning: false },

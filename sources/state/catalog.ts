@@ -58,6 +58,25 @@ export function formatLoadError(e: LoadError): string {
   }
 }
 
+export type CustomPart = {
+  itemId: string;
+  name: string;
+  type_name: string;
+  baseItemId: string;
+  sheets: Record<string, HTMLCanvasElement>;
+  image?: HTMLCanvasElement | HTMLImageElement;
+};
+
+export const customParts: Record<string, CustomPart> = {};
+
+export function registerCustomPart(part: CustomPart): void {
+  customParts[part.itemId] = part;
+}
+
+export function getCustomPart(id: string): CustomPart | undefined {
+  return customParts[id];
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Catalog data shapes (audited from real consumer usage)
 // ────────────────────────────────────────────────────────────────────────────
@@ -391,19 +410,44 @@ export function createCatalog(): Catalog {
     // result-returning getters
     getItemLite(id) {
       if (!liteStage.resolved) return err(loading("lite"));
-      const item = itemLiteStore?.[id];
-      return item ? ok(item) : err(notFound(id));
+      const custom = customParts[id];
+      const lookupId = custom ? custom.baseItemId : id;
+      const item = itemLiteStore?.[lookupId];
+      if (!item) return err(notFound(id));
+      if (custom) {
+        return ok({
+          ...item,
+          itemId: id,
+          name: custom.name,
+          type_name: custom.type_name,
+        });
+      }
+      return ok(item);
     },
 
     getItemMerged(id) {
       if (!liteStage.resolved) return err(loading("lite"));
-      const lite = itemLiteStore?.[id];
+      const custom = customParts[id];
+      const lookupId = custom ? custom.baseItemId : id;
+      const lite = itemLiteStore?.[lookupId];
       if (!lite) return err(notFound(id));
-      const layers = layersStage.resolved ? (itemLayersStore?.[id] ?? {}) : {};
+      const layers = layersStage.resolved
+        ? (itemLayersStore?.[lookupId] ?? {})
+        : {};
       const credits = creditsStage.resolved
-        ? (itemCreditsStore?.[id] ?? [])
+        ? (itemCreditsStore?.[lookupId] ?? [])
         : [];
-      return ok({ ...lite, layers, credits });
+      const merged = { ...lite, layers, credits } as typeof lite & {
+        layers: typeof layers;
+        credits: typeof credits;
+        itemId?: string;
+      };
+      if (custom) {
+        merged.itemId = id;
+        merged.name = custom.name;
+        merged.type_name = custom.type_name;
+      }
+      return ok(merged);
     },
 
     getItemCredits(id) {

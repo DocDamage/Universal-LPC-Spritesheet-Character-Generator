@@ -10,6 +10,7 @@ import {
   getMetadataIndexes,
   isIndexReady,
   isLiteReady,
+  customParts,
   type AliasMetadata,
   type ItemLite,
   type SlimByTypeNameRow,
@@ -38,6 +39,30 @@ type HashDeps = {
 function createDefaultHashDeps(): HashDeps {
   return {
     resolveHashParam: ({ typeName, nameAndVariant }) => {
+      for (const part of Object.values(customParts)) {
+        if (part.type_name !== typeName) continue;
+        const customName = part.name.replaceAll(" ", "_");
+        if (nameAndVariant === customName) {
+          return {
+            foundItemId: part.itemId,
+            matchedVariant: "",
+            matchedRecolor: "",
+          };
+        }
+        if (!nameAndVariant.startsWith(`${customName}_`)) continue;
+
+        const suffix = nameAndVariant.slice(customName.length + 1);
+        const [variantOrRecolor, recolor = ""] = suffix.split("|");
+        const baseMeta = getItemLite(part.baseItemId).unwrapOr(null);
+        const suffixIsVariant =
+          !!variantOrRecolor && baseMeta?.variants?.includes(variantOrRecolor);
+        return {
+          foundItemId: part.itemId,
+          matchedVariant: recolor || suffixIsVariant ? variantOrRecolor : "",
+          matchedRecolor: recolor || (!suffixIsVariant ? variantOrRecolor : ""),
+        };
+      }
+
       let itemsByTypeName: Record<string, SlimByTypeNameRow[]>;
       if (isIndexReady()) {
         const idx = getMetadataIndexes().unwrapOr(null);
@@ -176,14 +201,20 @@ export function buildNewSelection(
   const meta = hashDeps.getItemLite(foundItemId)!;
   const subMeta = meta.recolors?.[subId ?? 0];
 
+  const isCustom = foundItemId.startsWith("custom_part_");
   const newSelection: Selection = {
     itemId: foundItemId,
     subId,
-    variant:
-      matchedVariant || (matchedRecolor != "" ? "" : meta.variants?.[0] || ""),
-    recolor:
-      matchedRecolor ||
-      ((meta.variants?.length ?? 0) === 0 ? subMeta?.variants?.[0] || "" : ""),
+    variant: isCustom
+      ? matchedVariant || ""
+      : matchedVariant ||
+        (matchedRecolor != "" ? "" : meta.variants?.[0] || ""),
+    recolor: isCustom
+      ? matchedRecolor || ""
+      : matchedRecolor ||
+        ((meta.variants?.length ?? 0) === 0
+          ? subMeta?.variants?.[0] || ""
+          : ""),
     name: subId ? (subMeta?.label ?? "") : meta.name,
   };
 

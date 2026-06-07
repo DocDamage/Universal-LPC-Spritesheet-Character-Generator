@@ -91,6 +91,12 @@ export function getPurgeSafelist() {
       "variants-container",
       "box",
     ],
-    greedy: [/^skeleton-/, /^preview-canvas/, /^category-tree/],
+    greedy: [
+      /^skeleton-/,
+      /^preview-canvas/,
+      /^category-tree/,
+      /^desktop-/,
+      /^part-editor-/,
+    ],
   };
 }

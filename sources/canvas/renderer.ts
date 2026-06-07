@@ -27,6 +27,7 @@ import {
   defaultCatalog,
   formatLoadError,
   getItemMerged,
+  getCustomPart,
 } from "../state/catalog.ts";
 import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
@@ -73,7 +74,7 @@ function formatPathError(itemId: string, e: PathError): string {
  */
 export type LayerSource =
   | { kind: "catalog"; spritePath: string }
-  | { kind: "custom"; image: HTMLImageElement };
+  | { kind: "custom"; image: HTMLCanvasElement | HTMLImageElement };
 
 /**
  * One queued draw operation produced by `runRenderCharacter`: one `(item,
@@ -255,7 +256,9 @@ async function runRenderCharacter(
 
     for (const [, selection] of Object.entries(selections)) {
       const { itemId, subId, variant } = selection;
-      const metaResult = getItemMerged(itemId);
+      const customPart = getCustomPart(itemId);
+      const assetItemId = customPart?.baseItemId ?? itemId;
+      const metaResult = getItemMerged(assetItemId);
       if (metaResult.isErr() || subId) continue;
       const meta = metaResult.value;
 
@@ -274,7 +277,7 @@ async function runRenderCharacter(
         const layer = meta.layers?.[layerKey];
         if (!layer) break;
 
-        const zPos = getZPos(defaultCatalog, itemId, layerNum);
+        const zPos = getZPos(defaultCatalog, assetItemId, layerNum);
 
         // Check if this layer has a custom animation
         if (layer.custom_animation) {
@@ -333,33 +336,49 @@ async function runRenderCharacter(
             if (!meta.animations.includes(animName)) continue;
           }
 
-          const pathResult = getSpritePath(
-            itemId,
-            variant ?? null,
-            recolors,
-            bodyType,
-            animName,
-            layerNum,
-            selections,
-            meta,
-          );
-          if (pathResult.isErr()) {
-            debugWarn(formatPathError(itemId, pathResult.error));
-            continue;
-          }
+          const customSheet = customPart?.sheets?.[animName];
+          if (customSheet) {
+            drawCalls.push({
+              itemId,
+              name: selection.name,
+              variant: null,
+              recolors,
+              source: { kind: "custom", image: customSheet },
+              zPos,
+              layerNum,
+              animation: animName,
+              yPos,
+              needsRecolor: false,
+            });
+          } else {
+            const pathResult = getSpritePath(
+              assetItemId,
+              variant ?? null,
+              recolors,
+              bodyType,
+              animName,
+              layerNum,
+              selections,
+              meta,
+            );
+            if (pathResult.isErr()) {
+              debugWarn(formatPathError(itemId, pathResult.error));
+              continue;
+            }
 
-          drawCalls.push({
-            itemId,
-            name: selection.name,
-            variant: variant ?? null,
-            recolors,
-            source: { kind: "catalog", spritePath: pathResult.value },
-            zPos,
-            layerNum,
-            animation: animName,
-            yPos,
-            needsRecolor: itemId === "body-body" && variant !== "light", // Flag body variants for recoloring
-          });
+            drawCalls.push({
+              itemId,
+              name: selection.name,
+              variant: variant ?? null,
+              recolors,
+              source: { kind: "catalog", spritePath: pathResult.value },
+              zPos,
+              layerNum,
+              animation: animName,
+              yPos,
+              needsRecolor: itemId === "body-body" && variant !== "light", // Flag body variants for recoloring
+            });
+          }
         }
       }
     }
@@ -638,6 +657,13 @@ export async function renderSingleItem(
   singleLayer: number | null = null,
   zipProfiler: ZipExportProfiler | null = null,
 ): Promise<HTMLCanvasElement | null> {
+  const customPart = getCustomPart(itemId);
+  if (customPart) {
+    return (
+      customPart.sheets.walk ?? Object.values(customPart.sheets)[0] ?? null
+    );
+  }
+
   const metaResult = getItemMerged(itemId);
   if (metaResult.isErr()) {
     console.error("Item metadata not found:", itemId);
@@ -867,6 +893,11 @@ export async function renderSingleItemAnimation(
   singleLayer: number | null = null,
   zipProfiler: ZipExportProfiler | null = null,
 ): Promise<HTMLCanvasElement | null> {
+  const customPart = getCustomPart(itemId);
+  if (customPart) {
+    return customPart.sheets[animationName] ?? null;
+  }
+
   const metaResult = getItemMerged(itemId);
   if (metaResult.isErr()) {
     console.error("Item metadata not found:", itemId);

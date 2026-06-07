@@ -474,7 +474,6 @@ export const exportSplitItemAnimations = async (
       for (const layer of customAreaItems[customAnimName]) {
         debugLog("Processing layer for custom animation only export:", layer);
 
-        const spritePath = layer.spritePath;
         const itemFileName = getItemFileName(
           layer.itemId,
           String(layer.variant),
@@ -490,15 +489,19 @@ export const exportSplitItemAnimations = async (
           debugLog(
             `Exporting item ${itemFileName} for custom animation ${customAnimName}`,
           );
-          if (!spritePath) continue;
-          let img: HTMLImageElement | undefined;
+          let img: HTMLImageElement | HTMLCanvasElement | undefined;
           let imgCanvas: HTMLImageElement | HTMLCanvasElement | undefined;
-          await profiler.phase(
-            "render_imageLoadDecode_customItemSprite",
-            async () => {
-              img = await loadImageFn(spritePath);
-            },
-          );
+          const source = layer.source;
+          if (source.kind === "custom") {
+            img = source.image;
+          } else {
+            await profiler.phase(
+              "render_imageLoadDecode_customItemSprite",
+              async () => {
+                img = await loadImageFn(source.spritePath);
+              },
+            );
+          }
           if (!img) continue;
           await profiler.phase(
             "render_composite_customItemSprite",

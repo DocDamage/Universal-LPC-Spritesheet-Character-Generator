@@ -111,7 +111,7 @@ type CustomAnimationItem = {
   name?: string;
   variant: string | null;
   recolors: Recolors;
-  spritePath: string;
+  source: LayerSource;
   zPos: number;
   layerNum: number;
   customAnimation: string;
@@ -120,7 +120,7 @@ type CustomAnimationItem = {
 type CustomSpriteAreaItem = {
   type: "custom_sprite";
   zPos: number;
-  spritePath: string;
+  source: LayerSource;
   itemId: string;
   animation: string;
   recolors: Recolors;
@@ -131,7 +131,7 @@ type CustomSpriteAreaItem = {
 type ExtractedFramesAreaItem = {
   type: "extracted_frames";
   zPos: number;
-  spritePath: string;
+  source: { kind: "catalog"; spritePath: string };
   itemId: string;
   animation: string;
   needsRecolor?: boolean;
@@ -141,6 +141,12 @@ type ExtractedFramesAreaItem = {
 };
 
 export type CustomAreaItem = CustomSpriteAreaItem | ExtractedFramesAreaItem;
+
+type LoadedCustomAreaImage = {
+  item: CustomAreaItem;
+  img: HTMLImageElement | HTMLCanvasElement | null;
+  success: boolean;
+};
 
 /**
  * When `zipProfiler` is set, records separate load/decode vs compositing phases; otherwise runs load then composite.
@@ -159,6 +165,26 @@ async function zipExportProfiledLoadComposite(
     await loadFn();
     await compositeFn();
   }
+}
+
+async function loadCustomAreaImages(
+  items: CustomAreaItem[],
+): Promise<LoadedCustomAreaImage[]> {
+  const promises = items.map(async (item): Promise<LoadedCustomAreaImage> => {
+    const source = item.source;
+    if (source.kind === "custom") {
+      return { item, img: source.image, success: true };
+    }
+
+    return loadImage(source.spritePath)
+      .then((img) => ({ item, img, success: true }))
+      .catch(() => {
+        debugWarn(`Failed to load sprite: ${source.spritePath}`);
+        return { item, img: null, success: false };
+      });
+  });
+
+  return Promise.all(promises);
 }
 
 export const SHEET_HEIGHT = 3456; // Full universal sheet height
@@ -275,7 +301,22 @@ async function runRenderCharacter(
         const recolors = getMultiRecolors(itemId, selections);
         for (const [animation, sheet] of Object.entries(customPart.sheets)) {
           const yPos = animationOffsetByName[animation];
-          if (yPos === undefined) continue;
+          if (yPos === undefined) {
+            if (customAnimations[animation]) {
+              addedCustomAnimations.add(animation);
+              customAnimationItems.push({
+                itemId,
+                name: selection.name,
+                variant: null,
+                recolors,
+                source: { kind: "custom", image: sheet },
+                zPos,
+                layerNum,
+                customAnimation: animation,
+              });
+            }
+            continue;
+          }
           drawCalls.push({
             itemId,
             name: selection.name,
@@ -335,7 +376,7 @@ async function runRenderCharacter(
             name: selection.name,
             variant: variant ?? null,
             recolors,
-            spritePath,
+            source: { kind: "catalog", spritePath },
             zPos,
             layerNum,
             customAnimation: customAnimName,
@@ -532,7 +573,7 @@ async function runRenderCharacter(
             areaItems.push({
               type: "custom_sprite",
               zPos: item.zPos,
-              spritePath: item.spritePath,
+              source: item.source,
               itemId: item.itemId,
               animation: customAnimName,
               recolors: item.recolors,
@@ -551,7 +592,7 @@ async function runRenderCharacter(
               areaItems.push({
                 type: "extracted_frames",
                 zPos: item.zPos,
-                spritePath: item.source.spritePath,
+                source: item.source,
                 itemId: item.itemId,
                 animation: item.animation,
                 needsRecolor: item.needsRecolor,
@@ -567,7 +608,7 @@ async function runRenderCharacter(
         areaItems.sort((a, b) => a.zPos - b.zPos);
 
         // Load all custom area images in parallel
-        const loadedCustomImages = await loadImagesInParallel(areaItems);
+        const loadedCustomImages = await loadCustomAreaImages(areaItems);
 
         // Draw in zPos order
         for (const { item: areaItem, img, success } of loadedCustomImages) {
@@ -576,7 +617,9 @@ async function runRenderCharacter(
               img,
               areaItem.itemId,
               areaItem.recolors,
-              areaItem.spritePath,
+              areaItem.source.kind === "catalog"
+                ? areaItem.source.spritePath
+                : null,
             );
 
             if (areaItem.type === "custom_sprite") {

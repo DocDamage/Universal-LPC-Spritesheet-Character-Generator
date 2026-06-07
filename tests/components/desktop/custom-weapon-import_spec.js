@@ -61,6 +61,16 @@ describe("components/desktop/custom-weapon-import.ts", () => {
         animations: ["thrust"],
         layers: { layer_1: { zPos: 140 } },
       },
+      rod: {
+        type_name: "weapon",
+        animations: ["tool_rod"],
+        layers: {
+          layer_1: {
+            zPos: 9,
+            custom_animation: "tool_rod",
+          },
+        },
+      },
       shield: {
         type_name: "shield",
         animations: ["walk"],
@@ -75,6 +85,7 @@ describe("components/desktop/custom-weapon-import.ts", () => {
 
     expect(canUseWeaponImportReference(catalog, "sword")).to.equal(true);
     expect(canUseWeaponImportReference(catalog, "crystal")).to.equal(true);
+    expect(canUseWeaponImportReference(catalog, "rod")).to.equal(true);
     expect(canUseWeaponImportReference(catalog, "shield")).to.equal(false);
     expect(canUseWeaponImportReference(catalog, "emoteOnly")).to.equal(false);
     expect(canUseWeaponImportReference(catalog, "missing")).to.equal(false);
@@ -140,6 +151,33 @@ describe("components/desktop/custom-weapon-import.ts", () => {
       255, 0, 0, 255,
     ]);
     expect(getRgb(aligned, 32, FRAME_SIZE * 3 + 9)).to.deep.equal([
+      0, 0, 255, 255,
+    ]);
+  });
+
+  it("aligns larger custom-animation sheets frame-by-frame", () => {
+    const frameSize = 128;
+    const source = createCanvas(frameSize, frameSize * 4);
+    paintOrientationMarker(source, 4, frameSize * 3 + 7);
+    const reference = createCanvas(frameSize, frameSize * 4);
+    const ctx = get2DContext(reference, true);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(30, frameSize * 3 + 9, 3, 1);
+
+    const aligned = alignSourceToReferenceSheet(
+      source,
+      { x: 0, y: 0, width: 3, height: 1 },
+      "fullSheet",
+      reference,
+      "tool_rod",
+      { offsetX: 0, offsetY: 0, scale: 1 },
+      { frameSize, sourceAnimationY: 0 },
+    );
+
+    expect(getRgb(aligned, 30, frameSize * 3 + 9)).to.deep.equal([
+      255, 0, 0, 255,
+    ]);
+    expect(getRgb(aligned, 32, frameSize * 3 + 9)).to.deep.equal([
       0, 0, 255, 255,
     ]);
   });

@@ -1,7 +1,12 @@
 import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { loadImage } from "../../canvas/load-image.ts";
+import {
+  customAnimations,
+  customAnimationSize,
+} from "../../custom-animations.ts";
 import { ANIMATION_OFFSETS, FRAME_SIZE } from "../../state/constants.ts";
 import { getSpritePath } from "../../state/path.ts";
+import { variantToFilename } from "../../utils/helpers.ts";
 import type {
   CatalogReader,
   CustomPart,
@@ -46,7 +51,6 @@ const STANDARD_SHEET_WIDTH = 13 * FRAME_SIZE;
 const STANDARD_SHEET_HEIGHT =
   Math.max(...Object.values(ANIMATION_OFFSETS)) + 4 * FRAME_SIZE;
 const ANIMATION_OFFSET_BY_NAME = ANIMATION_OFFSETS as Record<string, number>;
-const FRAMES_PER_ROW = Math.floor(STANDARD_SHEET_WIDTH / FRAME_SIZE);
 const MAINHAND_IMPORT_TYPE_NAMES = new Set(["weapon", "weapon_magic_crystal"]);
 
 export function canUseWeaponImportReference(
@@ -55,8 +59,9 @@ export function canUseWeaponImportReference(
 ): boolean {
   const meta = catalog.getItemMerged(itemId).unwrapOr(null);
   if (!meta || !MAINHAND_IMPORT_TYPE_NAMES.has(meta.type_name)) return false;
-  return Object.keys(ANIMATION_OFFSETS).some((animation) =>
-    supportsStandardAnimation(meta, animation),
+  return (
+    getStandardImportAnimations(meta).length > 0 ||
+    getCustomImportAnimations(meta).length > 0
   );
 }
 
@@ -116,9 +121,7 @@ export async function buildImportedWeaponPart(
   const referenceVariant =
     options.referenceVariant ?? meta.variants?.[0] ?? null;
   const sheets: Record<string, HTMLCanvasElement> = {};
-  for (const animation of Object.keys(ANIMATION_OFFSETS)) {
-    if (!supportsStandardAnimation(meta, animation)) continue;
-
+  for (const animation of getStandardImportAnimations(meta)) {
     const referenceSheet = await buildReferenceAnimationSheet(
       options.catalog,
       meta,
@@ -143,8 +146,41 @@ export async function buildImportedWeaponPart(
     }
   }
 
+  for (const animation of getCustomImportAnimations(meta)) {
+    const referenceSheet = await buildReferenceCustomAnimationSheet(
+      options.catalog,
+      meta,
+      options.referenceItemId,
+      referenceVariant,
+      options.bodyType,
+      animation,
+    );
+    if (!referenceSheet) continue;
+
+    const customAnimation = customAnimations[animation];
+    if (!customAnimation) continue;
+
+    const sheet = alignSourceToReferenceSheet(
+      sourceCanvas,
+      sourceBounds,
+      getCustomAnimationSourceMode(sourceMode, sourceCanvas, referenceSheet),
+      referenceSheet,
+      animation,
+      adjustment,
+      {
+        frameSize: customAnimation.frameSize,
+        sourceAnimationY: 0,
+      },
+    );
+    if (sheetHasContent(sheet)) {
+      sheets[animation] = sheet;
+    }
+  }
+
   if (Object.keys(sheets).length === 0) {
-    throw new Error("No standard weapon animations could be aligned.");
+    throw new Error(
+      "No importable weapon or tool animations could be aligned.",
+    );
   }
 
   const drawLayerNum = getWeaponImportDrawLayerNum(
@@ -166,6 +202,27 @@ export async function buildImportedWeaponPart(
       drawLayerNum,
     ),
   };
+}
+
+function getStandardImportAnimations(meta: ItemMerged): string[] {
+  return Object.keys(ANIMATION_OFFSETS).filter((animation) =>
+    supportsStandardAnimation(meta, animation),
+  );
+}
+
+function getCustomImportAnimations(meta: ItemMerged): string[] {
+  const animations: string[] = [];
+  for (const layer of Object.values(meta.layers ?? {})) {
+    const customAnimation = layer.custom_animation;
+    if (
+      customAnimation &&
+      customAnimations[customAnimation] &&
+      !animations.includes(customAnimation)
+    ) {
+      animations.push(customAnimation);
+    }
+  }
+  return animations;
 }
 
 function supportsStandardAnimation(
@@ -234,6 +291,48 @@ async function buildReferenceAnimationSheet(
   return canvas;
 }
 
+async function buildReferenceCustomAnimationSheet(
+  catalog: CatalogReader,
+  meta: ItemMerged,
+  itemId: string,
+  variant: string | null,
+  bodyType: string,
+  animation: string,
+): Promise<HTMLCanvasElement | null> {
+  const customAnimation = customAnimations[animation];
+  if (!customAnimation) return null;
+
+  const sprites: ReferenceSprite[] = [];
+  for (let layerNum = 1; layerNum < 10; layerNum += 1) {
+    const layer = meta.layers?.[`layer_${layerNum}`];
+    if (!layer) break;
+    if (layer.custom_animation !== animation) continue;
+
+    const basePath = layer[bodyType] as string | undefined;
+    if (!basePath) continue;
+
+    try {
+      const img = await loadImage(
+        `spritesheets/${basePath}${variantToFilename(variant ?? "")}.png`,
+      );
+      sprites.push({ img, zPos: getLayerZPos(catalog, itemId, layerNum) });
+    } catch {
+      // Missing variants are common in the generated catalog; simply omit them.
+    }
+  }
+  if (sprites.length === 0) return null;
+
+  const { width, height } = customAnimationSize(customAnimation);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = get2DContext(canvas, true);
+  sprites
+    .sort((a, b) => a.zPos - b.zPos)
+    .forEach((sprite) => ctx.drawImage(sprite.img, 0, 0));
+  return canvas;
+}
+
 function getLayerZPos(
   catalog: CatalogReader,
   itemId: string,
@@ -253,6 +352,10 @@ export function alignSourceToReferenceSheet(
   referenceSheet: HTMLCanvasElement,
   animation: string,
   adjustment: ImportAdjustment,
+  options: {
+    frameSize?: number;
+    sourceAnimationY?: number;
+  } = {},
 ): HTMLCanvasElement {
   const out = document.createElement("canvas");
   out.width = referenceSheet.width;
@@ -260,23 +363,22 @@ export function alignSourceToReferenceSheet(
   const outCtx = get2DContext(out, true);
   const refCtx = get2DContext(referenceSheet, true);
   const sourceCtx = get2DContext(sourceCanvas, true);
-  const rowCount = Math.floor(referenceSheet.height / FRAME_SIZE);
-  const colCount = Math.min(
-    FRAMES_PER_ROW,
-    Math.floor(referenceSheet.width / FRAME_SIZE),
-  );
-  const sourceAnimationY = ANIMATION_OFFSET_BY_NAME[animation] ?? 0;
+  const frameSize = options.frameSize ?? FRAME_SIZE;
+  const rowCount = Math.floor(referenceSheet.height / frameSize);
+  const colCount = Math.floor(referenceSheet.width / frameSize);
+  const sourceAnimationY =
+    options.sourceAnimationY ?? ANIMATION_OFFSET_BY_NAME[animation] ?? 0;
 
   for (let row = 0; row < rowCount; row += 1) {
     for (let col = 0; col < colCount; col += 1) {
-      const frameX = col * FRAME_SIZE;
-      const frameY = row * FRAME_SIZE;
+      const frameX = col * frameSize;
+      const frameY = row * frameSize;
       const referenceBounds = getContentBounds(
         refCtx,
         frameX,
         frameY,
-        FRAME_SIZE,
-        FRAME_SIZE,
+        frameSize,
+        frameSize,
       );
       if (!referenceBounds) continue;
 
@@ -286,8 +388,8 @@ export function alignSourceToReferenceSheet(
               sourceCtx,
               frameX,
               sourceAnimationY + frameY,
-              FRAME_SIZE,
-              FRAME_SIZE,
+              frameSize,
+              frameSize,
             )
           : sourceBounds;
       if (!sourceFrameBounds) continue;
@@ -381,6 +483,18 @@ function getImportAdjustment(options: ImportWeaponOptions): ImportAdjustment {
 function getSourceMode(sourceCanvas: HTMLCanvasElement): SourceMode {
   return sourceCanvas.width >= STANDARD_SHEET_WIDTH &&
     sourceCanvas.height >= STANDARD_SHEET_HEIGHT
+    ? "fullSheet"
+    : "singleImage";
+}
+
+function getCustomAnimationSourceMode(
+  sourceMode: SourceMode,
+  sourceCanvas: HTMLCanvasElement,
+  referenceSheet: HTMLCanvasElement,
+): SourceMode {
+  if (sourceMode === "fullSheet") return "singleImage";
+  return sourceCanvas.width >= referenceSheet.width &&
+    sourceCanvas.height >= referenceSheet.height
     ? "fullSheet"
     : "singleImage";
 }

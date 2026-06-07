@@ -216,6 +216,15 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
           state.selections,
           state.bodyType,
         );
+        const importedCustomAnimation = Object.keys(customPart.sheets).find(
+          (animation) => customAnimations[animation],
+        );
+        if (importedCustomAnimation) {
+          stopPreviewAnimation();
+          setPreviewAnimation(importedCustomAnimation);
+          startPreviewAnimation();
+          state.selectedAnimation = importedCustomAnimation;
+        }
         vnode.state.importStatus = `Imported ${customPart.name}`;
         vnode.state.showImporter = false;
         vnode.state.importName = "";

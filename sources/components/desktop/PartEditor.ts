@@ -13,7 +13,12 @@ import { SLOT_CONFIG, clearSlotSelections } from "./slot-config.ts";
 import { customAnimations } from "../../custom-animations.ts";
 import { variantToFilename } from "../../utils/helpers.ts";
 import { getMultiRecolors } from "../../state/palettes.ts";
-import { ANIMATION_OFFSETS, FRAME_SIZE } from "../../state/constants.ts";
+import {
+  ANIMATION_CONFIGS,
+  ANIMATION_OFFSETS,
+  ANIMATIONS,
+  FRAME_SIZE,
+} from "../../state/constants.ts";
 import type { ItemMerged } from "../../state/catalog.ts";
 import {
   applyBrush,
@@ -37,6 +42,15 @@ type PartEditorState = PixelEditorToolState & {
   editLayers: EditorLayer[];
   activeLayerId: string | null;
   nextLayerNumber: number;
+  globalEditorContext: EditorContextSnapshot | null;
+  frameEditorContexts: Record<string, EditorContextSnapshot>;
+  availableFrameAnimations: string[];
+  frameMode: boolean;
+  frameAnimation: string;
+  frameIndex: number;
+  onionSkin: boolean;
+  onionOpacity: number;
+  onionCanvases: OnionCanvases | null;
   isDrawing: boolean;
   zoom: number;
   showGrid: boolean;
@@ -73,6 +87,23 @@ type EditorSnapshot = {
   activeLayerId: string | null;
   nextLayerNumber: number;
   layers: EditorLayerSnapshot[];
+};
+
+type EditorContextSnapshot = EditorSnapshot & {
+  originalCanvases: Record<Direction, string>;
+  history: string[];
+  historyIndex: number;
+};
+
+type OnionCanvases = {
+  previous: Record<Direction, HTMLCanvasElement> | null;
+  next: Record<Direction, HTMLCanvasElement> | null;
+};
+
+type FrameOverride = {
+  animation: string;
+  frameIndex: number;
+  canvases: Record<Direction, HTMLCanvasElement>;
 };
 
 type SelectionRect = {
@@ -193,6 +224,15 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.editLayers = [];
     vnode.state.activeLayerId = null;
     vnode.state.nextLayerNumber = 1;
+    vnode.state.globalEditorContext = null;
+    vnode.state.frameEditorContexts = {};
+    vnode.state.availableFrameAnimations = ["walk"];
+    vnode.state.frameMode = false;
+    vnode.state.frameAnimation = "walk";
+    vnode.state.frameIndex = 0;
+    vnode.state.onionSkin = false;
+    vnode.state.onionOpacity = 0.28;
+    vnode.state.onionCanvases = null;
     resetEditLayers(vnode.state);
   },
 
@@ -224,11 +264,20 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       vnode.state.loading = true;
       vnode.state.history = [];
       vnode.state.historyIndex = -1;
+      vnode.state.frameMode = false;
+      vnode.state.frameIndex = 0;
+      vnode.state.frameEditorContexts = {};
+      vnode.state.globalEditorContext = null;
+      vnode.state.onionCanvases = null;
       clearSelectionState(vnode.state, false);
 
       const meta = getItemMerged(editing.itemId).unwrapOr(null);
       if (meta) {
         vnode.state.name = `Custom ${meta.name}`;
+        vnode.state.availableFrameAnimations =
+          getAvailableFrameAnimations(meta);
+        vnode.state.frameAnimation =
+          vnode.state.availableFrameAnimations[0] ?? "walk";
 
         // Standard animation sheets already contain four direction rows.
         const firstAnim = meta.animations?.[0] ?? "walk";
@@ -293,6 +342,9 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               recomposeCanvases(vnode.state);
               vnode.state.loading = false;
               saveHistory(vnode.state);
+              vnode.state.globalEditorContext = createEditorContextSnapshot(
+                vnode.state,
+              );
               m.redraw();
             })
             .catch((err) => {
@@ -313,6 +365,9 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               recomposeCanvases(vnode.state);
               vnode.state.loading = false;
               saveHistory(vnode.state);
+              vnode.state.globalEditorContext = createEditorContextSnapshot(
+                vnode.state,
+              );
               m.redraw();
             });
         } else {
@@ -329,6 +384,9 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
           recomposeCanvases(vnode.state);
           vnode.state.loading = false;
           saveHistory(vnode.state);
+          vnode.state.globalEditorContext = createEditorContextSnapshot(
+            vnode.state,
+          );
         }
       } else {
         vnode.state.loading = false;
@@ -344,6 +402,9 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
     const activeCanvas = vnode.state.canvases[vnode.state.activeDirection];
     const canvasDisplaySize = `${FRAME_SIZE * vnode.state.zoom}px`;
+    const editorModeLabel = vnode.state.frameMode
+      ? `${getAnimationLabel(vnode.state.frameAnimation)} F${vnode.state.frameIndex + 1}`
+      : "GLOBAL";
 
     const setZoom = (zoom: number) => {
       vnode.state.zoom = clampEditorZoom(zoom);
@@ -485,11 +546,18 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       vnode.state.loading = true;
       try {
         recomposeCanvases(vnode.state);
+        saveActiveEditorContext(vnode.state);
+        const globalContext =
+          vnode.state.globalEditorContext ??
+          createEditorContextSnapshot(vnode.state);
+        const globalCanvases = await createCanvasesFromContext(globalContext);
+        const frameOverrides = await createFrameOverrides(vnode.state);
         const sheets = await buildEditedAnimationSheets(
           baseId,
           meta,
-          vnode.state.originalCanvases,
-          vnode.state.canvases,
+          globalCanvases.originalCanvases,
+          globalCanvases.editedCanvases,
+          frameOverrides,
         );
         const firstSheet = sheets.walk ?? Object.values(sheets)[0];
         if (!firstSheet) {
@@ -737,7 +805,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               m("div.part-editor-canvas-header", [
                 m(
                   "span",
-                  `${vnode.state.activeDirection.toUpperCase()} VIEW  ·  ${vnode.state.tool.toUpperCase()} MODE  ·  64×64`,
+                  `${vnode.state.activeDirection.toUpperCase()} VIEW  ·  ${vnode.state.tool.toUpperCase()} MODE  ·  ${editorModeLabel}  ·  64×64`,
                 ),
                 m("div.part-editor-zoom-controls", [
                   m(
@@ -895,6 +963,8 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
     activeLayerIndex >= 0 && activeLayerIndex < stateObj.editLayers.length - 1;
   const canMergeLayerDown = activeLayerIndex > 0;
   const canFlattenLayers = stateObj.editLayers.length > 1;
+  const frameCount = getAnimationFrameCount(stateObj.frameAnimation);
+  const canUseFrameTools = stateObj.availableFrameAnimations.length > 0;
 
   return m("aside.part-editor-pro-panel", [
     m("div.part-editor-pro-section", [
@@ -915,6 +985,148 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           },
         }),
         m("b", `${stateObj.brushSize}px`),
+      ]),
+    ]),
+    m("div.part-editor-pro-section.part-editor-timeline-section", [
+      m("h4", "Timeline"),
+      m("div.part-editor-mode-switch", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            class: !stateObj.frameMode ? "active" : "",
+            title: "Edit global standing-frame changes",
+            onclick: () => {
+              void switchEditorContext(stateObj, false);
+            },
+          },
+          "Global",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            class: stateObj.frameMode ? "active" : "",
+            disabled: !canUseFrameTools,
+            title: "Edit one animation frame",
+            onclick: () => {
+              void switchEditorContext(stateObj, true);
+            },
+          },
+          "Frame",
+        ),
+      ]),
+      m("label.part-editor-pro-field.part-editor-pro-field-wide", [
+        m("span", "Anim"),
+        m(
+          "select",
+          {
+            value: stateObj.frameAnimation,
+            disabled: !canUseFrameTools,
+            title: "Animation for frame editing",
+            onchange: (e: Event) => {
+              const animation = (e.target as HTMLSelectElement).value;
+              void switchEditorContext(stateObj, true, animation, 0);
+            },
+          },
+          stateObj.availableFrameAnimations.map((animation) =>
+            m("option", { value: animation }, getAnimationLabel(animation)),
+          ),
+        ),
+        m("b", stateObj.frameMode ? "On" : "Off"),
+      ]),
+      m("div.part-editor-frame-controls", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            disabled: !stateObj.frameMode || stateObj.frameIndex <= 0,
+            title: "Previous animation frame (,)",
+            onclick: () => {
+              void switchEditorContext(
+                stateObj,
+                true,
+                stateObj.frameAnimation,
+                stateObj.frameIndex - 1,
+              );
+            },
+          },
+          "<",
+        ),
+        m("input.part-editor-frame-slider", {
+          type: "range",
+          min: "0",
+          max: String(Math.max(0, frameCount - 1)),
+          step: "1",
+          value: String(stateObj.frameIndex),
+          disabled: !stateObj.frameMode,
+          title: "Animation frame",
+          oninput: (e: Event) => {
+            void switchEditorContext(
+              stateObj,
+              true,
+              stateObj.frameAnimation,
+              Number((e.target as HTMLInputElement).value),
+            );
+          },
+        }),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            disabled:
+              !stateObj.frameMode || stateObj.frameIndex >= frameCount - 1,
+            title: "Next animation frame (.)",
+            onclick: () => {
+              void switchEditorContext(
+                stateObj,
+                true,
+                stateObj.frameAnimation,
+                stateObj.frameIndex + 1,
+              );
+            },
+          },
+          ">",
+        ),
+        m(
+          "span.part-editor-frame-count",
+          `${stateObj.frameIndex + 1}/${frameCount}`,
+        ),
+      ]),
+      m(
+        "label.part-editor-pro-toggle",
+        {
+          title: "Show neighboring animation frames",
+        },
+        [
+          m("input", {
+            type: "checkbox",
+            checked: stateObj.onionSkin,
+            onchange: (e: Event) => {
+              stateObj.onionSkin = (e.target as HTMLInputElement).checked;
+              if (stateObj.frameMode) {
+                void updateOnionCanvases(stateObj);
+              }
+            },
+          }),
+          "Onion",
+        ],
+      ),
+      m("label.part-editor-pro-field", [
+        m("span", "Ghost"),
+        m("input", {
+          type: "range",
+          min: "10",
+          max: "70",
+          step: "5",
+          value: String(Math.round(stateObj.onionOpacity * 100)),
+          title: "Onion skin opacity",
+          oninput: (e: Event) => {
+            stateObj.onionOpacity =
+              Number((e.target as HTMLInputElement).value) / 100;
+          },
+        }),
+        m("b", `${Math.round(stateObj.onionOpacity * 100)}%`),
       ]),
     ]),
     m("div.part-editor-pro-section.part-editor-layers-section", [
@@ -1251,6 +1463,24 @@ function handleEditorShortcut(
   } else if (key === "g" && stateObj.isFullscreen) {
     e.preventDefault();
     stateObj.tool = "fill";
+  } else if (key === "," && stateObj.isFullscreen && stateObj.frameMode) {
+    e.preventDefault();
+    void switchEditorContext(
+      stateObj,
+      true,
+      stateObj.frameAnimation,
+      stateObj.frameIndex - 1,
+    );
+    return;
+  } else if (key === "." && stateObj.isFullscreen && stateObj.frameMode) {
+    e.preventDefault();
+    void switchEditorContext(
+      stateObj,
+      true,
+      stateObj.frameAnimation,
+      stateObj.frameIndex + 1,
+    );
+    return;
   } else if (key === "[") {
     e.preventDefault();
     stateObj.brushSize = clampBrushSize(stateObj.brushSize - 1);
@@ -1561,6 +1791,20 @@ function drawMainGrid(
   stateObj?: PartEditorState,
 ) {
   ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+  if (stateObj?.frameMode && stateObj.onionSkin && stateObj.onionCanvases) {
+    ctx.save();
+    ctx.globalAlpha = stateObj.onionOpacity;
+    const previous =
+      stateObj.onionCanvases.previous?.[stateObj.activeDirection];
+    const next = stateObj.onionCanvases.next?.[stateObj.activeDirection];
+    if (previous) {
+      ctx.drawImage(previous, 0, 0);
+    }
+    if (next) {
+      ctx.drawImage(next, 0, 0);
+    }
+    ctx.restore();
+  }
   ctx.drawImage(offscreenCanvas, 0, 0);
 
   const rect = stateObj?.selectionRect;
@@ -1583,6 +1827,328 @@ function refreshVisibleCanvas(
   const ctx = get2DContext(canvasEl);
   ctx.imageSmoothingEnabled = false;
   drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection], stateObj);
+}
+
+function getAvailableFrameAnimations(meta: ItemMerged): string[] {
+  return Object.keys(ANIMATION_OFFSETS).filter(
+    (animation) =>
+      supportsStandardAnimation(meta, animation) &&
+      getAnimationFrameCount(animation) > 0,
+  );
+}
+
+function getAnimationConfigName(animation: string): string {
+  if (animation === "combat_idle") return "combat";
+  if (animation === "backslash") return "1h_backslash";
+  if (animation === "halfslash") return "1h_halfslash";
+  return animation;
+}
+
+function getAnimationFrameCount(animation: string): number {
+  const configs = ANIMATION_CONFIGS as Record<
+    string,
+    { cycle: number[] } | undefined
+  >;
+  const config = configs[getAnimationConfigName(animation)];
+  if (!config || config.cycle.length === 0) return 1;
+  return Math.max(...config.cycle) + 1;
+}
+
+function getAnimationLabel(animation: string): string {
+  const animationEntry = ANIMATIONS.find(
+    (entry) =>
+      entry.value === animation ||
+      (entry.folderName === animation && !entry.noExport),
+  );
+  if (animationEntry) return animationEntry.label;
+  return animation
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getFrameContextKey(animation: string, frameIndex: number): string {
+  return `${animation}:${frameIndex}`;
+}
+
+function parseFrameContextKey(
+  key: string,
+): { animation: string; frameIndex: number } | null {
+  const [animation, frameText] = key.split(":");
+  const frameIndex = Number(frameText);
+  if (!animation || !Number.isInteger(frameIndex)) return null;
+  return { animation, frameIndex };
+}
+
+function saveActiveEditorContext(stateObj: PartEditorState): void {
+  const context = createEditorContextSnapshot(stateObj);
+  if (stateObj.frameMode) {
+    stateObj.frameEditorContexts[
+      getFrameContextKey(stateObj.frameAnimation, stateObj.frameIndex)
+    ] = context;
+  } else {
+    stateObj.globalEditorContext = context;
+  }
+}
+
+async function switchEditorContext(
+  stateObj: PartEditorState,
+  frameMode: boolean,
+  animation = stateObj.frameAnimation,
+  frameIndex = stateObj.frameIndex,
+): Promise<void> {
+  const nextAnimation = stateObj.availableFrameAnimations.includes(animation)
+    ? animation
+    : (stateObj.availableFrameAnimations[0] ?? "walk");
+  const frameCount = getAnimationFrameCount(nextAnimation);
+  const nextFrameIndex = Math.min(
+    frameCount - 1,
+    Math.max(0, Math.round(frameIndex)),
+  );
+
+  if (
+    stateObj.frameMode === frameMode &&
+    (!frameMode ||
+      (stateObj.frameAnimation === nextAnimation &&
+        stateObj.frameIndex === nextFrameIndex))
+  ) {
+    return;
+  }
+
+  saveActiveEditorContext(stateObj);
+  clearSelectionState(stateObj, true);
+
+  if (!frameMode) {
+    if (stateObj.globalEditorContext) {
+      await restoreEditorContext(stateObj, stateObj.globalEditorContext);
+    }
+    stateObj.frameMode = false;
+    stateObj.onionCanvases = null;
+    m.redraw();
+    return;
+  }
+
+  const contextKey = getFrameContextKey(nextAnimation, nextFrameIndex);
+  const existingContext = stateObj.frameEditorContexts[contextKey];
+  if (existingContext) {
+    await restoreEditorContext(stateObj, existingContext);
+  } else {
+    const frameCanvases = await loadFrameCanvasesWithGlobalEdits(
+      stateObj,
+      nextAnimation,
+      nextFrameIndex,
+    );
+    copyDirectionCanvases(frameCanvases, stateObj.originalCanvases);
+    resetEditLayers(stateObj);
+    recomposeCanvases(stateObj);
+    stateObj.history = [];
+    stateObj.historyIndex = -1;
+    saveHistory(stateObj);
+  }
+
+  stateObj.frameMode = true;
+  stateObj.frameAnimation = nextAnimation;
+  stateObj.frameIndex = nextFrameIndex;
+  await updateOnionCanvases(stateObj);
+  m.redraw();
+}
+
+async function restoreEditorContext(
+  stateObj: PartEditorState,
+  context: EditorContextSnapshot,
+): Promise<void> {
+  await Promise.all(
+    DIRECTIONS.map((direction) =>
+      loadDataUrlIntoCanvas(
+        context.originalCanvases[direction],
+        stateObj.originalCanvases[direction],
+      ),
+    ),
+  );
+
+  const layers = await Promise.all(
+    context.layers.map((layerSnapshot) =>
+      createLayerFromSnapshot(layerSnapshot),
+    ),
+  );
+  if (layers.length === 0) {
+    resetEditLayers(stateObj);
+  } else {
+    stateObj.editLayers = layers;
+    stateObj.activeLayerId =
+      layers.find((layer) => layer.id === context.activeLayerId)?.id ??
+      layers[layers.length - 1].id;
+    stateObj.nextLayerNumber = Math.max(context.nextLayerNumber, 1);
+  }
+  stateObj.history = [...context.history];
+  stateObj.historyIndex = Math.min(
+    stateObj.history.length - 1,
+    Math.max(-1, context.historyIndex),
+  );
+  recomposeCanvases(stateObj);
+}
+
+async function updateOnionCanvases(stateObj: PartEditorState): Promise<void> {
+  if (!stateObj.frameMode || !stateObj.onionSkin) {
+    stateObj.onionCanvases = null;
+    m.redraw();
+    return;
+  }
+
+  try {
+    const frameCount = getAnimationFrameCount(stateObj.frameAnimation);
+    const previous =
+      stateObj.frameIndex > 0
+        ? await loadFrameCanvasesWithGlobalEdits(
+            stateObj,
+            stateObj.frameAnimation,
+            stateObj.frameIndex - 1,
+          )
+        : null;
+    const next =
+      stateObj.frameIndex < frameCount - 1
+        ? await loadFrameCanvasesWithGlobalEdits(
+            stateObj,
+            stateObj.frameAnimation,
+            stateObj.frameIndex + 1,
+          )
+        : null;
+    stateObj.onionCanvases = { previous, next };
+    m.redraw();
+  } catch (err) {
+    console.warn("Failed to load onion skin frames:", err);
+    stateObj.onionCanvases = null;
+  }
+}
+
+async function loadFrameCanvasesWithGlobalEdits(
+  stateObj: PartEditorState,
+  animation: string,
+  frameIndex: number,
+): Promise<Record<Direction, HTMLCanvasElement>> {
+  const frameCanvases = await loadAnimationFrameCanvases(
+    stateObj,
+    animation,
+    frameIndex,
+  );
+
+  if (stateObj.globalEditorContext) {
+    const globalCanvases = await createCanvasesFromContext(
+      stateObj.globalEditorContext,
+    );
+    for (const direction of DIRECTIONS) {
+      applyCanvasDiff(
+        globalCanvases.originalCanvases[direction],
+        globalCanvases.editedCanvases[direction],
+        frameCanvases[direction],
+      );
+    }
+  }
+
+  return frameCanvases;
+}
+
+async function loadAnimationFrameCanvases(
+  stateObj: PartEditorState,
+  animation: string,
+  frameIndex: number,
+): Promise<Record<Direction, HTMLCanvasElement>> {
+  const canvases = createDirectionCanvases();
+  const baseId = stateObj.baseItemId;
+  if (!baseId) return canvases;
+
+  const meta = getItemMerged(baseId).unwrapOr(null);
+  if (!meta) return canvases;
+
+  const selection = state.selections[meta.type_name];
+  const recolors = getMultiRecolors(baseId, state.selections);
+  const pathResult = getSpritePath(
+    baseId,
+    selection?.variant ?? null,
+    recolors,
+    state.bodyType,
+    animation,
+    1,
+    state.selections,
+    meta,
+  );
+  if (pathResult.isErr()) return canvases;
+
+  const img = await loadImage(pathResult.value);
+  const rowCount = Math.max(1, Math.floor(img.height / FRAME_SIZE));
+  const frameCount = Math.max(1, Math.floor(img.width / FRAME_SIZE));
+  const clampedFrame = Math.min(frameCount - 1, Math.max(0, frameIndex));
+  for (const direction of DIRECTIONS) {
+    const row = rowCount >= 4 ? DIRECTION_ROWS[direction] : 0;
+    const ctx = get2DContext(canvases[direction]);
+    ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+    ctx.drawImage(
+      img,
+      clampedFrame * FRAME_SIZE,
+      row * FRAME_SIZE,
+      FRAME_SIZE,
+      FRAME_SIZE,
+      0,
+      0,
+      FRAME_SIZE,
+      FRAME_SIZE,
+    );
+  }
+  return canvases;
+}
+
+function copyDirectionCanvases(
+  source: Record<Direction, HTMLCanvasElement>,
+  target: Record<Direction, HTMLCanvasElement>,
+): void {
+  for (const direction of DIRECTIONS) {
+    const ctx = get2DContext(target[direction]);
+    ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+    ctx.drawImage(source[direction], 0, 0);
+  }
+}
+
+async function createCanvasesFromContext(
+  context: EditorContextSnapshot,
+): Promise<{
+  originalCanvases: Record<Direction, HTMLCanvasElement>;
+  editedCanvases: Record<Direction, HTMLCanvasElement>;
+}> {
+  const originalCanvases = createDirectionCanvases();
+  await Promise.all(
+    DIRECTIONS.map((direction) =>
+      loadDataUrlIntoCanvas(
+        context.originalCanvases[direction],
+        originalCanvases[direction],
+      ),
+    ),
+  );
+
+  const layers = await Promise.all(
+    context.layers.map((layerSnapshot) =>
+      createLayerFromSnapshot(layerSnapshot),
+    ),
+  );
+  const editedCanvases = createDirectionCanvases();
+  composeLayersIntoCanvases(layers, editedCanvases);
+  return { originalCanvases, editedCanvases };
+}
+
+async function createFrameOverrides(
+  stateObj: PartEditorState,
+): Promise<FrameOverride[]> {
+  const overrides: FrameOverride[] = [];
+  for (const [key, context] of Object.entries(stateObj.frameEditorContexts)) {
+    const parsed = parseFrameContextKey(key);
+    if (!parsed) continue;
+    const { editedCanvases } = await createCanvasesFromContext(context);
+    overrides.push({
+      animation: parsed.animation,
+      frameIndex: parsed.frameIndex,
+      canvases: editedCanvases,
+    });
+  }
+  return overrides;
 }
 
 function createEditorLayer(
@@ -1641,18 +2207,65 @@ function getActiveLayerToolState(
 }
 
 function recomposeCanvases(stateObj: PartEditorState): void {
+  composeLayersIntoCanvases(stateObj.editLayers, stateObj.canvases);
+}
+
+function composeLayersIntoCanvases(
+  layers: EditorLayer[],
+  targetCanvases: Record<Direction, HTMLCanvasElement>,
+): void {
   for (const direction of DIRECTIONS) {
-    const ctx = get2DContext(stateObj.canvases[direction]);
+    const ctx = get2DContext(targetCanvases[direction]);
     ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
     ctx.globalAlpha = 1;
 
-    for (const layer of stateObj.editLayers) {
+    for (const layer of layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
       ctx.globalAlpha = Math.min(1, Math.max(0, layer.opacity));
       ctx.drawImage(layer.canvases[direction], 0, 0);
     }
     ctx.globalAlpha = 1;
   }
+}
+
+function applyCanvasDiff(
+  originalCanvas: HTMLCanvasElement,
+  editedCanvas: HTMLCanvasElement,
+  targetCanvas: HTMLCanvasElement,
+): void {
+  const originalData = get2DContext(originalCanvas).getImageData(
+    0,
+    0,
+    FRAME_SIZE,
+    FRAME_SIZE,
+  );
+  const editedData = get2DContext(editedCanvas).getImageData(
+    0,
+    0,
+    FRAME_SIZE,
+    FRAME_SIZE,
+  );
+  const targetCtx = get2DContext(targetCanvas);
+  const targetData = targetCtx.getImageData(0, 0, FRAME_SIZE, FRAME_SIZE);
+
+  for (let y = 0; y < FRAME_SIZE; y++) {
+    for (let x = 0; x < FRAME_SIZE; x++) {
+      const idx = (y * FRAME_SIZE + x) * 4;
+      const originalMatches =
+        originalData.data[idx] === editedData.data[idx] &&
+        originalData.data[idx + 1] === editedData.data[idx + 1] &&
+        originalData.data[idx + 2] === editedData.data[idx + 2] &&
+        originalData.data[idx + 3] === editedData.data[idx + 3];
+      if (originalMatches) continue;
+
+      targetData.data[idx] = editedData.data[idx];
+      targetData.data[idx + 1] = editedData.data[idx + 1];
+      targetData.data[idx + 2] = editedData.data[idx + 2];
+      targetData.data[idx + 3] = editedData.data[idx + 3];
+    }
+  }
+
+  targetCtx.putImageData(targetData, 0, 0);
 }
 
 function cloneDirectionCanvases(
@@ -1776,6 +2389,7 @@ async function buildEditedAnimationSheets(
   meta: ItemMerged,
   originalCanvases: Record<Direction, HTMLCanvasElement>,
   editedCanvases: Record<Direction, HTMLCanvasElement>,
+  frameOverrides: FrameOverride[],
 ): Promise<Record<string, HTMLCanvasElement>> {
   const sheets: Record<string, HTMLCanvasElement> = {};
   const selection = state.selections[meta.type_name];
@@ -1803,10 +2417,58 @@ async function buildEditedAnimationSheets(
     const outCtx = get2DContext(outCanvas);
     outCtx.drawImage(baseImg, 0, 0);
     applyDirectionEdits(outCtx, baseImg, originalCanvases, editedCanvases);
+    applyFrameOverrides(outCtx, baseImg, animName, frameOverrides);
     sheets[animName] = outCanvas;
   }
 
   return sheets;
+}
+
+function applyFrameOverrides(
+  ctx: CanvasRenderingContext2D,
+  baseImg: HTMLImageElement,
+  animation: string,
+  frameOverrides: FrameOverride[],
+): void {
+  const rowCount = Math.floor(baseImg.height / FRAME_SIZE);
+  const frameCount = Math.floor(baseImg.width / FRAME_SIZE);
+  if (rowCount <= 0 || frameCount <= 0) return;
+
+  for (const override of frameOverrides) {
+    if (override.animation !== animation) continue;
+    if (override.frameIndex < 0 || override.frameIndex >= frameCount) continue;
+
+    if (rowCount < 4) {
+      for (let row = 0; row < rowCount; row++) {
+        ctx.clearRect(
+          override.frameIndex * FRAME_SIZE,
+          row * FRAME_SIZE,
+          FRAME_SIZE,
+          FRAME_SIZE,
+        );
+        ctx.drawImage(
+          override.canvases.front,
+          override.frameIndex * FRAME_SIZE,
+          row * FRAME_SIZE,
+        );
+      }
+      continue;
+    }
+
+    for (const direction of DIRECTIONS) {
+      ctx.clearRect(
+        override.frameIndex * FRAME_SIZE,
+        DIRECTION_ROWS[direction] * FRAME_SIZE,
+        FRAME_SIZE,
+        FRAME_SIZE,
+      );
+      ctx.drawImage(
+        override.canvases[direction],
+        override.frameIndex * FRAME_SIZE,
+        DIRECTION_ROWS[direction] * FRAME_SIZE,
+      );
+    }
+  }
 }
 
 function applyDirectionEdits(
@@ -1934,6 +2596,23 @@ function createHistorySnapshot(stateObj: PartEditorState): EditorSnapshot {
         right: layer.canvases.right.toDataURL(),
       },
     })),
+  };
+}
+
+function createEditorContextSnapshot(
+  stateObj: PartEditorState,
+): EditorContextSnapshot {
+  const layerSnapshot = createHistorySnapshot(stateObj);
+  return {
+    ...layerSnapshot,
+    originalCanvases: {
+      front: stateObj.originalCanvases.front.toDataURL(),
+      back: stateObj.originalCanvases.back.toDataURL(),
+      left: stateObj.originalCanvases.left.toDataURL(),
+      right: stateObj.originalCanvases.right.toDataURL(),
+    },
+    history: [...stateObj.history],
+    historyIndex: stateObj.historyIndex,
   };
 }
 

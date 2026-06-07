@@ -1058,7 +1058,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
         {
           type: "button",
           class: stateObj.activeEditorTab === "edit" ? "active" : "",
-          title: "Show sprite editing tools",
+          title: "Show sprite editing tools (1)",
           onclick: () => {
             stateObj.activeEditorTab = "edit";
           },
@@ -1070,7 +1070,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
         {
           type: "button",
           class: stateObj.activeEditorTab === "animation" ? "active" : "",
-          title: "Show animation frame editor",
+          title: "Show animation frame editor (2)",
           onclick: () => {
             stateObj.activeEditorTab = "animation";
           },
@@ -1838,6 +1838,12 @@ function handleEditorShortcut(
   } else if (key === "f") {
     e.preventDefault();
     stateObj.isFullscreen = !stateObj.isFullscreen;
+  } else if (key === "1" && stateObj.isFullscreen) {
+    e.preventDefault();
+    stateObj.activeEditorTab = "edit";
+  } else if (key === "2" && stateObj.isFullscreen) {
+    e.preventDefault();
+    stateObj.activeEditorTab = "animation";
   } else if (key === "b" || key === "p") {
     e.preventDefault();
     stateObj.tool = "pen";
@@ -2773,6 +2779,7 @@ async function switchEditorContext(
   }
 
   stateObj.frameMode = true;
+  stateObj.activeEditorTab = "animation";
   stateObj.frameAnimation = nextAnimation;
   stateObj.frameIndex = nextFrameIndex;
   await updateOnionCanvases(stateObj);

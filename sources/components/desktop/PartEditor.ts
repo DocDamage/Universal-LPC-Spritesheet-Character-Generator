@@ -34,6 +34,9 @@ type PartEditorState = PixelEditorToolState & {
   baseItemId: string | null;
   name: string;
   originalCanvases: Record<Direction, HTMLCanvasElement>;
+  editLayers: EditorLayer[];
+  activeLayerId: string | null;
+  nextLayerNumber: number;
   isDrawing: boolean;
   zoom: number;
   showGrid: boolean;
@@ -42,8 +45,30 @@ type PartEditorState = PixelEditorToolState & {
   keyboardHandler: ((e: KeyboardEvent) => void) | null;
 
   // Undo history
-  history: string[]; // Store JSON snapshots of canvases
+  history: string[]; // Store JSON snapshots of edit layers
   historyIndex: number;
+};
+
+type EditorLayer = {
+  id: string;
+  name: string;
+  canvases: Record<Direction, HTMLCanvasElement>;
+  visible: boolean;
+  opacity: number;
+};
+
+type EditorLayerSnapshot = {
+  id: string;
+  name: string;
+  visible: boolean;
+  opacity: number;
+  canvases: Record<Direction, string>;
+};
+
+type EditorSnapshot = {
+  activeLayerId: string | null;
+  nextLayerNumber: number;
+  layers: EditorLayerSnapshot[];
 };
 
 const QUICK_COLORS = [
@@ -135,6 +160,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
     vnode.state.canvases = createDirectionCanvases();
     vnode.state.originalCanvases = createDirectionCanvases();
+    vnode.state.editLayers = [];
+    vnode.state.activeLayerId = null;
+    vnode.state.nextLayerNumber = 1;
+    resetEditLayers(vnode.state);
   },
 
   oncreate(vnode) {
@@ -223,15 +252,14 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                 right: cropFrame(img, 3, 0),
               };
               for (const key of DIRECTIONS) {
-                const ctx = get2DContext(vnode.state.canvases[key]);
                 const originalCtx = get2DContext(
                   vnode.state.originalCanvases[key],
                 );
-                ctx.clearRect(0, 0, 64, 64);
                 originalCtx.clearRect(0, 0, 64, 64);
-                ctx.drawImage(frames[key], 0, 0);
                 originalCtx.drawImage(frames[key], 0, 0);
               }
+              resetEditLayers(vnode.state);
+              recomposeCanvases(vnode.state);
               vnode.state.loading = false;
               saveHistory(vnode.state);
               m.redraw();
@@ -243,7 +271,6 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               );
               // Start with blank canvases instead of failing
               for (const key of DIRECTIONS) {
-                get2DContext(vnode.state.canvases[key]).clearRect(0, 0, 64, 64);
                 get2DContext(vnode.state.originalCanvases[key]).clearRect(
                   0,
                   0,
@@ -251,6 +278,8 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                   64,
                 );
               }
+              resetEditLayers(vnode.state);
+              recomposeCanvases(vnode.state);
               vnode.state.loading = false;
               saveHistory(vnode.state);
               m.redraw();
@@ -258,7 +287,6 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
         } else {
           // No image could be loaded - start with blank canvases
           for (const key of DIRECTIONS) {
-            get2DContext(vnode.state.canvases[key]).clearRect(0, 0, 64, 64);
             get2DContext(vnode.state.originalCanvases[key]).clearRect(
               0,
               0,
@@ -266,6 +294,8 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               64,
             );
           }
+          resetEditLayers(vnode.state);
+          recomposeCanvases(vnode.state);
           vnode.state.loading = false;
           saveHistory(vnode.state);
         }
@@ -335,8 +365,12 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
           return;
         }
 
+        const layerState = getActiveLayerToolState(vnode.state);
+        if (!layerState) return;
+
         if (tool === "fill") {
-          applyFill(vnode.state, point);
+          applyFill(layerState, point);
+          recomposeCanvases(vnode.state);
           refreshVisibleCanvas(canvasEl, vnode.state);
           vnode.state.lastPoint = point;
           return;
@@ -348,8 +382,9 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
             : [point];
 
         for (const p of points) {
-          applyBrush(vnode.state, p, tool === "eraser" ? "erase" : "paint");
+          applyBrush(layerState, p, tool === "eraser" ? "erase" : "paint");
         }
+        recomposeCanvases(vnode.state);
         refreshVisibleCanvas(canvasEl, vnode.state);
         vnode.state.lastPoint = point;
       }
@@ -363,6 +398,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
       vnode.state.loading = true;
       try {
+        recomposeCanvases(vnode.state);
         const sheets = await buildEditedAnimationSheets(
           baseId,
           meta,
@@ -754,6 +790,11 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 };
 
 function renderProPanel(stateObj: PartEditorState): m.Children {
+  const activeLayerIndex = getActiveLayerIndex(stateObj);
+  const canMoveLayerDown = activeLayerIndex > 0;
+  const canMoveLayerUp =
+    activeLayerIndex >= 0 && activeLayerIndex < stateObj.editLayers.length - 1;
+
   return m("aside.part-editor-pro-panel", [
     m("div.part-editor-pro-section", [
       m("h4", "Brush"),
@@ -774,6 +815,126 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
         }),
         m("b", `${stateObj.brushSize}px`),
       ]),
+    ]),
+    m("div.part-editor-pro-section.part-editor-layers-section", [
+      m("h4", "Layers"),
+      m("div.part-editor-layer-actions", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Add a new edit layer",
+            onclick: () => addEditLayer(stateObj),
+          },
+          "+",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Duplicate active layer",
+            disabled: activeLayerIndex < 0,
+            onclick: () => duplicateActiveLayer(stateObj),
+          },
+          "Copy",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Move active layer up",
+            disabled: !canMoveLayerUp,
+            onclick: () => moveActiveLayer(stateObj, 1),
+          },
+          "Up",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Move active layer down",
+            disabled: !canMoveLayerDown,
+            onclick: () => moveActiveLayer(stateObj, -1),
+          },
+          "Down",
+        ),
+        m(
+          "button.part-editor-pro-button.part-editor-layer-delete",
+          {
+            type: "button",
+            title: "Delete active layer",
+            disabled: stateObj.editLayers.length <= 1 || activeLayerIndex < 0,
+            onclick: () => deleteActiveLayer(stateObj),
+          },
+          "Del",
+        ),
+      ]),
+      m(
+        "div.part-editor-layer-list",
+        stateObj.editLayers
+          .slice()
+          .reverse()
+          .map((layer) =>
+            m(
+              "div.part-editor-layer-row",
+              {
+                key: layer.id,
+                class: layer.id === stateObj.activeLayerId ? "active" : "",
+                onclick: () => {
+                  stateObj.activeLayerId = layer.id;
+                },
+              },
+              [
+                m("div.part-editor-layer-main", [
+                  m(
+                    "button.part-editor-layer-visibility",
+                    {
+                      type: "button",
+                      title: layer.visible ? "Hide layer" : "Show layer",
+                      onclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        layer.visible = !layer.visible;
+                        recomposeCanvases(stateObj);
+                        saveHistory(stateObj);
+                      },
+                    },
+                    layer.visible ? "On" : "Off",
+                  ),
+                  m("input.part-editor-layer-name", {
+                    type: "text",
+                    value: layer.name,
+                    title: "Layer name",
+                    onclick: (e: MouseEvent) => e.stopPropagation(),
+                    oninput: (e: Event) => {
+                      layer.name =
+                        (e.target as HTMLInputElement).value || "Layer";
+                    },
+                    onchange: () => saveHistory(stateObj),
+                  }),
+                  m(
+                    "span.part-editor-layer-opacity-value",
+                    `${Math.round(layer.opacity * 100)}%`,
+                  ),
+                ]),
+                m("input.part-editor-layer-opacity", {
+                  type: "range",
+                  min: "0",
+                  max: "100",
+                  step: "1",
+                  value: String(Math.round(layer.opacity * 100)),
+                  title: "Layer opacity",
+                  onclick: (e: MouseEvent) => e.stopPropagation(),
+                  oninput: (e: Event) => {
+                    layer.opacity =
+                      Number((e.target as HTMLInputElement).value) / 100;
+                    recomposeCanvases(stateObj);
+                  },
+                  onchange: () => saveHistory(stateObj),
+                }),
+              ],
+            ),
+          ),
+      ),
     ]),
     m("div.part-editor-pro-section", [
       m("h4", "Symmetry"),
@@ -949,6 +1110,138 @@ function refreshVisibleCanvas(
   drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection]);
 }
 
+function createEditorLayer(
+  stateObj: PartEditorState,
+  name?: string,
+): EditorLayer {
+  const layerNumber = stateObj.nextLayerNumber;
+  stateObj.nextLayerNumber += 1;
+  return {
+    id: `layer_${layerNumber}_${Math.random().toString(36).slice(2, 9)}`,
+    name: name ?? `Layer ${layerNumber}`,
+    canvases: createDirectionCanvases(),
+    visible: true,
+    opacity: 1,
+  };
+}
+
+function resetEditLayers(stateObj: PartEditorState): void {
+  stateObj.nextLayerNumber = 1;
+  const firstLayer = createEditorLayer(stateObj, "Base");
+  firstLayer.canvases = cloneDirectionCanvases(stateObj.originalCanvases);
+  stateObj.editLayers = [firstLayer];
+  stateObj.activeLayerId = firstLayer.id;
+}
+
+function getActiveLayer(stateObj: PartEditorState): EditorLayer | null {
+  return (
+    stateObj.editLayers.find((layer) => layer.id === stateObj.activeLayerId) ??
+    stateObj.editLayers[stateObj.editLayers.length - 1] ??
+    null
+  );
+}
+
+function getActiveLayerIndex(stateObj: PartEditorState): number {
+  return stateObj.editLayers.findIndex(
+    (layer) => layer.id === stateObj.activeLayerId,
+  );
+}
+
+function getActiveLayerToolState(
+  stateObj: PartEditorState,
+): PixelEditorToolState | null {
+  const activeLayer = getActiveLayer(stateObj);
+  if (!activeLayer) return null;
+
+  return {
+    activeDirection: stateObj.activeDirection,
+    tool: stateObj.tool,
+    activeColor: stateObj.activeColor,
+    autoPropagate: stateObj.autoPropagate,
+    canvases: activeLayer.canvases,
+    brushSize: stateObj.brushSize,
+    mirrorX: stateObj.mirrorX,
+    mirrorY: stateObj.mirrorY,
+  };
+}
+
+function recomposeCanvases(stateObj: PartEditorState): void {
+  for (const direction of DIRECTIONS) {
+    const ctx = get2DContext(stateObj.canvases[direction]);
+    ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+    ctx.globalAlpha = 1;
+
+    for (const layer of stateObj.editLayers) {
+      if (!layer.visible || layer.opacity <= 0) continue;
+      ctx.globalAlpha = Math.min(1, Math.max(0, layer.opacity));
+      ctx.drawImage(layer.canvases[direction], 0, 0);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function cloneDirectionCanvases(
+  canvases: Record<Direction, HTMLCanvasElement>,
+): Record<Direction, HTMLCanvasElement> {
+  const clone = createDirectionCanvases();
+  for (const direction of DIRECTIONS) {
+    get2DContext(clone[direction]).drawImage(canvases[direction], 0, 0);
+  }
+  return clone;
+}
+
+function addEditLayer(stateObj: PartEditorState): void {
+  const layer = createEditorLayer(stateObj);
+  stateObj.editLayers.push(layer);
+  stateObj.activeLayerId = layer.id;
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function duplicateActiveLayer(stateObj: PartEditorState): void {
+  const activeIndex = getActiveLayerIndex(stateObj);
+  if (activeIndex < 0) return;
+
+  const activeLayer = stateObj.editLayers[activeIndex];
+  const layer = createEditorLayer(stateObj, `${activeLayer.name} copy`);
+  layer.visible = activeLayer.visible;
+  layer.opacity = activeLayer.opacity;
+  layer.canvases = cloneDirectionCanvases(activeLayer.canvases);
+
+  stateObj.editLayers.splice(activeIndex + 1, 0, layer);
+  stateObj.activeLayerId = layer.id;
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function moveActiveLayer(stateObj: PartEditorState, direction: -1 | 1): void {
+  const activeIndex = getActiveLayerIndex(stateObj);
+  const nextIndex = activeIndex + direction;
+  if (
+    activeIndex < 0 ||
+    nextIndex < 0 ||
+    nextIndex >= stateObj.editLayers.length
+  ) {
+    return;
+  }
+
+  const [layer] = stateObj.editLayers.splice(activeIndex, 1);
+  stateObj.editLayers.splice(nextIndex, 0, layer);
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function deleteActiveLayer(stateObj: PartEditorState): void {
+  const activeIndex = getActiveLayerIndex(stateObj);
+  if (activeIndex < 0 || stateObj.editLayers.length <= 1) return;
+
+  stateObj.editLayers.splice(activeIndex, 1);
+  const nextActiveIndex = Math.min(activeIndex, stateObj.editLayers.length - 1);
+  stateObj.activeLayerId = stateObj.editLayers[nextActiveIndex]?.id ?? null;
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
 function supportsStandardAnimation(
   meta: ItemMerged,
   animName: string,
@@ -1108,46 +1401,140 @@ function applyDirectionChangesToRow(
   }
 }
 
-function saveHistory(stateObj: PartEditorState) {
-  const snapshot: Record<string, string> = {};
-  for (const key of ["front", "back", "left", "right"] as const) {
-    snapshot[key] = stateObj.canvases[key].toDataURL();
-  }
-
-  // Cut any redo history
+function saveHistory(stateObj: PartEditorState): void {
   stateObj.history = stateObj.history.slice(0, stateObj.historyIndex + 1);
-  stateObj.history.push(JSON.stringify(snapshot));
+  stateObj.history.push(JSON.stringify(createHistorySnapshot(stateObj)));
   stateObj.historyIndex = stateObj.history.length - 1;
 }
 
-function undo(stateObj: PartEditorState) {
-  if (stateObj.historyIndex <= 0) return;
-  stateObj.historyIndex--;
-  const snapshot = JSON.parse(stateObj.history[stateObj.historyIndex]);
-  loadSnapshot(stateObj, snapshot);
+function createHistorySnapshot(stateObj: PartEditorState): EditorSnapshot {
+  return {
+    activeLayerId: stateObj.activeLayerId,
+    nextLayerNumber: stateObj.nextLayerNumber,
+    layers: stateObj.editLayers.map((layer) => ({
+      id: layer.id,
+      name: layer.name,
+      visible: layer.visible,
+      opacity: layer.opacity,
+      canvases: {
+        front: layer.canvases.front.toDataURL(),
+        back: layer.canvases.back.toDataURL(),
+        left: layer.canvases.left.toDataURL(),
+        right: layer.canvases.right.toDataURL(),
+      },
+    })),
+  };
 }
 
-function loadSnapshot(
+function undo(stateObj: PartEditorState): void {
+  if (stateObj.historyIndex <= 0) return;
+  stateObj.historyIndex--;
+  const snapshot = JSON.parse(stateObj.history[stateObj.historyIndex]) as
+    | EditorSnapshot
+    | Partial<Record<Direction, string>>;
+  void loadSnapshot(stateObj, snapshot);
+}
+
+async function loadSnapshot(
   stateObj: PartEditorState,
-  snapshot: Record<string, string>,
-) {
-  for (const key of ["front", "back", "left", "right"] as const) {
-    const img = new Image();
-    img.src = snapshot[key];
-    img.onload = () => {
-      const ctx = get2DContext(stateObj.canvases[key]);
-      ctx.clearRect(0, 0, 64, 64);
-      ctx.drawImage(img, 0, 0);
-      m.redraw();
-    };
+  snapshot: EditorSnapshot | Partial<Record<Direction, string>>,
+): Promise<void> {
+  try {
+    if (isEditorSnapshot(snapshot)) {
+      const layers = await Promise.all(
+        snapshot.layers.map((layerSnapshot) =>
+          createLayerFromSnapshot(layerSnapshot),
+        ),
+      );
+      if (layers.length === 0) {
+        resetEditLayers(stateObj);
+      } else {
+        stateObj.editLayers = layers;
+        stateObj.activeLayerId =
+          layers.find((layer) => layer.id === snapshot.activeLayerId)?.id ??
+          layers[layers.length - 1].id;
+        stateObj.nextLayerNumber = Math.max(snapshot.nextLayerNumber, 1);
+      }
+    } else {
+      await loadLegacyCanvasSnapshot(stateObj, snapshot);
+    }
+
+    recomposeCanvases(stateObj);
+    m.redraw();
+  } catch (err) {
+    console.warn("Failed to restore editor history snapshot:", err);
   }
 }
 
-function resetCanvases(stateObj: PartEditorState) {
+function isEditorSnapshot(snapshot: unknown): snapshot is EditorSnapshot {
+  return (
+    typeof snapshot === "object" &&
+    snapshot !== null &&
+    Array.isArray((snapshot as { layers?: unknown }).layers)
+  );
+}
+
+async function createLayerFromSnapshot(
+  snapshot: EditorLayerSnapshot,
+): Promise<EditorLayer> {
+  const canvases = createDirectionCanvases();
+  await Promise.all(
+    DIRECTIONS.map((direction) =>
+      loadDataUrlIntoCanvas(snapshot.canvases[direction], canvases[direction]),
+    ),
+  );
+
+  return {
+    id: snapshot.id,
+    name: snapshot.name || "Layer",
+    visible: snapshot.visible,
+    opacity: Math.min(1, Math.max(0, snapshot.opacity)),
+    canvases,
+  };
+}
+
+async function loadLegacyCanvasSnapshot(
+  stateObj: PartEditorState,
+  snapshot: Partial<Record<Direction, string>>,
+): Promise<void> {
+  stateObj.nextLayerNumber = 1;
+  const layer = createEditorLayer(stateObj, "Base");
+  await Promise.all(
+    DIRECTIONS.map((direction) =>
+      loadDataUrlIntoCanvas(snapshot[direction], layer.canvases[direction]),
+    ),
+  );
+  stateObj.editLayers = [layer];
+  stateObj.activeLayerId = layer.id;
+}
+
+function loadDataUrlIntoCanvas(
+  dataUrl: string | undefined,
+  canvas: HTMLCanvasElement,
+): Promise<void> {
+  const ctx = get2DContext(canvas);
+  ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+  if (!dataUrl) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+      ctx.drawImage(img, 0, 0);
+      resolve();
+    };
+    img.onerror = () => reject(new Error("Unable to load layer image data."));
+    img.src = dataUrl;
+  });
+}
+
+function resetCanvases(stateObj: PartEditorState): void {
   if (stateObj.history.length > 0) {
     // Reset to index 0 of history (original standing frames)
-    const snapshot = JSON.parse(stateObj.history[0]);
-    loadSnapshot(stateObj, snapshot);
+    const snapshot = JSON.parse(stateObj.history[0]) as
+      | EditorSnapshot
+      | Partial<Record<Direction, string>>;
+    void loadSnapshot(stateObj, snapshot);
     stateObj.history = stateObj.history.slice(0, 1);
     stateObj.historyIndex = 0;
   }

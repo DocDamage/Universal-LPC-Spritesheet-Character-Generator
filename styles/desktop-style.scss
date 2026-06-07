@@ -1423,6 +1423,117 @@
   }
 }
 
+.part-editor-layers-section {
+  min-height: 0;
+}
+
+.part-editor-layer-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 8px;
+
+  .part-editor-pro-button {
+    margin-top: 0;
+    padding: 5px 4px;
+    min-width: 0;
+    font-size: 10px;
+  }
+}
+
+.part-editor-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 270px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary) transparent;
+}
+
+.part-editor-layer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(12, 13, 20, 0.78);
+  padding: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--bg-raised);
+    border-color: var(--border-mid);
+  }
+
+  &.active {
+    border-color: var(--accent-primary);
+    background: rgba(124, 109, 240, 0.14);
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+  }
+}
+
+.part-editor-layer-main {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 5px;
+}
+
+.part-editor-layer-visibility {
+  width: 34px;
+  height: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-darkest);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 9px;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--border-mid);
+    color: var(--text-primary);
+  }
+}
+
+.part-editor-layer-name {
+  min-width: 0;
+  width: 100%;
+  background: var(--bg-darkest);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 11px;
+
+  &:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+  }
+}
+
+.part-editor-layer-opacity-value {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  text-align: right;
+}
+
+.part-editor-layer-opacity {
+  width: 100%;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.part-editor-layer-delete {
+  color: #fb7185;
+}
+
 .part-editor-pro-field {
   display: grid;
   grid-template-columns: 52px 1fr 34px;
@@ -1475,6 +1586,11 @@
     background: var(--bg-hover);
     border-color: var(--border-mid);
     color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
 }
 

@@ -246,7 +246,7 @@ function getLayerZPos(
   return Number(layers[`layer_${layerNum}`]?.zPos ?? 0);
 }
 
-function alignSourceToReferenceSheet(
+export function alignSourceToReferenceSheet(
   sourceCanvas: HTMLCanvasElement,
   sourceBounds: Rect,
   sourceMode: SourceMode,
@@ -299,7 +299,7 @@ function alignSourceToReferenceSheet(
         referenceBounds,
         sourceMode,
         adjustment,
-        row === 3,
+        sourceMode === "singleImage" && row === 3,
       );
     }
   }

@@ -288,6 +288,32 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       vnode.state.zoom = clampEditorZoom(zoom);
     };
 
+    const handleCanvasWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const oldZoom = vnode.state.zoom;
+      const nextZoom = clampEditorZoom(oldZoom + (e.deltaY < 0 ? 1 : -1));
+      if (nextZoom === oldZoom) return;
+
+      const stageEl = e.currentTarget as HTMLElement;
+      const canvasEl = stageEl.querySelector(
+        ".editor-pixel-canvas",
+      ) as HTMLCanvasElement | null;
+      const rect = canvasEl?.getBoundingClientRect();
+      const pointerRatioX = rect
+        ? Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+        : 0.5;
+      const pointerRatioY = rect
+        ? Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
+        : 0.5;
+      const sizeDelta = FRAME_SIZE * (nextZoom - oldZoom);
+
+      setZoom(nextZoom);
+      requestAnimationFrame(() => {
+        stageEl.scrollLeft += sizeDelta * pointerRatioX;
+        stageEl.scrollTop += sizeDelta * pointerRatioY;
+      });
+    };
+
     const drawOnMain = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
       const rect = canvasEl.getBoundingClientRect();
       const scaleX = 64 / rect.width;
@@ -604,59 +630,68 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                   ),
                 ]),
               ]),
-              m("div.part-editor-canvas-stage", [
-                m("canvas.editor-pixel-canvas", {
-                  width: 64,
-                  height: 64,
-                  style: {
-                    width: canvasDisplaySize,
-                    height: canvasDisplaySize,
-                    imageRendering: "pixelated",
-                    backgroundImage: vnode.state.showGrid ? undefined : "none",
-                    cursor:
-                      vnode.state.tool === "picker"
-                        ? "crosshair"
-                        : vnode.state.tool === "eraser"
-                          ? "cell"
-                          : "crosshair",
-                  },
-                  oncreate: (vnodeDOM) => {
-                    const el = vnodeDOM.dom as HTMLCanvasElement;
-                    const ctx = get2DContext(el);
-                    ctx.imageSmoothingEnabled = false;
-                    drawMainGrid(ctx, activeCanvas);
-                  },
-                  onupdate: (vnodeDOM) => {
-                    const el = vnodeDOM.dom as HTMLCanvasElement;
-                    const ctx = get2DContext(el);
-                    ctx.imageSmoothingEnabled = false;
-                    drawMainGrid(ctx, activeCanvas);
-                  },
-                  onmousedown: (e: MouseEvent) => {
-                    vnode.state.isDrawing = true;
-                    drawOnMain(e, e.target as HTMLCanvasElement);
-                  },
-                  onmousemove: (e: MouseEvent) => {
-                    if (vnode.state.isDrawing) {
+              m(
+                "div.part-editor-canvas-stage",
+                {
+                  title: "Scroll over the canvas to zoom",
+                  onwheel: handleCanvasWheel,
+                },
+                [
+                  m("canvas.editor-pixel-canvas", {
+                    width: 64,
+                    height: 64,
+                    style: {
+                      width: canvasDisplaySize,
+                      height: canvasDisplaySize,
+                      imageRendering: "pixelated",
+                      backgroundImage: vnode.state.showGrid
+                        ? undefined
+                        : "none",
+                      cursor:
+                        vnode.state.tool === "picker"
+                          ? "crosshair"
+                          : vnode.state.tool === "eraser"
+                            ? "cell"
+                            : "crosshair",
+                    },
+                    oncreate: (vnodeDOM) => {
+                      const el = vnodeDOM.dom as HTMLCanvasElement;
+                      const ctx = get2DContext(el);
+                      ctx.imageSmoothingEnabled = false;
+                      drawMainGrid(ctx, activeCanvas);
+                    },
+                    onupdate: (vnodeDOM) => {
+                      const el = vnodeDOM.dom as HTMLCanvasElement;
+                      const ctx = get2DContext(el);
+                      ctx.imageSmoothingEnabled = false;
+                      drawMainGrid(ctx, activeCanvas);
+                    },
+                    onmousedown: (e: MouseEvent) => {
+                      vnode.state.isDrawing = true;
                       drawOnMain(e, e.target as HTMLCanvasElement);
-                    }
-                  },
-                  onmouseup: () => {
-                    if (vnode.state.isDrawing) {
-                      vnode.state.isDrawing = false;
-                      saveHistory(vnode.state);
-                      m.redraw();
-                    }
-                  },
-                  onmouseleave: () => {
-                    if (vnode.state.isDrawing) {
-                      vnode.state.isDrawing = false;
-                      saveHistory(vnode.state);
-                      m.redraw();
-                    }
-                  },
-                }),
-              ]),
+                    },
+                    onmousemove: (e: MouseEvent) => {
+                      if (vnode.state.isDrawing) {
+                        drawOnMain(e, e.target as HTMLCanvasElement);
+                      }
+                    },
+                    onmouseup: () => {
+                      if (vnode.state.isDrawing) {
+                        vnode.state.isDrawing = false;
+                        saveHistory(vnode.state);
+                        m.redraw();
+                      }
+                    },
+                    onmouseleave: () => {
+                      if (vnode.state.isDrawing) {
+                        vnode.state.isDrawing = false;
+                        saveHistory(vnode.state);
+                        m.redraw();
+                      }
+                    },
+                  }),
+                ],
+              ),
             ]),
 
             // 4 directions thumbnail previews / selectors

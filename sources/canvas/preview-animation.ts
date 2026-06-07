@@ -107,6 +107,16 @@ function paintPreviewFrameForCycleIndex(cycleIndex: number): void {
     }
   }
 
+  const previewWidth = animRowNum * frameSize;
+  if (
+    previewCanvas.width !== previewWidth ||
+    previewCanvas.height !== frameSize
+  ) {
+    previewCanvas.width = previewWidth;
+    previewCanvas.height = frameSize;
+    previewCtx.imageSmoothingEnabled = false;
+  }
+
   let tmpCanvas: HTMLCanvasElement;
   if (state.applyTransparencyMask) {
     // using a tmpCanvas here to avoid modifying the original offscreen canvas

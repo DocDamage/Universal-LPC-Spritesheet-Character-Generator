@@ -56,6 +56,7 @@ type PartEditorState = PixelEditorToolState & {
   replaceTolerance: number;
   replaceAllDirections: boolean;
   transformAllDirections: boolean;
+  alphaLocked: boolean;
   isDrawing: boolean;
   zoom: number;
   showGrid: boolean;
@@ -81,6 +82,8 @@ type EditorLayer = {
   canvases: Record<Direction, HTMLCanvasElement>;
   visible: boolean;
   opacity: number;
+  locked: boolean;
+  alphaLocked: boolean;
 };
 
 type EditorLayerSnapshot = {
@@ -88,6 +91,8 @@ type EditorLayerSnapshot = {
   name: string;
   visible: boolean;
   opacity: number;
+  locked?: boolean;
+  alphaLocked?: boolean;
   canvases: Record<Direction, string>;
 };
 
@@ -265,6 +270,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.replaceTolerance = 0;
     vnode.state.replaceAllDirections = false;
     vnode.state.transformAllDirections = false;
+    vnode.state.alphaLocked = false;
     resetEditLayers(vnode.state);
   },
 
@@ -1044,11 +1050,19 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
 function renderProPanel(stateObj: PartEditorState): m.Children {
   const activeLayerIndex = getActiveLayerIndex(stateObj);
+  const activeLayer = getActiveLayer(stateObj);
+  const activeLayerLocked = activeLayer?.locked ?? false;
   const canMoveLayerDown = activeLayerIndex > 0;
   const canMoveLayerUp =
     activeLayerIndex >= 0 && activeLayerIndex < stateObj.editLayers.length - 1;
-  const canMergeLayerDown = activeLayerIndex > 0;
+  const targetMergeLayer = stateObj.editLayers[activeLayerIndex - 1];
+  const canMergeLayerDown =
+    activeLayerIndex > 0 && !activeLayerLocked && !targetMergeLayer?.locked;
   const canFlattenLayers = stateObj.editLayers.length > 1;
+  const canDeleteActiveLayer =
+    stateObj.editLayers.length > 1 &&
+    activeLayerIndex >= 0 &&
+    !activeLayerLocked;
   const frameCount = getAnimationFrameCount(stateObj.frameAnimation);
   const canUseFrameTools = stateObj.availableFrameAnimations.length > 0;
   const paletteColors = getVisiblePaletteColors(stateObj);
@@ -1199,6 +1213,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           {
             type: "button",
             title: "Replace color on active layer (Ctrl+Shift+R)",
+            disabled: activeLayerLocked,
             onclick: () => replaceColorOnActiveLayer(stateObj),
           },
           "Apply",
@@ -1231,6 +1246,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           {
             type: "button",
             title: "Flip selection or active layer horizontally (H)",
+            disabled: activeLayerLocked,
             onclick: () => transformActivePixels(stateObj, "flipHorizontal"),
           },
           "Flip H",
@@ -1240,6 +1256,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           {
             type: "button",
             title: "Flip selection or active layer vertically (V)",
+            disabled: activeLayerLocked,
             onclick: () => transformActivePixels(stateObj, "flipVertical"),
           },
           "Flip V",
@@ -1249,6 +1266,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           {
             type: "button",
             title: "Rotate selection or active layer clockwise (T)",
+            disabled: activeLayerLocked,
             onclick: () => transformActivePixels(stateObj, "rotateClockwise"),
           },
           "Rot CW",
@@ -1259,6 +1277,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
             type: "button",
             title:
               "Rotate selection or active layer counterclockwise (Shift+T)",
+            disabled: activeLayerLocked,
             onclick: () =>
               transformActivePixels(stateObj, "rotateCounterClockwise"),
           },
@@ -1269,6 +1288,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           {
             type: "button",
             title: "Clear selection or active layer",
+            disabled: activeLayerLocked,
             onclick: () => transformActivePixels(stateObj, "clear"),
           },
           "Clear",
@@ -1484,7 +1504,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           {
             type: "button",
             title: "Delete active layer",
-            disabled: stateObj.editLayers.length <= 1 || activeLayerIndex < 0,
+            disabled: !canDeleteActiveLayer,
             onclick: () => deleteActiveLayer(stateObj),
           },
           "Del",
@@ -1508,7 +1528,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
               [
                 m("div.part-editor-layer-main", [
                   m(
-                    "button.part-editor-layer-visibility",
+                    "button.part-editor-layer-control",
                     {
                       type: "button",
                       title: layer.visible ? "Hide layer" : "Show layer",
@@ -1520,6 +1540,37 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
                       },
                     },
                     layer.visible ? "On" : "Off",
+                  ),
+                  m(
+                    "button.part-editor-layer-control",
+                    {
+                      type: "button",
+                      title: layer.locked
+                        ? "Unlock layer pixels (/)"
+                        : "Lock layer pixels (/)",
+                      class: layer.locked ? "active" : "",
+                      onclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        toggleLayerPixelLock(stateObj, layer);
+                      },
+                    },
+                    layer.locked ? "Lock" : "Edit",
+                  ),
+                  m(
+                    "button.part-editor-layer-control",
+                    {
+                      type: "button",
+                      title: layer.alphaLocked
+                        ? "Unlock transparent pixels (Shift+/)"
+                        : "Lock transparent pixels for recoloring (Shift+/)",
+                      class: layer.alphaLocked ? "active" : "",
+                      disabled: layer.locked,
+                      onclick: (e: MouseEvent) => {
+                        e.stopPropagation();
+                        toggleLayerAlphaLock(stateObj, layer);
+                      },
+                    },
+                    "A",
                   ),
                   m("input.part-editor-layer-name", {
                     type: "text",
@@ -1778,6 +1829,13 @@ function handleEditorShortcut(
       stateObj,
       e.shiftKey ? "rotateCounterClockwise" : "rotateClockwise",
     );
+  } else if ((key === "/" || key === "?") && stateObj.isFullscreen) {
+    e.preventDefault();
+    if (e.shiftKey || key === "?") {
+      toggleActiveLayerAlphaLock(stateObj);
+    } else {
+      toggleActiveLayerPixelLock(stateObj);
+    }
   } else if (key === "," && stateObj.isFullscreen && stateObj.frameMode) {
     e.preventDefault();
     void switchEditorContext(
@@ -1894,6 +1952,7 @@ function startSelectionInteraction(
   const activeLayer = getActiveLayer(stateObj);
   if (
     activeLayer &&
+    !activeLayer.locked &&
     stateObj.selectionRect &&
     pointInSelection(point, stateObj.selectionRect)
   ) {
@@ -2028,7 +2087,7 @@ function copySelection(stateObj: PartEditorState): boolean {
 function pasteClipboard(stateObj: PartEditorState): boolean {
   const activeLayer = getActiveLayer(stateObj);
   const clipboard = stateObj.clipboard;
-  if (!activeLayer || !clipboard) return false;
+  if (!activeLayer || activeLayer.locked || !clipboard) return false;
 
   const rect = {
     x:
@@ -2057,7 +2116,7 @@ function pasteClipboard(stateObj: PartEditorState): boolean {
 function clearSelectedPixels(stateObj: PartEditorState): boolean {
   const activeLayer = getActiveLayer(stateObj);
   const rect = stateObj.selectionRect;
-  if (!activeLayer || !rect) return false;
+  if (!activeLayer || activeLayer.locked || !rect) return false;
 
   const ctx = get2DContext(activeLayer.canvases[stateObj.activeDirection]);
   ctx.clearRect(rect.x, rect.y, rect.width, rect.height);
@@ -2073,7 +2132,7 @@ function nudgeSelection(
 ): boolean {
   const activeLayer = getActiveLayer(stateObj);
   const rect = stateObj.selectionRect;
-  if (!activeLayer || !rect) return false;
+  if (!activeLayer || activeLayer.locked || !rect) return false;
 
   const delta = {
     arrowleft: { x: -distance, y: 0 },
@@ -2336,7 +2395,7 @@ function getVisiblePaletteColors(stateObj: PartEditorState): string[] {
 
 function replaceColorOnActiveLayer(stateObj: PartEditorState): void {
   const activeLayer = getActiveLayer(stateObj);
-  if (!activeLayer) return;
+  if (!activeLayer || activeLayer.locked) return;
 
   const from = hexToRgbColor(stateObj.replaceFromColor);
   const to = hexToRgbColor(stateObj.replaceToColor);
@@ -2411,7 +2470,7 @@ function transformActivePixels(
   operation: TransformOperation,
 ): void {
   const activeLayer = getActiveLayer(stateObj);
-  if (!activeLayer) return;
+  if (!activeLayer || activeLayer.locked) return;
 
   const sourceRect = stateObj.selectionRect ?? {
     x: 0,
@@ -2885,6 +2944,8 @@ function createEditorLayer(
     canvases: createDirectionCanvases(),
     visible: true,
     opacity: 1,
+    locked: false,
+    alphaLocked: false,
   };
 }
 
@@ -2910,11 +2971,43 @@ function getActiveLayerIndex(stateObj: PartEditorState): number {
   );
 }
 
+function toggleActiveLayerPixelLock(stateObj: PartEditorState): boolean {
+  const activeLayer = getActiveLayer(stateObj);
+  return activeLayer ? toggleLayerPixelLock(stateObj, activeLayer) : false;
+}
+
+function toggleLayerPixelLock(
+  stateObj: PartEditorState,
+  layer: EditorLayer,
+): boolean {
+  layer.locked = !layer.locked;
+  if (layer.locked && layer.id === stateObj.activeLayerId) {
+    clearSelectionState(stateObj, true);
+  }
+  saveHistory(stateObj);
+  return true;
+}
+
+function toggleActiveLayerAlphaLock(stateObj: PartEditorState): boolean {
+  const activeLayer = getActiveLayer(stateObj);
+  return activeLayer ? toggleLayerAlphaLock(stateObj, activeLayer) : false;
+}
+
+function toggleLayerAlphaLock(
+  stateObj: PartEditorState,
+  layer: EditorLayer,
+): boolean {
+  if (layer.locked) return false;
+  layer.alphaLocked = !layer.alphaLocked;
+  saveHistory(stateObj);
+  return true;
+}
+
 function getActiveLayerToolState(
   stateObj: PartEditorState,
 ): PixelEditorToolState | null {
   const activeLayer = getActiveLayer(stateObj);
-  if (!activeLayer) return null;
+  if (!activeLayer || activeLayer.locked) return null;
 
   return {
     activeDirection: stateObj.activeDirection,
@@ -2925,6 +3018,7 @@ function getActiveLayerToolState(
     brushSize: stateObj.brushSize,
     mirrorX: stateObj.mirrorX,
     mirrorY: stateObj.mirrorY,
+    alphaLocked: activeLayer.alphaLocked,
   };
 }
 
@@ -3016,6 +3110,8 @@ function duplicateActiveLayer(stateObj: PartEditorState): void {
   const layer = createEditorLayer(stateObj, `${activeLayer.name} copy`);
   layer.visible = activeLayer.visible;
   layer.opacity = activeLayer.opacity;
+  layer.locked = activeLayer.locked;
+  layer.alphaLocked = activeLayer.alphaLocked;
   layer.canvases = cloneDirectionCanvases(activeLayer.canvases);
 
   stateObj.editLayers.splice(activeIndex + 1, 0, layer);
@@ -3044,6 +3140,7 @@ function moveActiveLayer(stateObj: PartEditorState, direction: -1 | 1): void {
 function deleteActiveLayer(stateObj: PartEditorState): void {
   const activeIndex = getActiveLayerIndex(stateObj);
   if (activeIndex < 0 || stateObj.editLayers.length <= 1) return;
+  if (stateObj.editLayers[activeIndex]?.locked) return;
 
   stateObj.editLayers.splice(activeIndex, 1);
   const nextActiveIndex = Math.min(activeIndex, stateObj.editLayers.length - 1);
@@ -3058,6 +3155,8 @@ function mergeActiveLayerDown(stateObj: PartEditorState): void {
 
   const activeLayer = stateObj.editLayers[activeIndex];
   const targetLayer = stateObj.editLayers[activeIndex - 1];
+  if (activeLayer.locked || targetLayer.locked) return;
+
   if (activeLayer.visible && activeLayer.opacity > 0) {
     for (const direction of DIRECTIONS) {
       const targetCtx = get2DContext(targetLayer.canvases[direction]);
@@ -3311,6 +3410,8 @@ function createHistorySnapshot(stateObj: PartEditorState): EditorSnapshot {
       name: layer.name,
       visible: layer.visible,
       opacity: layer.opacity,
+      locked: layer.locked,
+      alphaLocked: layer.alphaLocked,
       canvases: {
         front: layer.canvases.front.toDataURL(),
         back: layer.canvases.back.toDataURL(),
@@ -3411,6 +3512,8 @@ async function createLayerFromSnapshot(
     name: snapshot.name || "Layer",
     visible: snapshot.visible,
     opacity: Math.min(1, Math.max(0, snapshot.opacity)),
+    locked: snapshot.locked ?? false,
+    alphaLocked: snapshot.alphaLocked ?? false,
     canvases,
   };
 }

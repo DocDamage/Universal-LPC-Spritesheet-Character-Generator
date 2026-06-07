@@ -1648,13 +1648,13 @@
 
 .part-editor-layer-main {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 36px;
+  grid-template-columns: 34px 38px 32px minmax(0, 1fr) 36px;
   align-items: center;
   gap: 5px;
 }
 
-.part-editor-layer-visibility {
-  width: 34px;
+.part-editor-layer-control {
+  width: 100%;
   height: 24px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
@@ -1668,6 +1668,17 @@
   &:hover {
     border-color: var(--border-mid);
     color: var(--text-primary);
+  }
+
+  &.active {
+    background: rgba(124, 109, 240, 0.16);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
 }
 

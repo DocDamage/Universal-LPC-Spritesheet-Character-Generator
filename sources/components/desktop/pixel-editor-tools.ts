@@ -22,6 +22,7 @@ export type PixelEditorToolState = {
   brushSize: number;
   mirrorX: boolean;
   mirrorY: boolean;
+  alphaLocked: boolean;
 };
 
 export const DIRECTIONS: Direction[] = ["front", "back", "left", "right"];
@@ -53,13 +54,31 @@ export function applyBrush(
   point: Point,
   mode: "paint" | "erase",
 ): void {
+  const paintColor = hexToRgba(stateObj.activeColor);
   for (const target of getDrawTargets(stateObj, point)) {
     const canvas = stateObj.canvases[target.direction];
     const ctx = get2DContext(canvas);
+    if (mode === "erase" && stateObj.alphaLocked) {
+      continue;
+    }
+
+    if (mode === "paint" && stateObj.alphaLocked) {
+      const image = ctx.getImageData(0, 0, FRAME_SIZE, FRAME_SIZE);
+      let changed = false;
+      for (const p of getBrushPoints(target.point, stateObj.brushSize)) {
+        if (getPixel(image, p.x, p.y).a === 0) continue;
+        setPixel(image, p.x, p.y, paintColor, true);
+        changed = true;
+      }
+      if (changed) {
+        ctx.putImageData(image, 0, 0);
+      }
+      continue;
+    }
+
     if (mode === "paint") {
       ctx.fillStyle = stateObj.activeColor;
     }
-
     for (const p of getBrushPoints(target.point, stateObj.brushSize)) {
       if (mode === "paint") {
         ctx.fillRect(p.x, p.y, 1, 1);
@@ -77,6 +96,7 @@ export function applyFill(stateObj: PixelEditorToolState, point: Point): void {
       stateObj.canvases[target.direction],
       target.point,
       fillColor,
+      stateObj.alphaLocked,
     );
   }
 }
@@ -189,10 +209,12 @@ function floodFillCanvas(
   canvas: HTMLCanvasElement,
   start: Point,
   fillColor: Rgba,
+  alphaLocked = false,
 ): void {
   const ctx = get2DContext(canvas);
   const image = ctx.getImageData(0, 0, FRAME_SIZE, FRAME_SIZE);
   const targetColor = getPixel(image, start.x, start.y);
+  if (alphaLocked && targetColor.a === 0) return;
   if (rgbaMatches(targetColor, fillColor)) return;
 
   const stack: Point[] = [start];
@@ -212,7 +234,7 @@ function floodFillCanvas(
     seen.add(key);
 
     if (!rgbaMatches(getPixel(image, point.x, point.y), targetColor)) continue;
-    setPixel(image, point.x, point.y, fillColor);
+    setPixel(image, point.x, point.y, fillColor, alphaLocked);
     stack.push(
       { x: point.x + 1, y: point.y },
       { x: point.x - 1, y: point.y },
@@ -234,12 +256,19 @@ function getPixel(image: ImageData, x: number, y: number): Rgba {
   };
 }
 
-function setPixel(image: ImageData, x: number, y: number, color: Rgba): void {
+function setPixel(
+  image: ImageData,
+  x: number,
+  y: number,
+  color: Rgba,
+  preserveAlpha = false,
+): void {
   const idx = (y * FRAME_SIZE + x) * 4;
+  const alpha = image.data[idx + 3];
   image.data[idx] = color.r;
   image.data[idx + 1] = color.g;
   image.data[idx + 2] = color.b;
-  image.data[idx + 3] = color.a;
+  image.data[idx + 3] = preserveAlpha ? alpha : color.a;
 }
 
 function rgbaMatches(a: Rgba, b: Rgba): boolean {

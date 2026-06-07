@@ -68,7 +68,7 @@ const DIRECTION_ROWS: Record<Direction, number> = {
   right: 3,
 };
 const MIN_EDITOR_ZOOM = 2;
-const MAX_EDITOR_ZOOM = 8;
+const MAX_EDITOR_ZOOM = 16;
 const DEFAULT_EDITOR_ZOOM = 4;
 
 function clampEditorZoom(value: number): number {

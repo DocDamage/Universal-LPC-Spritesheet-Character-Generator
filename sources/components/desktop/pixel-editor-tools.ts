@@ -110,7 +110,7 @@ function getDrawTargets(
     addDrawTarget(targets, stateObj.activeDirection, p);
 
     if (stateObj.autoPropagate && stateObj.activeDirection === "front") {
-      addDrawTarget(targets, "left", { x: FRAME_SIZE - 1 - p.x, y: p.y });
+      addDrawTarget(targets, "left", p);
       addDrawTarget(targets, "right", { x: FRAME_SIZE - 1 - p.x, y: p.y });
       addDrawTarget(targets, "back", p);
     }

@@ -3,8 +3,10 @@ import { describe, it, beforeEach, afterEach } from "mocha-globals";
 import {
   clearCustomParts,
   customParts,
+  deleteCustomPart,
   hydrateCustomPartsFromStorage,
   registerCustomPart,
+  renameCustomPart,
 } from "../../sources/state/catalog.ts";
 import { get2DContext } from "../../sources/canvas/canvas-utils.ts";
 
@@ -65,5 +67,32 @@ describe("state/custom-parts-storage.ts", () => {
       1,
     ).data;
     expect(Array.from(restoredPixel)).to.deep.equal([255, 0, 0, 255]);
+  });
+
+  it("persists custom part rename and delete actions", () => {
+    const sheet = document.createElement("canvas");
+    sheet.width = 1;
+    sheet.height = 1;
+
+    registerCustomPart({
+      itemId: "custom_weapon_manage_test",
+      name: "Managed Axe",
+      type_name: "weapon",
+      baseItemId: "weapon_sword_longsword",
+      sheets: { walk: sheet },
+      image: sheet,
+    });
+
+    expect(
+      renameCustomPart("custom_weapon_manage_test", "Renamed Axe"),
+    ).to.equal(true);
+    const renamedPayload = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY) ?? "{}",
+    );
+    expect(renamedPayload.parts[0].name).to.equal("Renamed Axe");
+
+    expect(deleteCustomPart("custom_weapon_manage_test")).to.equal(true);
+    expect(customParts.custom_weapon_manage_test).to.equal(undefined);
+    expect(window.localStorage.getItem(STORAGE_KEY)).to.equal(null);
   });
 });

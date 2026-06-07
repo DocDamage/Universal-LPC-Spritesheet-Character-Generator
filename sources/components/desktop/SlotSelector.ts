@@ -8,6 +8,7 @@ import {
   clearSlotSelections,
   randomizeSlot,
   getDefaultRecolor,
+  getSlotTypeNames,
 } from "./slot-config.ts";
 import { getPaletteOptions } from "../../state/palettes.ts";
 import { ucwords } from "../../utils/helpers.ts";
@@ -18,7 +19,13 @@ import {
 } from "../../canvas/preview-animation.ts";
 import { renderCharacter } from "../../canvas/renderer.ts";
 import { customAnimations } from "../../custom-animations.ts";
-import { getItemMerged, registerCustomPart } from "../../state/catalog.ts";
+import {
+  customParts,
+  deleteCustomPart,
+  getItemMerged,
+  registerCustomPart,
+  renameCustomPart,
+} from "../../state/catalog.ts";
 import {
   buildImportedWeaponPart,
   canUseWeaponImportReference,
@@ -40,6 +47,8 @@ type SlotSelectorState = {
   importOffsetX: number;
   importOffsetY: number;
   importScalePercent: number;
+  renamingCustomPartId: string | null;
+  renameCustomPartName: string;
 };
 
 const IMPORT_OFFSET_MIN = -256;
@@ -109,6 +118,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     vnode.state.importOffsetX = 0;
     vnode.state.importOffsetY = 0;
     vnode.state.importScalePercent = 100;
+    vnode.state.renamingCustomPartId = null;
+    vnode.state.renameCustomPartName = "";
   },
 
   view(vnode) {
@@ -117,12 +128,18 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     const selectedValue = getSlotSelectedValue(slot, catalog);
     const hasSelection = selectedValue !== "";
     const canImportWeapon = slot.label === "Mainhand";
+    const slotTypeNames = getSlotTypeNames(slot);
     const importReferenceOptions = canImportWeapon
       ? options.filter(
           (opt) =>
             !opt.itemId.startsWith("custom_") &&
             canUseWeaponImportReference(catalog, opt.itemId),
         )
+      : [];
+    const customAssetParts = canImportWeapon
+      ? Object.values(customParts)
+          .filter((part) => slotTypeNames.includes(part.type_name))
+          .sort((a, b) => a.name.localeCompare(b.name))
       : [];
     if (
       canImportWeapon &&
@@ -230,6 +247,79 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       vnode.state.importOffsetX = 0;
       vnode.state.importOffsetY = 0;
       vnode.state.importScalePercent = 100;
+    };
+
+    const renderCurrentCharacter = async (): Promise<void> => {
+      await (window.canvasRenderer?.renderCharacter ?? renderCharacter)(
+        state.selections,
+        state.bodyType,
+      );
+      m.redraw();
+    };
+
+    const selectCustomAsset = async (
+      part: (typeof customAssetParts)[number],
+    ): Promise<void> => {
+      clearSlotSelections(slot, catalog);
+      state.selections[part.type_name] = {
+        itemId: part.itemId,
+        variant: null,
+        recolor: null,
+        name: part.name,
+      };
+      await renderCurrentCharacter();
+    };
+
+    const startRenameCustomAsset = (
+      part: (typeof customAssetParts)[number],
+    ): void => {
+      vnode.state.renamingCustomPartId = part.itemId;
+      vnode.state.renameCustomPartName = part.name;
+    };
+
+    const cancelRenameCustomAsset = (): void => {
+      vnode.state.renamingCustomPartId = null;
+      vnode.state.renameCustomPartName = "";
+    };
+
+    const saveRenameCustomAsset = (
+      part: (typeof customAssetParts)[number],
+    ): void => {
+      const nextName = vnode.state.renameCustomPartName.trim();
+      if (!nextName) return;
+
+      if (renameCustomPart(part.itemId, nextName)) {
+        for (const selection of Object.values(state.selections)) {
+          if (selection.itemId === part.itemId) {
+            selection.name = nextName;
+          }
+        }
+      }
+      cancelRenameCustomAsset();
+    };
+
+    const deleteCustomAsset = async (
+      part: (typeof customAssetParts)[number],
+    ): Promise<void> => {
+      if (!confirm(`Delete "${part.name}" from saved imports?`)) return;
+
+      const wasSelected = Object.values(state.selections).some(
+        (selection) => selection.itemId === part.itemId,
+      );
+      for (const [key, selection] of Object.entries(state.selections)) {
+        if (selection.itemId === part.itemId) {
+          delete state.selections[key];
+        }
+      }
+      deleteCustomPart(part.itemId);
+      if (vnode.state.renamingCustomPartId === part.itemId) {
+        cancelRenameCustomAsset();
+      }
+      if (wasSelected) {
+        await renderCurrentCharacter();
+      } else {
+        m.redraw();
+      }
     };
 
     return m(
@@ -469,6 +559,98 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
               ]),
               vnode.state.importStatus
                 ? m("span.desktop-slot-import-status", vnode.state.importStatus)
+                : null,
+              customAssetParts.length > 0
+                ? m("div.desktop-slot-custom-library", [
+                    m("div.desktop-slot-custom-library-title", "Saved imports"),
+                    customAssetParts.map((part) =>
+                      m(
+                        "div.desktop-slot-custom-asset",
+                        {
+                          key: part.itemId,
+                          class:
+                            selectedValue === part.itemId ? "is-selected" : "",
+                        },
+                        vnode.state.renamingCustomPartId === part.itemId
+                          ? [
+                              m("input.desktop-slot-custom-asset-name", {
+                                type: "text",
+                                value: vnode.state.renameCustomPartName,
+                                title: "Rename saved import",
+                                oninput: (e: Event) => {
+                                  vnode.state.renameCustomPartName = (
+                                    e.target as HTMLInputElement
+                                  ).value;
+                                },
+                                onkeydown: (e: KeyboardEvent) => {
+                                  if (e.key === "Enter") {
+                                    saveRenameCustomAsset(part);
+                                  }
+                                  if (e.key === "Escape") {
+                                    cancelRenameCustomAsset();
+                                  }
+                                },
+                              }),
+                              m(
+                                "button.desktop-slot-custom-action",
+                                {
+                                  type: "button",
+                                  title: "Save import name",
+                                  disabled:
+                                    vnode.state.renameCustomPartName.trim() ===
+                                    "",
+                                  onclick: () => saveRenameCustomAsset(part),
+                                },
+                                "Save",
+                              ),
+                              m(
+                                "button.desktop-slot-custom-action",
+                                {
+                                  type: "button",
+                                  title: "Cancel rename",
+                                  onclick: cancelRenameCustomAsset,
+                                },
+                                "Cancel",
+                              ),
+                            ]
+                          : [
+                              m(
+                                "button.desktop-slot-custom-name",
+                                {
+                                  type: "button",
+                                  title: `Use ${part.name}`,
+                                  onclick: () => {
+                                    void selectCustomAsset(part);
+                                  },
+                                },
+                                part.name,
+                              ),
+                              m(
+                                "button.desktop-slot-custom-action",
+                                {
+                                  type: "button",
+                                  title: `Rename ${part.name}`,
+                                  onclick: () => {
+                                    startRenameCustomAsset(part);
+                                  },
+                                },
+                                "Rename",
+                              ),
+                              m(
+                                "button.desktop-slot-custom-action is-danger",
+                                {
+                                  type: "button",
+                                  title: `Delete ${part.name}`,
+                                  onclick: () => {
+                                    void deleteCustomAsset(part);
+                                  },
+                                },
+                                "Delete",
+                              ),
+                            ],
+                      ),
+                    ),
+                  ])
                 : null,
             ])
           : null,

@@ -98,6 +98,34 @@ export function getCustomPart(id: string): CustomPart | undefined {
   return customParts[id];
 }
 
+export function renameCustomPart(
+  id: string,
+  name: string,
+  options: RegisterCustomPartOptions = {},
+): boolean {
+  const part = customParts[id];
+  if (!part) return false;
+
+  part.name = name;
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+  return true;
+}
+
+export function deleteCustomPart(
+  id: string,
+  options: RegisterCustomPartOptions = {},
+): boolean {
+  if (!customParts[id]) return false;
+
+  delete customParts[id];
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+  return true;
+}
+
 export function clearCustomParts(
   options: RegisterCustomPartOptions = {},
 ): void {

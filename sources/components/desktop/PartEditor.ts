@@ -893,6 +893,8 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
   const canMoveLayerDown = activeLayerIndex > 0;
   const canMoveLayerUp =
     activeLayerIndex >= 0 && activeLayerIndex < stateObj.editLayers.length - 1;
+  const canMergeLayerDown = activeLayerIndex > 0;
+  const canFlattenLayers = stateObj.editLayers.length > 1;
 
   return m("aside.part-editor-pro-panel", [
     m("div.part-editor-pro-section", [
@@ -956,6 +958,26 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
             onclick: () => moveActiveLayer(stateObj, -1),
           },
           "Down",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Merge active layer down (Ctrl+E)",
+            disabled: !canMergeLayerDown,
+            onclick: () => mergeActiveLayerDown(stateObj),
+          },
+          "Merge",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Flatten visible layers (Ctrl+Shift+E)",
+            disabled: !canFlattenLayers,
+            onclick: () => flattenVisibleLayers(stateObj),
+          },
+          "Flat",
         ),
         m(
           "button.part-editor-pro-button.part-editor-layer-delete",
@@ -1144,6 +1166,16 @@ function handleEditorShortcut(
   if (isCommand && key === "j" && stateObj.isFullscreen) {
     e.preventDefault();
     duplicateActiveLayer(stateObj);
+    m.redraw();
+    return;
+  }
+  if (isCommand && key === "e" && stateObj.isFullscreen) {
+    e.preventDefault();
+    if (e.shiftKey) {
+      flattenVisibleLayers(stateObj);
+    } else {
+      mergeActiveLayerDown(stateObj);
+    }
     m.redraw();
     return;
   }
@@ -1681,6 +1713,42 @@ function deleteActiveLayer(stateObj: PartEditorState): void {
   stateObj.editLayers.splice(activeIndex, 1);
   const nextActiveIndex = Math.min(activeIndex, stateObj.editLayers.length - 1);
   stateObj.activeLayerId = stateObj.editLayers[nextActiveIndex]?.id ?? null;
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function mergeActiveLayerDown(stateObj: PartEditorState): void {
+  const activeIndex = getActiveLayerIndex(stateObj);
+  if (activeIndex <= 0) return;
+
+  const activeLayer = stateObj.editLayers[activeIndex];
+  const targetLayer = stateObj.editLayers[activeIndex - 1];
+  if (activeLayer.visible && activeLayer.opacity > 0) {
+    for (const direction of DIRECTIONS) {
+      const targetCtx = get2DContext(targetLayer.canvases[direction]);
+      targetCtx.globalAlpha = Math.min(1, Math.max(0, activeLayer.opacity));
+      targetCtx.drawImage(activeLayer.canvases[direction], 0, 0);
+      targetCtx.globalAlpha = 1;
+    }
+  }
+
+  stateObj.editLayers.splice(activeIndex, 1);
+  stateObj.activeLayerId = targetLayer.id;
+  clearSelectionState(stateObj, true);
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function flattenVisibleLayers(stateObj: PartEditorState): void {
+  if (stateObj.editLayers.length <= 1) return;
+
+  recomposeCanvases(stateObj);
+  stateObj.nextLayerNumber = 1;
+  const layer = createEditorLayer(stateObj, "Base");
+  layer.canvases = cloneDirectionCanvases(stateObj.canvases);
+  stateObj.editLayers = [layer];
+  stateObj.activeLayerId = layer.id;
+  clearSelectionState(stateObj, true);
   recomposeCanvases(stateObj);
   saveHistory(stateObj);
 }

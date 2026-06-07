@@ -59,6 +59,9 @@ type PartEditorState = PixelEditorToolState & {
   zoom: number;
   showGrid: boolean;
   isFullscreen: boolean;
+  shapeStart: Point | null;
+  shapeEnd: Point | null;
+  shapeFilled: boolean;
   lastPoint: Point | null;
   selectionRect: SelectionRect | null;
   selectionDraftStart: Point | null;
@@ -131,6 +134,8 @@ type SelectionClipboard = {
   height: number;
   imageData: ImageData;
 };
+
+type ShapeTool = "line" | "rect" | "ellipse";
 
 type RgbColor = {
   r: number;
@@ -221,6 +226,9 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.mirrorY = false;
     vnode.state.showGrid = true;
     vnode.state.isFullscreen = false;
+    vnode.state.shapeStart = null;
+    vnode.state.shapeEnd = null;
+    vnode.state.shapeFilled = false;
     vnode.state.lastPoint = null;
     vnode.state.selectionRect = null;
     vnode.state.selectionDraftStart = null;
@@ -455,7 +463,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       const point = getCanvasPoint(e, canvasEl);
       if (point) {
         const tool = e.altKey ? "picker" : vnode.state.tool;
-        if (tool === "select") return;
+        if (tool === "select" || isShapeTool(tool)) return;
 
         if (tool === "picker") {
           const sampledColor = sampleColor(vnode.state, point);
@@ -504,6 +512,13 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
         return;
       }
 
+      if (isShapeTool(vnode.state.tool) && !e.altKey) {
+        vnode.state.isDrawing = false;
+        startShapeInteraction(vnode.state, point);
+        refreshVisibleCanvas(canvasEl, vnode.state);
+        return;
+      }
+
       vnode.state.isDrawing = true;
       drawOnMain(e, canvasEl);
     };
@@ -519,6 +534,12 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
         return;
       }
 
+      if (vnode.state.shapeStart) {
+        vnode.state.shapeEnd = point;
+        refreshVisibleCanvas(canvasEl, vnode.state);
+        return;
+      }
+
       if (vnode.state.isDrawing) {
         drawOnMain(e, canvasEl);
       }
@@ -527,6 +548,11 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     const handleCanvasUp = (canvasEl: HTMLCanvasElement) => {
       const movedSelection = finishSelectionInteraction(vnode.state);
       if (movedSelection) {
+        saveHistory(vnode.state);
+      }
+
+      const drewShape = finishShapeInteraction(vnode.state);
+      if (drewShape) {
         saveHistory(vnode.state);
       }
 
@@ -544,7 +570,8 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       if (
         !vnode.state.isDrawing &&
         !vnode.state.selectionDraftStart &&
-        !vnode.state.selectionMove
+        !vnode.state.selectionMove &&
+        !vnode.state.shapeStart
       ) {
         return;
       }
@@ -729,6 +756,39 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                 ? m(
                     "button.button.is-small",
                     {
+                      class: vnode.state.tool === "line" ? "is-active" : "",
+                      onclick: () => (vnode.state.tool = "line"),
+                      title: "Line tool (L). Drag to draw a straight segment.",
+                    },
+                    "╱",
+                  )
+                : null,
+              vnode.state.isFullscreen
+                ? m(
+                    "button.button.is-small",
+                    {
+                      class: vnode.state.tool === "rect" ? "is-active" : "",
+                      onclick: () => (vnode.state.tool = "rect"),
+                      title: "Rectangle tool (R). Toggle Fill in pro tools.",
+                    },
+                    "□",
+                  )
+                : null,
+              vnode.state.isFullscreen
+                ? m(
+                    "button.button.is-small",
+                    {
+                      class: vnode.state.tool === "ellipse" ? "is-active" : "",
+                      onclick: () => (vnode.state.tool = "ellipse"),
+                      title: "Ellipse tool (O). Toggle Fill in pro tools.",
+                    },
+                    "○",
+                  )
+                : null,
+              vnode.state.isFullscreen
+                ? m(
+                    "button.button.is-small",
+                    {
                       class: vnode.state.tool === "fill" ? "is-active" : "",
                       onclick: () => (vnode.state.tool = "fill"),
                       title: "Flood fill tool (G)",
@@ -879,9 +939,11 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                           ? "crosshair"
                           : vnode.state.tool === "select"
                             ? "crosshair"
-                            : vnode.state.tool === "eraser"
-                              ? "cell"
-                              : "crosshair",
+                            : isShapeTool(vnode.state.tool)
+                              ? "crosshair"
+                              : vnode.state.tool === "eraser"
+                                ? "cell"
+                                : "crosshair",
                     },
                     oncreate: (vnodeDOM) => {
                       const el = vnodeDOM.dom as HTMLCanvasElement;
@@ -1002,6 +1064,22 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
         }),
         m("b", `${stateObj.brushSize}px`),
       ]),
+      m(
+        "label.part-editor-pro-toggle",
+        {
+          title: "Fill rectangle and ellipse tools",
+        },
+        [
+          m("input", {
+            type: "checkbox",
+            checked: stateObj.shapeFilled,
+            onchange: (e: Event) => {
+              stateObj.shapeFilled = (e.target as HTMLInputElement).checked;
+            },
+          }),
+          "Fill shapes",
+        ],
+      ),
     ]),
     m("div.part-editor-pro-section.part-editor-color-section", [
       m("h4", "Color"),
@@ -1597,6 +1675,15 @@ function handleEditorShortcut(
   } else if (key === "m" && stateObj.isFullscreen) {
     e.preventDefault();
     stateObj.tool = "select";
+  } else if (key === "l" && stateObj.isFullscreen) {
+    e.preventDefault();
+    stateObj.tool = "line";
+  } else if (key === "r" && stateObj.isFullscreen) {
+    e.preventDefault();
+    stateObj.tool = "rect";
+  } else if (key === "o" && stateObj.isFullscreen) {
+    e.preventDefault();
+    stateObj.tool = "ellipse";
   } else if (key === "g" && stateObj.isFullscreen) {
     e.preventDefault();
     stateObj.tool = "fill";
@@ -1922,6 +2009,166 @@ function nudgeSelection(
   return true;
 }
 
+function isShapeTool(tool: PartEditorState["tool"]): tool is ShapeTool {
+  return tool === "line" || tool === "rect" || tool === "ellipse";
+}
+
+function startShapeInteraction(stateObj: PartEditorState, point: Point): void {
+  clearSelectionState(stateObj, true);
+  stateObj.shapeStart = point;
+  stateObj.shapeEnd = point;
+}
+
+function finishShapeInteraction(stateObj: PartEditorState): boolean {
+  const start = stateObj.shapeStart;
+  const end = stateObj.shapeEnd;
+  const tool = stateObj.tool;
+  stateObj.shapeStart = null;
+  stateObj.shapeEnd = null;
+
+  if (!start || !end || !isShapeTool(tool)) return false;
+  const layerState = getActiveLayerToolState(stateObj);
+  if (!layerState) return false;
+
+  for (const point of getShapePoints(tool, start, end, stateObj.shapeFilled)) {
+    applyBrush(layerState, point, "paint");
+  }
+  recomposeCanvases(stateObj);
+  return true;
+}
+
+function getShapePoints(
+  tool: ShapeTool,
+  start: Point,
+  end: Point,
+  filled: boolean,
+): Point[] {
+  if (tool === "line") {
+    return getLinePoints(start, end);
+  }
+
+  if (tool === "rect") {
+    return getRectanglePoints(start, end, filled);
+  }
+
+  return getEllipsePoints(start, end, filled);
+}
+
+function getRectanglePoints(
+  start: Point,
+  end: Point,
+  filled: boolean,
+): Point[] {
+  const rect = normalizeSelectionRect(start, end);
+  const points: Point[] = [];
+  for (let y = rect.y; y < rect.y + rect.height; y++) {
+    for (let x = rect.x; x < rect.x + rect.width; x++) {
+      if (
+        filled ||
+        x === rect.x ||
+        x === rect.x + rect.width - 1 ||
+        y === rect.y ||
+        y === rect.y + rect.height - 1
+      ) {
+        points.push({ x, y });
+      }
+    }
+  }
+  return points;
+}
+
+function getEllipsePoints(start: Point, end: Point, filled: boolean): Point[] {
+  const rect = normalizeSelectionRect(start, end);
+  if (rect.width <= 1 || rect.height <= 1) {
+    return rect.width >= rect.height
+      ? getLinePoints(
+          { x: rect.x, y: rect.y },
+          { x: rect.x + rect.width - 1, y: rect.y },
+        )
+      : getLinePoints(
+          { x: rect.x, y: rect.y },
+          { x: rect.x, y: rect.y + rect.height - 1 },
+        );
+  }
+
+  if (filled) {
+    return getFilledEllipsePoints(rect);
+  }
+  return getEllipseOutlinePoints(rect);
+}
+
+function getFilledEllipsePoints(rect: SelectionRect): Point[] {
+  const points: Point[] = [];
+  const radiusX = rect.width / 2;
+  const radiusY = rect.height / 2;
+  const centerX = rect.x + radiusX - 0.5;
+  const centerY = rect.y + radiusY - 0.5;
+  for (let y = rect.y; y < rect.y + rect.height; y++) {
+    for (let x = rect.x; x < rect.x + rect.width; x++) {
+      const dx = (x - centerX) / radiusX;
+      const dy = (y - centerY) / radiusY;
+      if (dx * dx + dy * dy <= 1) {
+        points.push({ x, y });
+      }
+    }
+  }
+  return points;
+}
+
+function getEllipseOutlinePoints(rect: SelectionRect): Point[] {
+  const points = new Map<string, Point>();
+  const radiusX = (rect.width - 1) / 2;
+  const radiusY = (rect.height - 1) / 2;
+  const centerX = rect.x + radiusX;
+  const centerY = rect.y + radiusY;
+  const steps = Math.max(24, Math.ceil(Math.max(rect.width, rect.height) * 8));
+
+  for (let i = 0; i < steps; i++) {
+    const angle = (Math.PI * 2 * i) / steps;
+    const x = Math.round(centerX + Math.cos(angle) * radiusX);
+    const y = Math.round(centerY + Math.sin(angle) * radiusY);
+    if (x >= 0 && x < FRAME_SIZE && y >= 0 && y < FRAME_SIZE) {
+      points.set(`${x}:${y}`, { x, y });
+    }
+  }
+  return [...points.values()];
+}
+
+function drawShapePreview(
+  ctx: CanvasRenderingContext2D,
+  stateObj: PartEditorState,
+): void {
+  const start = stateObj.shapeStart;
+  const end = stateObj.shapeEnd;
+  const tool = stateObj.tool;
+  if (!start || !end || !isShapeTool(tool)) return;
+
+  ctx.save();
+  ctx.globalAlpha = 0.72;
+  ctx.fillStyle = stateObj.activeColor;
+  for (const point of getShapePoints(tool, start, end, stateObj.shapeFilled)) {
+    drawBrushPreviewPoint(ctx, point, stateObj.brushSize);
+  }
+  ctx.restore();
+}
+
+function drawBrushPreviewPoint(
+  ctx: CanvasRenderingContext2D,
+  point: Point,
+  brushSize: number,
+): void {
+  const offset = Math.floor(brushSize / 2);
+  for (let y = 0; y < brushSize; y++) {
+    for (let x = 0; x < brushSize; x++) {
+      const px = point.x + x - offset;
+      const py = point.y + y - offset;
+      if (px >= 0 && px < FRAME_SIZE && py >= 0 && py < FRAME_SIZE) {
+        ctx.fillRect(px, py, 1, 1);
+      }
+    }
+  }
+}
+
 function drawMainGrid(
   ctx: CanvasRenderingContext2D,
   offscreenCanvas: HTMLCanvasElement,
@@ -1943,6 +2190,9 @@ function drawMainGrid(
     ctx.restore();
   }
   ctx.drawImage(offscreenCanvas, 0, 0);
+  if (stateObj) {
+    drawShapePreview(ctx, stateObj);
+  }
 
   const rect = stateObj?.selectionRect;
   if (!rect) return;

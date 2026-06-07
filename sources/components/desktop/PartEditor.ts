@@ -7,6 +7,10 @@ import {
   registerCustomPart,
   defaultCatalog,
 } from "../../state/catalog.ts";
+import {
+  registerEditorContext,
+  unregisterEditorContext,
+} from "../../state/commands.ts";
 import { loadImage } from "../../canvas/load-image.ts";
 import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { SLOT_CONFIG, clearSlotSelections } from "./slot-config.ts";
@@ -277,6 +281,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
   },
 
   oncreate(vnode) {
+    registerEditorContext(vnode.state);
     vnode.state.keyboardHandler = (e: KeyboardEvent) => {
       handleEditorShortcut(e, vnode.state);
     };
@@ -284,6 +289,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
   },
 
   onremove(vnode) {
+    unregisterEditorContext();
     if (vnode.state.keyboardHandler) {
       window.removeEventListener("keydown", vnode.state.keyboardHandler);
     }
@@ -1726,6 +1732,7 @@ function handleEditorShortcut(
   stateObj: PartEditorState,
 ): void {
   if (!state.editingPart) return;
+  if (e.defaultPrevented) return;
 
   const key = e.key.toLowerCase();
   const isCommand = e.ctrlKey || e.metaKey;

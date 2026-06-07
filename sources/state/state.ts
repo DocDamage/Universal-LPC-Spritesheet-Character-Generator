@@ -59,6 +59,8 @@ export type State = {
   editingPart: { slotLabel: string; itemId: string } | null;
 
   // transient (never saved)
+  showCommandPalette: boolean;
+  showShortcutHelp: boolean;
   zipByAnimation: ZipMode;
   zipByItem: ZipMode;
   zipByAnimationAndItem: ZipMode;
@@ -135,6 +137,8 @@ export const state: State = {
   editingPart: null,
 
   // Following transient state should never be saved
+  showCommandPalette: false,
+  showShortcutHelp: false,
   zipByAnimation: { isRunning: false },
   zipByItem: { isRunning: false },
   zipByAnimationAndItem: { isRunning: false },

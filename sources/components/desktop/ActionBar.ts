@@ -1,16 +1,7 @@
 // Desktop-style action bar (bottom buttons and toggles)
 import m from "mithril";
-import { state, resetAll } from "../../state/state.ts";
-import { downloadAsPNG } from "../../canvas/download.ts";
-import {
-  exportStateAsJSON,
-  importStateFromJSON,
-  serializeLayersForJson,
-} from "../../state/json.ts";
-import { drawCalls } from "../../canvas/renderer.ts";
-import { getAllCredits, creditsToCsv } from "../../utils/credits.ts";
-import { downloadFile } from "../../canvas/download.ts";
-import { randomizeAll } from "./slot-config.ts";
+import { state } from "../../state/state.ts";
+import { executeCommand, getCommandTitle } from "../../state/commands.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 
 type ActionBarAttrs = {
@@ -18,106 +9,94 @@ type ActionBarAttrs = {
 };
 
 export const ActionBar: m.Component<ActionBarAttrs> = {
-  view(vnode) {
-    const { catalog } = vnode.attrs;
-
-    const saveToClipboard = async () => {
-      if (!window.canvasRenderer) return;
-      try {
-        const json = exportStateAsJSON(
-          state,
-          serializeLayersForJson(drawCalls),
-        );
-        await navigator.clipboard.writeText(json);
-        alert("✅ Character saved to clipboard!");
-      } catch (err) {
-        console.error("Failed to save:", err);
-        alert("❌ Failed to save. Check browser permissions.");
-      }
-    };
-
-    const loadFromClipboard = async () => {
-      if (!window.canvasRenderer) return;
-      try {
-        const json = await navigator.clipboard.readText();
-        const imported = importStateFromJSON(json);
-        Object.assign(state, imported);
-        m.redraw();
-        alert("✅ Character loaded from clipboard!");
-      } catch (err) {
-        console.error("Failed to load:", err);
-        alert("❌ Failed to load. Check clipboard content.");
-      }
-    };
-
-    const exportPNG = () => {
-      if (!window.canvasRenderer) return;
-      downloadAsPNG("character-spritesheet.png");
-    };
-
+  view() {
     return m("div.desktop-action-bar", [
       // Toggles row
       m("div.desktop-toggles", [
-        m("label.desktop-toggle", [
-          m("input[type=checkbox]", {
-            checked: state.showTransparencyGrid,
-            onchange: (e: Event) => {
-              state.showTransparencyGrid = (
-                e.target as HTMLInputElement
-              ).checked;
-              m.redraw();
-            },
-          }),
-          " Transparency Grid",
-        ]),
-        m("label.desktop-toggle", [
-          m("input[type=checkbox]", {
-            checked: state.applyTransparencyMask,
-            onchange: (e: Event) => {
-              state.applyTransparencyMask = (
-                e.target as HTMLInputElement
-              ).checked;
-              m.redraw();
-            },
-          }),
-          " Cast Shadow",
-        ]),
+        m(
+          "label.desktop-toggle",
+          { title: getCommandTitle("app.grid.toggle", "Transparency Grid") },
+          [
+            m("input[type=checkbox]", {
+              checked: state.showTransparencyGrid,
+              onchange: (e: Event) => {
+                state.showTransparencyGrid = (
+                  e.target as HTMLInputElement
+                ).checked;
+                m.redraw();
+              },
+            }),
+            " Transparency Grid",
+          ],
+        ),
+        m(
+          "label.desktop-toggle",
+          { title: getCommandTitle("app.shadows.toggle", "Cast Shadow") },
+          [
+            m("input[type=checkbox]", {
+              checked: state.applyTransparencyMask,
+              onchange: (e: Event) => {
+                state.applyTransparencyMask = (
+                  e.target as HTMLInputElement
+                ).checked;
+                m.redraw();
+              },
+            }),
+            " Cast Shadow",
+          ],
+        ),
       ]),
       // Buttons row
       m("div.desktop-buttons", [
         m(
           "button.desktop-btn",
           {
-            onclick: loadFromClipboard,
-            title: "Load character from clipboard JSON",
+            onclick: () => {
+              executeCommand("app.load.clipboard");
+            },
+            title: getCommandTitle(
+              "app.load.clipboard",
+              "Load character from clipboard JSON",
+            ),
           },
           "📋 Load",
         ),
         m(
           "button.desktop-btn",
           {
-            onclick: saveToClipboard,
-            title: "Save character to clipboard as JSON",
+            onclick: () => {
+              executeCommand("app.save.clipboard");
+            },
+            title: getCommandTitle(
+              "app.save.clipboard",
+              "Save character to clipboard as JSON",
+            ),
           },
           "💾 Save",
         ),
         m(
           "button.desktop-btn",
-          { onclick: exportPNG, title: "Export full spritesheet as PNG" },
+          {
+            onclick: () => {
+              executeCommand("app.export.png");
+            },
+            title: getCommandTitle(
+              "app.export.png",
+              "Export full spritesheet as PNG",
+            ),
+          },
           "📤 Export PNG",
         ),
         m(
           "button.desktop-btn",
           {
             onclick: () => {
-              const allCredits = getAllCredits(
-                state.selections,
-                state.bodyType,
-              );
-              const csvContent = creditsToCsv(allCredits);
-              downloadFile(csvContent, "credits.csv", "text/csv");
+              executeCommand("app.export.credits");
             },
-            title: "Download asset credits as CSV",
+            title: getCommandTitle(
+              "app.export.credits",
+              "Download asset credits as CSV",
+            ),
           },
           "📜 Credits",
         ),
@@ -125,11 +104,12 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
           "button.desktop-btn.desktop-btn-random",
           {
             onclick: () => {
-              if (confirm("🎲 Randomize all character slots?")) {
-                randomizeAll(catalog);
-              }
+              executeCommand("app.randomize");
             },
-            title: "Randomly select items for all slots",
+            title: getCommandTitle(
+              "app.randomize",
+              "Randomly select items for all slots",
+            ),
           },
           "🎲 Randomize",
         ),
@@ -137,11 +117,12 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
           "button.desktop-btn.desktop-btn-danger",
           {
             onclick: () => {
-              if (confirm("Reset all selections to defaults?")) {
-                void resetAll();
-              }
+              executeCommand("app.reset");
             },
-            title: "Reset all character selections back to defaults",
+            title: getCommandTitle(
+              "app.reset",
+              "Reset all character selections back to defaults",
+            ),
           },
           "↺ Reset All",
         ),

@@ -9,6 +9,14 @@ import { DesktopPreview } from "./DesktopPreview.ts";
 import { ActionBar } from "./ActionBar.ts";
 import { SLOT_CONFIG } from "./slot-config.ts";
 import { PartEditor } from "./PartEditor.ts";
+import {
+  executeCommand,
+  initDefaultCommands,
+  setupGlobalShortcutListener,
+  teardownGlobalShortcutListener,
+} from "../../state/commands.ts";
+import { CommandPaletteModal } from "./CommandPaletteModal.ts";
+import { ShortcutHelpModal } from "./ShortcutHelpModal.ts";
 
 type DesktopAppAttrs = { catalog: CatalogReader };
 
@@ -19,6 +27,9 @@ type DesktopAppState = {
 
 export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
   oninit(vnode) {
+    initDefaultCommands();
+    setupGlobalShortcutListener();
+
     vnode.state.prevSelectionsKey =
       JSON.stringify(state.selections) +
       "|" +
@@ -26,6 +37,10 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       "|" +
       state.customImageZPos;
     vnode.state.slotSearch = "";
+  },
+
+  onremove() {
+    teardownGlobalShortcutListener();
   },
 
   onupdate(vnode) {
@@ -89,7 +104,28 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
           m("option", { value: "default" }, "Default"),
         ]),
         m("div.desktop-palette-spacer"),
-        m("button.desktop-title-btn", { title: "Info" }, "ℹ"),
+        m(
+          "button.desktop-title-btn",
+          {
+            type: "button",
+            title: "Open command palette (Ctrl+K)",
+            onclick: () => {
+              executeCommand("app.commandPalette.toggle");
+            },
+          },
+          "⌕",
+        ),
+        m(
+          "button.desktop-title-btn",
+          {
+            type: "button",
+            title: "Keyboard shortcuts (Ctrl+/)",
+            onclick: () => {
+              executeCommand("app.shortcuts.toggle");
+            },
+          },
+          "?",
+        ),
         m(
           "button.desktop-title-btn.desktop-title-btn-close",
           {
@@ -162,6 +198,10 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
 
       // Bottom action bar
       m(ActionBar, { catalog }),
+
+      // Global Modals / Overlays
+      m(CommandPaletteModal),
+      m(ShortcutHelpModal),
     ]);
   },
 };

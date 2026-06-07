@@ -47,13 +47,14 @@ const STANDARD_SHEET_HEIGHT =
   Math.max(...Object.values(ANIMATION_OFFSETS)) + 4 * FRAME_SIZE;
 const ANIMATION_OFFSET_BY_NAME = ANIMATION_OFFSETS as Record<string, number>;
 const FRAMES_PER_ROW = Math.floor(STANDARD_SHEET_WIDTH / FRAME_SIZE);
+const MAINHAND_IMPORT_TYPE_NAMES = new Set(["weapon", "weapon_magic_crystal"]);
 
 export function canUseWeaponImportReference(
   catalog: CatalogReader,
   itemId: string,
 ): boolean {
   const meta = catalog.getItemMerged(itemId).unwrapOr(null);
-  if (!meta || meta.type_name !== "weapon") return false;
+  if (!meta || !MAINHAND_IMPORT_TYPE_NAMES.has(meta.type_name)) return false;
   return Object.keys(ANIMATION_OFFSETS).some((animation) =>
     supportsStandardAnimation(meta, animation),
   );
@@ -152,9 +153,9 @@ export async function buildImportedWeaponPart(
   );
 
   return {
-    itemId: `custom_weapon_${Date.now()}`,
+    itemId: `custom_${meta.type_name}_${Date.now()}`,
     name: options.name,
-    type_name: "weapon",
+    type_name: meta.type_name,
     baseItemId: options.referenceItemId,
     sheets,
     image: sheets.walk ?? Object.values(sheets)[0],

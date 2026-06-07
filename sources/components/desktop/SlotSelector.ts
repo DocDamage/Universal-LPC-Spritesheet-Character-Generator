@@ -206,7 +206,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         });
         registerCustomPart(customPart);
         clearSlotSelections(slot, catalog);
-        state.selections.weapon = {
+        state.selections[customPart.type_name] = {
           itemId: customPart.itemId,
           variant: null,
           recolor: null,
@@ -450,9 +450,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
           ? m("div.desktop-slot-import-panel", [
               m("input.desktop-slot-import-name", {
                 type: "text",
-                placeholder: "Imported weapon name",
+                placeholder: "Imported asset name",
                 value: vnode.state.importName,
-                title: "Name for the imported weapon",
+                title: "Name for the imported weapon or tool",
                 oninput: (e: Event) => {
                   vnode.state.importName = (e.target as HTMLInputElement).value;
                 },

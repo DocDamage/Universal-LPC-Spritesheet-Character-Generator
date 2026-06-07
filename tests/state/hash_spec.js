@@ -41,7 +41,7 @@ describe("state/hash.ts", () => {
 
   afterEach(async () => {
     resetState();
-    clearCustomParts();
+    clearCustomParts({ persist: false });
     resetHashDeps();
     resetHashCalledTimes();
     sandbox.restore();

@@ -9,18 +9,24 @@ import {
   renameCustomPart,
 } from "../../sources/state/catalog.ts";
 import { get2DContext } from "../../sources/canvas/canvas-utils.ts";
-
-const STORAGE_KEY = "lpc.customParts.v1";
+import {
+  clearStoredCustomPartsForTests,
+  CUSTOM_PARTS_LEGACY_STORAGE_KEY,
+  loadStoredCustomParts,
+  waitForCustomPartsPersistence,
+} from "../../sources/state/custom-parts-storage.ts";
 
 describe("state/custom-parts-storage.ts", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     clearCustomParts({ persist: false });
-    window.localStorage.removeItem(STORAGE_KEY);
+    await clearStoredCustomPartsForTests();
+    window.localStorage.removeItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY);
   });
 
-  afterEach(() => {
-    clearCustomParts();
-    window.localStorage.removeItem(STORAGE_KEY);
+  afterEach(async () => {
+    clearCustomParts({ persist: false });
+    await clearStoredCustomPartsForTests();
+    window.localStorage.removeItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY);
   });
 
   it("persists registered custom parts and hydrates them back into canvases", async () => {
@@ -42,7 +48,11 @@ describe("state/custom-parts-storage.ts", () => {
       image: sheet,
     });
 
-    expect(window.localStorage.getItem(STORAGE_KEY)).to.be.a("string");
+    await waitForCustomPartsPersistence();
+    expect(
+      window.localStorage.getItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY),
+    ).to.equal(null);
+    expect(await loadStoredCustomParts()).to.have.length(1);
 
     clearCustomParts({ persist: false });
     expect(customParts.custom_weapon_storage_test).to.equal(undefined);
@@ -69,7 +79,7 @@ describe("state/custom-parts-storage.ts", () => {
     expect(Array.from(restoredPixel)).to.deep.equal([255, 0, 0, 255]);
   });
 
-  it("persists custom part rename and delete actions", () => {
+  it("persists custom part rename and delete actions", async () => {
     const sheet = document.createElement("canvas");
     sheet.width = 1;
     sheet.height = 1;
@@ -82,17 +92,55 @@ describe("state/custom-parts-storage.ts", () => {
       sheets: { walk: sheet },
       image: sheet,
     });
+    await waitForCustomPartsPersistence();
 
     expect(
       renameCustomPart("custom_weapon_manage_test", "Renamed Axe"),
     ).to.equal(true);
-    const renamedPayload = JSON.parse(
-      window.localStorage.getItem(STORAGE_KEY) ?? "{}",
-    );
-    expect(renamedPayload.parts[0].name).to.equal("Renamed Axe");
+    await waitForCustomPartsPersistence();
+    expect((await loadStoredCustomParts())[0].name).to.equal("Renamed Axe");
 
     expect(deleteCustomPart("custom_weapon_manage_test")).to.equal(true);
+    await waitForCustomPartsPersistence();
     expect(customParts.custom_weapon_manage_test).to.equal(undefined);
-    expect(window.localStorage.getItem(STORAGE_KEY)).to.equal(null);
+    expect(await loadStoredCustomParts()).to.deep.equal([]);
+  });
+
+  it("migrates legacy localStorage custom parts into IndexedDB", async () => {
+    const sheet = document.createElement("canvas");
+    sheet.width = 2;
+    sheet.height = 2;
+    get2DContext(sheet, true).fillRect(0, 0, 1, 1);
+
+    window.localStorage.setItem(
+      CUSTOM_PARTS_LEGACY_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        parts: [
+          {
+            version: 1,
+            itemId: "custom_weapon_legacy_test",
+            name: "Legacy Axe",
+            type_name: "weapon",
+            baseItemId: "weapon_sword_longsword",
+            drawLayerNum: 4,
+            drawZPos: 150,
+            sheets: { walk: sheet.toDataURL("image/png") },
+          },
+        ],
+      }),
+    );
+
+    await hydrateCustomPartsFromStorage();
+
+    expect(customParts.custom_weapon_legacy_test.name).to.equal("Legacy Axe");
+    expect(
+      window.localStorage.getItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY),
+    ).to.equal(null);
+
+    clearCustomParts({ persist: false });
+    await hydrateCustomPartsFromStorage();
+
+    expect(customParts.custom_weapon_legacy_test.name).to.equal("Legacy Axe");
   });
 });

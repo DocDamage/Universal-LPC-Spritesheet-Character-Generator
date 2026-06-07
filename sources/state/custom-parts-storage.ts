@@ -2,7 +2,11 @@ import { get2DContext } from "../canvas/canvas-utils.ts";
 import { debugWarn } from "../utils/debug.ts";
 import type { CustomPart } from "./catalog.ts";
 
-const STORAGE_KEY = "lpc.customParts.v1";
+export const CUSTOM_PARTS_LEGACY_STORAGE_KEY = "lpc.customParts.v1";
+
+const DB_NAME = "lpc-custom-parts";
+const DB_VERSION = 1;
+const STORE_NAME = "customParts";
 
 type StoredCustomPart = {
   version: 1;
@@ -20,49 +24,75 @@ type StoredCustomPartsPayload = {
   parts: StoredCustomPart[];
 };
 
-export function persistCustomParts(parts: Record<string, CustomPart>): void {
-  const storage = getCustomPartsStorage();
-  if (!storage) return;
+let pendingPersist: Promise<void> = Promise.resolve();
 
+export function persistCustomParts(parts: Record<string, CustomPart>): void {
   const storedParts = Object.values(parts)
     .map(serializeCustomPart)
     .filter((part): part is StoredCustomPart => part !== null);
 
-  try {
-    if (storedParts.length === 0) {
-      storage.removeItem(STORAGE_KEY);
-      return;
-    }
-
-    const payload: StoredCustomPartsPayload = {
-      version: 1,
-      parts: storedParts,
-    };
-    storage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch (err) {
-    debugWarn("Unable to persist custom parts:", err);
-  }
+  void enqueuePersist(storedParts);
 }
 
 export async function loadStoredCustomParts(): Promise<CustomPart[]> {
-  const storage = getCustomPartsStorage();
-  if (!storage) return [];
-
-  const rawPayload = storage.getItem(STORAGE_KEY);
-  if (!rawPayload) return [];
-
-  try {
-    const payload = JSON.parse(rawPayload) as Partial<StoredCustomPartsPayload>;
-    if (payload.version !== 1 || !Array.isArray(payload.parts)) return [];
-
-    const parts = await Promise.all(
-      payload.parts.map((part) => deserializeCustomPart(part)),
-    );
-    return parts.filter((part): part is CustomPart => part !== null);
-  } catch (err) {
-    debugWarn("Unable to load persisted custom parts:", err);
-    return [];
+  const indexedDb = getCustomPartsIndexedDb();
+  if (indexedDb) {
+    try {
+      const indexedParts = await readPartsFromIndexedDb(indexedDb);
+      if (indexedParts.length > 0) {
+        clearLegacyLocalStorage();
+        return deserializeCustomParts(indexedParts);
+      }
+    } catch (err) {
+      debugWarn("Unable to load custom parts from IndexedDB:", err);
+    }
   }
+
+  const legacyParts = readPartsFromLegacyLocalStorage();
+  if (legacyParts.length === 0) return [];
+
+  if (indexedDb) {
+    try {
+      await writePartsToIndexedDb(indexedDb, legacyParts);
+      clearLegacyLocalStorage();
+    } catch (err) {
+      debugWarn("Unable to migrate custom parts to IndexedDB:", err);
+    }
+  }
+
+  return deserializeCustomParts(legacyParts);
+}
+
+export async function waitForCustomPartsPersistence(): Promise<void> {
+  await pendingPersist;
+}
+
+export async function clearStoredCustomPartsForTests(): Promise<void> {
+  await enqueuePersist([]);
+  pendingPersist = Promise.resolve();
+}
+
+function enqueuePersist(parts: StoredCustomPart[]): Promise<void> {
+  pendingPersist = pendingPersist.then(
+    () => persistStoredParts(parts),
+    () => persistStoredParts(parts),
+  );
+  return pendingPersist;
+}
+
+async function persistStoredParts(parts: StoredCustomPart[]): Promise<void> {
+  const indexedDb = getCustomPartsIndexedDb();
+  if (indexedDb) {
+    try {
+      await writePartsToIndexedDb(indexedDb, parts);
+      clearLegacyLocalStorage();
+      return;
+    } catch (err) {
+      debugWarn("Unable to persist custom parts to IndexedDB:", err);
+    }
+  }
+
+  persistPartsToLegacyLocalStorage(parts);
 }
 
 function serializeCustomPart(part: CustomPart): StoredCustomPart | null {
@@ -87,6 +117,13 @@ function serializeCustomPart(part: CustomPart): StoredCustomPart | null {
     drawZPos: part.drawZPos,
     sheets,
   };
+}
+
+async function deserializeCustomParts(
+  parts: StoredCustomPart[],
+): Promise<CustomPart[]> {
+  const customParts = await Promise.all(parts.map(deserializeCustomPart));
+  return customParts.filter((part): part is CustomPart => part !== null);
 }
 
 async function deserializeCustomPart(
@@ -141,6 +178,150 @@ function canvasFromDataUrl(dataUrl: string): Promise<HTMLCanvasElement> {
     img.onerror = () => reject(new Error("Unable to load custom part sheet."));
     img.src = dataUrl;
   });
+}
+
+function getCustomPartsIndexedDb(): IDBFactory | null {
+  if (
+    typeof window === "undefined" ||
+    typeof window.indexedDB === "undefined"
+  ) {
+    return null;
+  }
+
+  try {
+    return window.indexedDB;
+  } catch {
+    return null;
+  }
+}
+
+function openCustomPartsDb(indexedDb: IDBFactory): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDb.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "itemId" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () =>
+      reject(request.error ?? new Error("Unable to open custom parts store."));
+  });
+}
+
+async function writePartsToIndexedDb(
+  indexedDb: IDBFactory,
+  parts: StoredCustomPart[],
+): Promise<void> {
+  const db = await openCustomPartsDb(indexedDb);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+      store.clear();
+      for (const part of parts) {
+        store.put(part);
+      }
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () =>
+        reject(transaction.error ?? new Error("Unable to write custom parts."));
+      transaction.onabort = () =>
+        reject(transaction.error ?? new Error("Custom parts write aborted."));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function readPartsFromIndexedDb(
+  indexedDb: IDBFactory,
+): Promise<StoredCustomPart[]> {
+  const db = await openCustomPartsDb(indexedDb);
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readonly");
+      const request = transaction.objectStore(STORE_NAME).getAll();
+      request.onsuccess = () =>
+        resolve(
+          (request.result as Partial<StoredCustomPart>[]).filter(
+            isStoredCustomPart,
+          ),
+        );
+      request.onerror = () =>
+        reject(request.error ?? new Error("Unable to read custom parts."));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+function isStoredCustomPart(
+  part: Partial<StoredCustomPart>,
+): part is StoredCustomPart {
+  return (
+    part.version === 1 &&
+    typeof part.itemId === "string" &&
+    typeof part.name === "string" &&
+    typeof part.type_name === "string" &&
+    typeof part.baseItemId === "string" &&
+    !!part.sheets &&
+    typeof part.sheets === "object"
+  );
+}
+
+function readPartsFromLegacyLocalStorage(): StoredCustomPart[] {
+  const storage = getCustomPartsStorage();
+  if (!storage) return [];
+
+  let rawPayload: string | null;
+  try {
+    rawPayload = storage.getItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY);
+  } catch (err) {
+    debugWarn("Unable to read legacy custom parts:", err);
+    return [];
+  }
+
+  if (!rawPayload) return [];
+
+  try {
+    const payload = JSON.parse(rawPayload) as Partial<StoredCustomPartsPayload>;
+    if (payload.version !== 1 || !Array.isArray(payload.parts)) return [];
+    return payload.parts.filter(isStoredCustomPart);
+  } catch (err) {
+    debugWarn("Unable to load legacy custom parts:", err);
+    return [];
+  }
+}
+
+function persistPartsToLegacyLocalStorage(parts: StoredCustomPart[]): void {
+  const storage = getCustomPartsStorage();
+  if (!storage) return;
+
+  try {
+    if (parts.length === 0) {
+      storage.removeItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY);
+      return;
+    }
+
+    const payload: StoredCustomPartsPayload = {
+      version: 1,
+      parts,
+    };
+    storage.setItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    debugWarn("Unable to persist legacy custom parts:", err);
+  }
+}
+
+function clearLegacyLocalStorage(): void {
+  const storage = getCustomPartsStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(CUSTOM_PARTS_LEGACY_STORAGE_KEY);
+  } catch (err) {
+    debugWarn("Unable to clear legacy custom parts:", err);
+  }
 }
 
 function getCustomPartsStorage(): Storage | null {

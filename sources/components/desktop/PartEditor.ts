@@ -55,6 +55,7 @@ type PartEditorState = PixelEditorToolState & {
   replaceToColor: string;
   replaceTolerance: number;
   replaceAllDirections: boolean;
+  transformAllDirections: boolean;
   isDrawing: boolean;
   zoom: number;
   showGrid: boolean;
@@ -136,6 +137,13 @@ type SelectionClipboard = {
 };
 
 type ShapeTool = "line" | "rect" | "ellipse";
+
+type TransformOperation =
+  | "flipHorizontal"
+  | "flipVertical"
+  | "rotateClockwise"
+  | "rotateCounterClockwise"
+  | "clear";
 
 type RgbColor = {
   r: number;
@@ -256,6 +264,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.replaceToColor = "#ff0000";
     vnode.state.replaceTolerance = 0;
     vnode.state.replaceAllDirections = false;
+    vnode.state.transformAllDirections = false;
     resetEditLayers(vnode.state);
   },
 
@@ -1196,6 +1205,76 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
         ),
       ]),
     ]),
+    m("div.part-editor-pro-section.part-editor-transform-section", [
+      m("h4", "Transform"),
+      m(
+        "label.part-editor-pro-toggle",
+        {
+          title: "Apply transforms to every direction",
+        },
+        [
+          m("input", {
+            type: "checkbox",
+            checked: stateObj.transformAllDirections,
+            onchange: (e: Event) => {
+              stateObj.transformAllDirections = (
+                e.target as HTMLInputElement
+              ).checked;
+            },
+          }),
+          "All dirs",
+        ],
+      ),
+      m("div.part-editor-transform-actions", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Flip selection or active layer horizontally (H)",
+            onclick: () => transformActivePixels(stateObj, "flipHorizontal"),
+          },
+          "Flip H",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Flip selection or active layer vertically (V)",
+            onclick: () => transformActivePixels(stateObj, "flipVertical"),
+          },
+          "Flip V",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Rotate selection or active layer clockwise (T)",
+            onclick: () => transformActivePixels(stateObj, "rotateClockwise"),
+          },
+          "Rot CW",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title:
+              "Rotate selection or active layer counterclockwise (Shift+T)",
+            onclick: () =>
+              transformActivePixels(stateObj, "rotateCounterClockwise"),
+          },
+          "Rot CCW",
+        ),
+        m(
+          "button.part-editor-pro-button.part-editor-transform-clear",
+          {
+            type: "button",
+            title: "Clear selection or active layer",
+            onclick: () => transformActivePixels(stateObj, "clear"),
+          },
+          "Clear",
+        ),
+      ]),
+    ]),
     m("div.part-editor-pro-section.part-editor-timeline-section", [
       m("h4", "Timeline"),
       m("div.part-editor-mode-switch", [
@@ -1687,6 +1766,18 @@ function handleEditorShortcut(
   } else if (key === "g" && stateObj.isFullscreen) {
     e.preventDefault();
     stateObj.tool = "fill";
+  } else if (key === "h" && stateObj.isFullscreen) {
+    e.preventDefault();
+    transformActivePixels(stateObj, "flipHorizontal");
+  } else if (key === "v" && stateObj.isFullscreen) {
+    e.preventDefault();
+    transformActivePixels(stateObj, "flipVertical");
+  } else if (key === "t" && stateObj.isFullscreen) {
+    e.preventDefault();
+    transformActivePixels(
+      stateObj,
+      e.shiftKey ? "rotateCounterClockwise" : "rotateClockwise",
+    );
   } else if (key === "," && stateObj.isFullscreen && stateObj.frameMode) {
     e.preventDefault();
     void switchEditorContext(
@@ -2312,6 +2403,151 @@ function hexToRgbColor(hex: string): RgbColor {
     r: parseInt(clean.slice(0, 2), 16),
     g: parseInt(clean.slice(2, 4), 16),
     b: parseInt(clean.slice(4, 6), 16),
+  };
+}
+
+function transformActivePixels(
+  stateObj: PartEditorState,
+  operation: TransformOperation,
+): void {
+  const activeLayer = getActiveLayer(stateObj);
+  if (!activeLayer) return;
+
+  const sourceRect = stateObj.selectionRect ?? {
+    x: 0,
+    y: 0,
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
+  };
+  const directions = stateObj.transformAllDirections
+    ? DIRECTIONS
+    : [stateObj.activeDirection];
+  let nextSelection: SelectionRect | null = null;
+  let changed = false;
+
+  for (const direction of directions) {
+    const result = transformCanvasRegion(
+      activeLayer.canvases[direction],
+      sourceRect,
+      operation,
+    );
+    changed = changed || result.changed;
+    nextSelection = nextSelection ?? result.rect;
+  }
+
+  if (!changed) return;
+  if (stateObj.selectionRect && nextSelection) {
+    stateObj.selectionRect = nextSelection;
+  }
+  stateObj.shapeStart = null;
+  stateObj.shapeEnd = null;
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function transformCanvasRegion(
+  canvas: HTMLCanvasElement,
+  sourceRect: SelectionRect,
+  operation: TransformOperation,
+): { changed: boolean; rect: SelectionRect } {
+  if (sourceRect.width <= 0 || sourceRect.height <= 0) {
+    return { changed: false, rect: sourceRect };
+  }
+
+  const ctx = get2DContext(canvas);
+  if (operation === "clear") {
+    ctx.clearRect(
+      sourceRect.x,
+      sourceRect.y,
+      sourceRect.width,
+      sourceRect.height,
+    );
+    return { changed: true, rect: sourceRect };
+  }
+
+  const sourceData = ctx.getImageData(
+    sourceRect.x,
+    sourceRect.y,
+    sourceRect.width,
+    sourceRect.height,
+  );
+  const transformedData = transformImageData(sourceData, operation);
+  const targetRect = clampTransformedRect(sourceRect, transformedData);
+  ctx.clearRect(
+    sourceRect.x,
+    sourceRect.y,
+    sourceRect.width,
+    sourceRect.height,
+  );
+  ctx.putImageData(transformedData, targetRect.x, targetRect.y);
+  return { changed: true, rect: targetRect };
+}
+
+function transformImageData(
+  sourceData: ImageData,
+  operation: TransformOperation,
+): ImageData {
+  if (operation === "rotateClockwise") {
+    return rotateImageData(sourceData, true);
+  }
+  if (operation === "rotateCounterClockwise") {
+    return rotateImageData(sourceData, false);
+  }
+  if (operation === "flipVertical") {
+    return flipImageData(sourceData, false);
+  }
+  return flipImageData(sourceData, true);
+}
+
+function flipImageData(sourceData: ImageData, horizontal: boolean): ImageData {
+  const output = new ImageData(sourceData.width, sourceData.height);
+  for (let y = 0; y < sourceData.height; y++) {
+    for (let x = 0; x < sourceData.width; x++) {
+      const sourceX = horizontal ? sourceData.width - 1 - x : x;
+      const sourceY = horizontal ? y : sourceData.height - 1 - y;
+      copyImagePixel(sourceData, output, sourceX, sourceY, x, y);
+    }
+  }
+  return output;
+}
+
+function rotateImageData(sourceData: ImageData, clockwise: boolean): ImageData {
+  const output = new ImageData(sourceData.height, sourceData.width);
+  for (let y = 0; y < sourceData.height; y++) {
+    for (let x = 0; x < sourceData.width; x++) {
+      const targetX = clockwise ? sourceData.height - 1 - y : y;
+      const targetY = clockwise ? x : sourceData.width - 1 - x;
+      copyImagePixel(sourceData, output, x, y, targetX, targetY);
+    }
+  }
+  return output;
+}
+
+function copyImagePixel(
+  sourceData: ImageData,
+  targetData: ImageData,
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+): void {
+  const sourceIndex = (sourceY * sourceData.width + sourceX) * 4;
+  const targetIndex = (targetY * targetData.width + targetX) * 4;
+  targetData.data[targetIndex] = sourceData.data[sourceIndex];
+  targetData.data[targetIndex + 1] = sourceData.data[sourceIndex + 1];
+  targetData.data[targetIndex + 2] = sourceData.data[sourceIndex + 2];
+  targetData.data[targetIndex + 3] = sourceData.data[sourceIndex + 3];
+}
+
+function clampTransformedRect(
+  sourceRect: SelectionRect,
+  transformedData: ImageData,
+): SelectionRect {
+  return {
+    x: Math.min(FRAME_SIZE - transformedData.width, Math.max(0, sourceRect.x)),
+    y: Math.min(FRAME_SIZE - transformedData.height, Math.max(0, sourceRect.y)),
+    width: transformedData.width,
+    height: transformedData.height,
   };
 }
 

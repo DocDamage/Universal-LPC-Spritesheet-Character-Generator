@@ -1514,6 +1514,23 @@
   }
 }
 
+.part-editor-transform-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+
+  .part-editor-pro-button {
+    margin-top: 0;
+    padding: 5px 4px;
+    line-height: 1.1;
+  }
+}
+
+.part-editor-transform-clear {
+  grid-column: 1 / -1;
+  color: #fb7185;
+}
+
 .part-editor-timeline-section {
   .part-editor-pro-button.active {
     background: var(--accent-primary);

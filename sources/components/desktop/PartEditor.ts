@@ -311,6 +311,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
         if (tool === "fill") {
           applyFill(vnode.state, point);
+          refreshVisibleCanvas(canvasEl, vnode.state);
           vnode.state.lastPoint = point;
           return;
         }
@@ -323,6 +324,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
         for (const p of points) {
           applyBrush(vnode.state, p, tool === "eraser" ? "erase" : "paint");
         }
+        refreshVisibleCanvas(canvasEl, vnode.state);
         vnode.state.lastPoint = point;
       }
     };
@@ -643,12 +645,14 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                     if (vnode.state.isDrawing) {
                       vnode.state.isDrawing = false;
                       saveHistory(vnode.state);
+                      m.redraw();
                     }
                   },
                   onmouseleave: () => {
                     if (vnode.state.isDrawing) {
                       vnode.state.isDrawing = false;
                       saveHistory(vnode.state);
+                      m.redraw();
                     }
                   },
                 }),
@@ -899,6 +903,15 @@ function drawMainGrid(
 ) {
   ctx.clearRect(0, 0, 64, 64);
   ctx.drawImage(offscreenCanvas, 0, 0);
+}
+
+function refreshVisibleCanvas(
+  canvasEl: HTMLCanvasElement,
+  stateObj: PartEditorState,
+): void {
+  const ctx = get2DContext(canvasEl);
+  ctx.imageSmoothingEnabled = false;
+  drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection]);
 }
 
 function supportsStandardAnimation(

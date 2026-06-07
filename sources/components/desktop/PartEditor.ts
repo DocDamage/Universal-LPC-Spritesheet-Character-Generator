@@ -51,6 +51,10 @@ type PartEditorState = PixelEditorToolState & {
   onionSkin: boolean;
   onionOpacity: number;
   onionCanvases: OnionCanvases | null;
+  replaceFromColor: string;
+  replaceToColor: string;
+  replaceTolerance: number;
+  replaceAllDirections: boolean;
   isDrawing: boolean;
   zoom: number;
   showGrid: boolean;
@@ -128,6 +132,12 @@ type SelectionClipboard = {
   imageData: ImageData;
 };
 
+type RgbColor = {
+  r: number;
+  g: number;
+  b: number;
+};
+
 const QUICK_COLORS = [
   "#000000",
   "#ffffff",
@@ -152,6 +162,7 @@ const DIRECTION_ROWS: Record<Direction, number> = {
 const MIN_EDITOR_ZOOM = 2;
 const MAX_EDITOR_ZOOM = 16;
 const DEFAULT_EDITOR_ZOOM = 4;
+const MAX_EXTRACTED_PALETTE_COLORS = 36;
 
 function clampEditorZoom(value: number): number {
   return Math.min(MAX_EDITOR_ZOOM, Math.max(MIN_EDITOR_ZOOM, value));
@@ -233,6 +244,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.onionSkin = false;
     vnode.state.onionOpacity = 0.28;
     vnode.state.onionCanvases = null;
+    vnode.state.replaceFromColor = "#000000";
+    vnode.state.replaceToColor = "#ff0000";
+    vnode.state.replaceTolerance = 0;
+    vnode.state.replaceAllDirections = false;
     resetEditLayers(vnode.state);
   },
 
@@ -965,6 +980,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
   const canFlattenLayers = stateObj.editLayers.length > 1;
   const frameCount = getAnimationFrameCount(stateObj.frameAnimation);
   const canUseFrameTools = stateObj.availableFrameAnimations.length > 0;
+  const paletteColors = getVisiblePaletteColors(stateObj);
 
   return m("aside.part-editor-pro-panel", [
     m("div.part-editor-pro-section", [
@@ -985,6 +1001,121 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           },
         }),
         m("b", `${stateObj.brushSize}px`),
+      ]),
+    ]),
+    m("div.part-editor-pro-section.part-editor-color-section", [
+      m("h4", "Color"),
+      m(
+        "div.part-editor-extracted-palette",
+        paletteColors.map((color) =>
+          m("button.part-editor-palette-chip", {
+            key: color,
+            type: "button",
+            style: { backgroundColor: color },
+            class: stateObj.activeColor === color ? "active" : "",
+            title: `Use ${color}`,
+            onclick: () => {
+              stateObj.activeColor = color;
+            },
+            ondblclick: () => {
+              stateObj.replaceFromColor = color;
+            },
+          }),
+        ),
+      ),
+      m("div.part-editor-replace-grid", [
+        m("label.part-editor-color-field", [
+          m("span", "From"),
+          m("input", {
+            type: "color",
+            value: stateObj.replaceFromColor,
+            title: "Color to replace",
+            oninput: (e: Event) => {
+              stateObj.replaceFromColor = (e.target as HTMLInputElement).value;
+            },
+          }),
+        ]),
+        m("label.part-editor-color-field", [
+          m("span", "To"),
+          m("input", {
+            type: "color",
+            value: stateObj.replaceToColor,
+            title: "Replacement color",
+            oninput: (e: Event) => {
+              stateObj.replaceToColor = (e.target as HTMLInputElement).value;
+            },
+          }),
+        ]),
+      ]),
+      m("label.part-editor-pro-field", [
+        m("span", "Tol"),
+        m("input", {
+          type: "range",
+          min: "0",
+          max: "96",
+          step: "1",
+          value: String(stateObj.replaceTolerance),
+          title: "Color match tolerance",
+          oninput: (e: Event) => {
+            stateObj.replaceTolerance = Number(
+              (e.target as HTMLInputElement).value,
+            );
+          },
+        }),
+        m("b", String(stateObj.replaceTolerance)),
+      ]),
+      m(
+        "label.part-editor-pro-toggle",
+        {
+          title: "Replace matching colors in every direction",
+        },
+        [
+          m("input", {
+            type: "checkbox",
+            checked: stateObj.replaceAllDirections,
+            onchange: (e: Event) => {
+              stateObj.replaceAllDirections = (
+                e.target as HTMLInputElement
+              ).checked;
+            },
+          }),
+          "All dirs",
+        ],
+      ),
+      m("div.part-editor-color-actions", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Use active brush color as replacement",
+            onclick: () => {
+              stateObj.replaceToColor = stateObj.activeColor;
+            },
+          },
+          "Use",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Swap source and replacement colors",
+            onclick: () => {
+              const from = stateObj.replaceFromColor;
+              stateObj.replaceFromColor = stateObj.replaceToColor;
+              stateObj.replaceToColor = from;
+            },
+          },
+          "Swap",
+        ),
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: "Replace color on active layer (Ctrl+Shift+R)",
+            onclick: () => replaceColorOnActiveLayer(stateObj),
+          },
+          "Apply",
+        ),
       ]),
     ]),
     m("div.part-editor-pro-section.part-editor-timeline-section", [
@@ -1388,6 +1519,12 @@ function handleEditorShortcut(
     } else {
       mergeActiveLayerDown(stateObj);
     }
+    m.redraw();
+    return;
+  }
+  if (isCommand && key === "r" && e.shiftKey && stateObj.isFullscreen) {
+    e.preventDefault();
+    replaceColorOnActiveLayer(stateObj);
     m.redraw();
     return;
   }
@@ -1827,6 +1964,105 @@ function refreshVisibleCanvas(
   const ctx = get2DContext(canvasEl);
   ctx.imageSmoothingEnabled = false;
   drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection], stateObj);
+}
+
+function getVisiblePaletteColors(stateObj: PartEditorState): string[] {
+  const counts = new Map<string, number>();
+  for (const direction of DIRECTIONS) {
+    const imageData = get2DContext(stateObj.canvases[direction]).getImageData(
+      0,
+      0,
+      FRAME_SIZE,
+      FRAME_SIZE,
+    );
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const alpha = imageData.data[i + 3];
+      if (alpha === 0) continue;
+      const color = rgbToHex(
+        imageData.data[i],
+        imageData.data[i + 1],
+        imageData.data[i + 2],
+      );
+      counts.set(color, (counts.get(color) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, MAX_EXTRACTED_PALETTE_COLORS)
+    .map(([color]) => color);
+}
+
+function replaceColorOnActiveLayer(stateObj: PartEditorState): void {
+  const activeLayer = getActiveLayer(stateObj);
+  if (!activeLayer) return;
+
+  const from = hexToRgbColor(stateObj.replaceFromColor);
+  const to = hexToRgbColor(stateObj.replaceToColor);
+  const directions = stateObj.replaceAllDirections
+    ? DIRECTIONS
+    : [stateObj.activeDirection];
+  let changedPixels = 0;
+
+  for (const direction of directions) {
+    changedPixels += replaceColorInCanvas(
+      activeLayer.canvases[direction],
+      from,
+      to,
+      stateObj.replaceTolerance,
+    );
+  }
+
+  if (changedPixels === 0) return;
+  stateObj.activeColor = stateObj.replaceToColor;
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+}
+
+function replaceColorInCanvas(
+  canvas: HTMLCanvasElement,
+  from: RgbColor,
+  to: RgbColor,
+  tolerance: number,
+): number {
+  const ctx = get2DContext(canvas);
+  const imageData = ctx.getImageData(0, 0, FRAME_SIZE, FRAME_SIZE);
+  const clampedTolerance = Math.max(0, tolerance);
+  let changedPixels = 0;
+
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    if (imageData.data[i + 3] === 0) continue;
+    const matches =
+      Math.abs(imageData.data[i] - from.r) <= clampedTolerance &&
+      Math.abs(imageData.data[i + 1] - from.g) <= clampedTolerance &&
+      Math.abs(imageData.data[i + 2] - from.b) <= clampedTolerance;
+    if (!matches) continue;
+
+    imageData.data[i] = to.r;
+    imageData.data[i + 1] = to.g;
+    imageData.data[i + 2] = to.b;
+    changedPixels += 1;
+  }
+
+  if (changedPixels > 0) {
+    ctx.putImageData(imageData, 0, 0);
+  }
+  return changedPixels;
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function hexToRgbColor(hex: string): RgbColor {
+  const clean = hex.replace("#", "").padEnd(6, "0").slice(0, 6);
+  return {
+    r: parseInt(clean.slice(0, 2), 16),
+    g: parseInt(clean.slice(2, 4), 16),
+    b: parseInt(clean.slice(4, 6), 16),
+  };
 }
 
 function getAvailableFrameAnimations(meta: ItemMerged): string[] {

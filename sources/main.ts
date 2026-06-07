@@ -1,6 +1,7 @@
 // Main entry point - initializes and mounts the Mithril application
 
 import m from "mithril";
+import "../styles/desktop-style.scss";
 import "./styles/critical-entry.scss";
 import "./vendor-globals.ts";
 import { loadAllMetadata } from "./install-item-metadata.ts";
@@ -68,9 +69,7 @@ import { initState, state } from "./state/state.ts";
 import { initHashChangeListener } from "./state/hash.ts";
 
 // Import components
-import { App } from "./components/App.ts";
-import { AnimationPreview } from "./components/preview/AnimationPreview.ts";
-import { FullSpritesheetPreview } from "./components/preview/FullSpritesheetPreview.ts";
+import { DesktopApp } from "./components/desktop/DesktopApp.ts";
 
 // Import performance profiler
 import { PerformanceProfiler } from "./performance-profiler.ts";
@@ -125,16 +124,10 @@ let hashHydrationInitDone = false;
 
 // Wait for DOM to be ready, then mount UI; catalog may already be loading or ready.
 document.addEventListener("DOMContentLoaded", () => {
-  // Mount roots are static markup in index.html; assert non-null.
-  // App is the composition root for catalog DI — services pass through via attrs.
-  m.mount(document.getElementById("mithril-filters")!, {
-    view: () => m(App, { catalog: defaultCatalog }),
+  // Mount the new desktop app
+  m.mount(document.getElementById("desktop-app-root")!, {
+    view: () => m(DesktopApp, { catalog: defaultCatalog }),
   });
-  m.mount(document.getElementById("mithril-preview")!, AnimationPreview);
-  m.mount(
-    document.getElementById("mithril-spritesheet-preview")!,
-    FullSpritesheetPreview,
-  );
 
   clearShellLoadingClass();
 
@@ -160,9 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /** Strips shell spinner from Mithril mount roots only (see index.html), not in-component spinners. */
 const SHELL_LOADING_ROOT_IDS = [
-  "mithril-filters",
-  "mithril-preview",
-  "mithril-spritesheet-preview",
+  "desktop-app-root",
 ];
 
 function clearShellLoadingClass(): void {

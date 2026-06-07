@@ -65,9 +65,16 @@ export type CustomPart = {
   baseItemId: string;
   sheets: Record<string, HTMLCanvasElement>;
   image?: HTMLCanvasElement | HTMLImageElement;
+  drawLayerNum?: number;
+  drawZPos?: number;
 };
 
-export const customParts: Record<string, CustomPart> = {};
+const customPartGlobal = globalThis as typeof globalThis & {
+  __LPC_customParts?: Record<string, CustomPart>;
+};
+
+export const customParts: Record<string, CustomPart> =
+  (customPartGlobal.__LPC_customParts ??= {});
 
 export function registerCustomPart(part: CustomPart): void {
   customParts[part.itemId] = part;

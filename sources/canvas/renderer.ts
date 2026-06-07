@@ -53,6 +53,7 @@ const animationConfigByName = ANIMATION_CONFIGS as Record<
   string,
   AnimationConfig | undefined
 >;
+const animationOffsetByName = ANIMATION_OFFSETS as Record<string, number>;
 
 function formatPathError(itemId: string, e: PathError): string {
   switch (e.kind) {
@@ -64,6 +65,17 @@ function formatPathError(itemId: string, e: PathError): string {
     case "missing-bodytype-path":
       return `getSpritePath: item ${itemId} has no path for bodyType ${e.bodyType}`;
   }
+}
+
+function getRuntimeCustomPart(itemId: string) {
+  return (
+    getCustomPart(itemId) ??
+    (
+      globalThis as typeof globalThis & {
+        __LPC_customParts?: Record<string, ReturnType<typeof getCustomPart>>;
+      }
+    ).__LPC_customParts?.[itemId]
+  );
 }
 
 /**
@@ -256,8 +268,31 @@ async function runRenderCharacter(
 
     for (const [, selection] of Object.entries(selections)) {
       const { itemId, subId, variant } = selection;
-      const customPart = getCustomPart(itemId);
-      const assetItemId = customPart?.baseItemId ?? itemId;
+      const customPart = getRuntimeCustomPart(itemId);
+      if (customPart) {
+        const layerNum = customPart.drawLayerNum ?? 1;
+        const zPos = customPart.drawZPos ?? 100;
+        const recolors = getMultiRecolors(itemId, selections);
+        for (const [animation, sheet] of Object.entries(customPart.sheets)) {
+          const yPos = animationOffsetByName[animation];
+          if (yPos === undefined) continue;
+          drawCalls.push({
+            itemId,
+            name: selection.name,
+            variant: null,
+            recolors,
+            source: { kind: "custom", image: sheet },
+            zPos,
+            layerNum,
+            animation,
+            yPos,
+            needsRecolor: false,
+          });
+        }
+        continue;
+      }
+
+      const assetItemId = itemId;
       const metaResult = getItemMerged(assetItemId);
       if (metaResult.isErr() || subId) continue;
       const meta = metaResult.value;
@@ -336,49 +371,33 @@ async function runRenderCharacter(
             if (!meta.animations.includes(animName)) continue;
           }
 
-          const customSheet = customPart?.sheets?.[animName];
-          if (customSheet) {
-            drawCalls.push({
-              itemId,
-              name: selection.name,
-              variant: null,
-              recolors,
-              source: { kind: "custom", image: customSheet },
-              zPos,
-              layerNum,
-              animation: animName,
-              yPos,
-              needsRecolor: false,
-            });
-          } else {
-            const pathResult = getSpritePath(
-              assetItemId,
-              variant ?? null,
-              recolors,
-              bodyType,
-              animName,
-              layerNum,
-              selections,
-              meta,
-            );
-            if (pathResult.isErr()) {
-              debugWarn(formatPathError(itemId, pathResult.error));
-              continue;
-            }
-
-            drawCalls.push({
-              itemId,
-              name: selection.name,
-              variant: variant ?? null,
-              recolors,
-              source: { kind: "catalog", spritePath: pathResult.value },
-              zPos,
-              layerNum,
-              animation: animName,
-              yPos,
-              needsRecolor: itemId === "body-body" && variant !== "light", // Flag body variants for recoloring
-            });
+          const pathResult = getSpritePath(
+            assetItemId,
+            variant ?? null,
+            recolors,
+            bodyType,
+            animName,
+            layerNum,
+            selections,
+            meta,
+          );
+          if (pathResult.isErr()) {
+            debugWarn(formatPathError(itemId, pathResult.error));
+            continue;
           }
+
+          drawCalls.push({
+            itemId,
+            name: selection.name,
+            variant: variant ?? null,
+            recolors,
+            source: { kind: "catalog", spritePath: pathResult.value },
+            zPos,
+            layerNum,
+            animation: animName,
+            yPos,
+            needsRecolor: itemId === "body-body" && variant !== "light", // Flag body variants for recoloring
+          });
         }
       }
     }
@@ -657,7 +676,7 @@ export async function renderSingleItem(
   singleLayer: number | null = null,
   zipProfiler: ZipExportProfiler | null = null,
 ): Promise<HTMLCanvasElement | null> {
-  const customPart = getCustomPart(itemId);
+  const customPart = getRuntimeCustomPart(itemId);
   if (customPart) {
     return (
       customPart.sheets.walk ?? Object.values(customPart.sheets)[0] ?? null
@@ -893,7 +912,7 @@ export async function renderSingleItemAnimation(
   singleLayer: number | null = null,
   zipProfiler: ZipExportProfiler | null = null,
 ): Promise<HTMLCanvasElement | null> {
-  const customPart = getCustomPart(itemId);
+  const customPart = getRuntimeCustomPart(itemId);
   if (customPart) {
     return customPart.sheets[animationName] ?? null;
   }

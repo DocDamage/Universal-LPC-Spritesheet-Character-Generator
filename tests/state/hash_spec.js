@@ -19,7 +19,11 @@ import {
   resetHashCalledTimes,
   resetHashDeps,
 } from "../../sources/state/hash.ts";
-import { resetCatalogForTests } from "../../sources/state/catalog.ts";
+import {
+  clearCustomParts,
+  registerCustomPart,
+  resetCatalogForTests,
+} from "../../sources/state/catalog.ts";
 import {
   restoreAppCatalogAfterTest,
   seedBrowserCatalog,
@@ -37,6 +41,7 @@ describe("state/hash.ts", () => {
 
   afterEach(async () => {
     resetState();
+    clearCustomParts();
     resetHashDeps();
     resetHashCalledTimes();
     sandbox.restore();
@@ -184,6 +189,36 @@ describe("state/hash.ts", () => {
         eyes: "Eyes_blue",
       });
     });
+
+    it("should generate hash params for custom part selections", () => {
+      updateState({
+        bodyType: "male",
+        selections: {
+          weapon: {
+            itemId: "custom_weapon_hash_test",
+            variant: null,
+            recolor: null,
+            name: "Stored Axe",
+          },
+        },
+      });
+      registerCustomPart(
+        {
+          itemId: "custom_weapon_hash_test",
+          name: "Stored Axe",
+          type_name: "weapon",
+          baseItemId: "weapon_sword_longsword",
+          sheets: { walk: document.createElement("canvas") },
+        },
+        { persist: false },
+      );
+
+      const params = getHashParamsforSelections(getState().selections);
+      expect(params).to.deep.equal({
+        sex: "male",
+        weapon: "Stored_Axe",
+      });
+    });
   });
 
   describe("syncSelectionsToHash", () => {
@@ -298,6 +333,39 @@ describe("state/hash.ts", () => {
           variant: "",
           name: "Eyes (blue)",
           recolor: "blue",
+        },
+      });
+    });
+
+    it("should load custom part selections from hash", () => {
+      setHash("#weapon=Stored_Axe");
+      seedBrowserCatalog({
+        weapon_sword_longsword: {
+          type_name: "weapon",
+          name: "Longsword",
+          variants: [],
+          recolors: [],
+        },
+      });
+      registerCustomPart(
+        {
+          itemId: "custom_weapon_hash_test",
+          name: "Stored Axe",
+          type_name: "weapon",
+          baseItemId: "weapon_sword_longsword",
+          sheets: { walk: document.createElement("canvas") },
+        },
+        { persist: false },
+      );
+
+      loadSelectionsFromHash();
+      expect(getState().selections).to.deep.equal({
+        weapon: {
+          itemId: "custom_weapon_hash_test",
+          subId: null,
+          variant: "",
+          name: "Stored Axe",
+          recolor: "",
         },
       });
     });

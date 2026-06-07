@@ -11,6 +11,7 @@ import {
   isIndexReady,
   isLiteReady,
   customParts,
+  getCustomPart,
   type AliasMetadata,
   type ItemLite,
   type SlimByTypeNameRow,
@@ -196,12 +197,15 @@ export function buildNewSelection(
   matchedRecolor: string,
   subId: number | null = null,
 ): Selection {
+  const custom = getCustomPart(foundItemId);
   // Get meta data for itemId. Existing JS assumes meta is non-null at this
   // point (resolveHashParam returned a hit); preserve that contract.
-  const meta = hashDeps.getItemLite(foundItemId)!;
+  const meta =
+    hashDeps.getItemLite(foundItemId) ??
+    (custom ? hashDeps.getItemLite(custom.baseItemId) : null)!;
   const subMeta = meta.recolors?.[subId ?? 0];
 
-  const isCustom = foundItemId.startsWith("custom_part_");
+  const isCustom = !!custom;
   const newSelection: Selection = {
     itemId: foundItemId,
     subId,
@@ -249,6 +253,18 @@ export function getHashParamsforSelections(
   // e.g., "body=Body_color_light", "shoes=Sara_sara".
   const aliasMetadata = getAliasMetadata().unwrapOr({} as AliasMetadata);
   for (const [typeName, selection] of Object.entries(selections)) {
+    const custom = getCustomPart(selection.itemId);
+    if (custom) {
+      const namePart = custom.name.replaceAll(" ", "_");
+      const variantPart = selection.variant ?? "";
+      const recolorPart = selection.recolor ?? "";
+      const uscorePart = variantPart || recolorPart ? "_" : "";
+      const splitPart = variantPart && recolorPart ? "|" : "";
+      params[custom.type_name || typeName] =
+        namePart + uscorePart + variantPart + splitPart + recolorPart;
+      continue;
+    }
+
     const meta = getItemLite(selection.itemId).unwrapOr(null);
     // Defensive: real production data has type_name, but a few test fixtures
     // (and possibly malformed URLs) might lack it. Treat as alias-fallback.

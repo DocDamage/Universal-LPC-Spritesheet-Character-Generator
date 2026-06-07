@@ -36,6 +36,10 @@ import {
   expandMetadataIndexesWithInternedArrays,
   isInternedItemLite,
 } from "./resolve-hash-param.ts";
+import {
+  loadStoredCustomParts,
+  persistCustomParts,
+} from "./custom-parts-storage.ts";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Error shape
@@ -76,12 +80,40 @@ const customPartGlobal = globalThis as typeof globalThis & {
 export const customParts: Record<string, CustomPart> =
   (customPartGlobal.__LPC_customParts ??= {});
 
-export function registerCustomPart(part: CustomPart): void {
+type RegisterCustomPartOptions = {
+  persist?: boolean;
+};
+
+export function registerCustomPart(
+  part: CustomPart,
+  options: RegisterCustomPartOptions = {},
+): void {
   customParts[part.itemId] = part;
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
 }
 
 export function getCustomPart(id: string): CustomPart | undefined {
   return customParts[id];
+}
+
+export function clearCustomParts(
+  options: RegisterCustomPartOptions = {},
+): void {
+  for (const itemId of Object.keys(customParts)) {
+    delete customParts[itemId];
+  }
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+}
+
+export async function hydrateCustomPartsFromStorage(): Promise<void> {
+  const parts = await loadStoredCustomParts();
+  for (const part of parts) {
+    registerCustomPart(part, { persist: false });
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -585,6 +617,7 @@ export function createCatalog(): Catalog {
       itemCreditsStore = null;
       itemLayersStore = null;
       paletteMetadataStore = null;
+      clearCustomParts({ persist: false });
     },
   };
 }

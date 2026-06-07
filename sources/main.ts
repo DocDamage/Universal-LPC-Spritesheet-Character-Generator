@@ -5,7 +5,11 @@ import "../styles/desktop-style.scss";
 import "./styles/critical-entry.scss";
 import "./vendor-globals.ts";
 import { loadAllMetadata } from "./install-item-metadata.ts";
-import { catalogReady, defaultCatalog } from "./state/catalog.ts";
+import {
+  catalogReady,
+  defaultCatalog,
+  hydrateCustomPartsFromStorage,
+} from "./state/catalog.ts";
 
 // Import debug first so `window.DEBUG` is set before other modules run.
 import { debugLog, getDebugParam } from "./utils/debug.ts";
@@ -99,6 +103,7 @@ window.setDefaultSelections = async function () {
 // Start metadata chunk fetches as soon as the entry module runs (no DOM required),
 // so download/parse overlaps HTML parse and the rest of this file.
 void loadAllMetadata();
+const customPartsHydrated = hydrateCustomPartsFromStorage();
 
 // TODO: this dynamic import doesn't actually load the deferred CSS in prod.
 // `load-deferred-styles.ts` has no JS exports (only `import "./deferred-entry.scss"`),
@@ -132,7 +137,11 @@ document.addEventListener("DOMContentLoaded", () => {
   clearShellLoadingClass();
 
   void (async () => {
-    await Promise.all([catalogReady.onIndexReady, catalogReady.onLiteReady]);
+    await Promise.all([
+      catalogReady.onIndexReady,
+      catalogReady.onLiteReady,
+      customPartsHydrated,
+    ]);
     if (hashHydrationInitDone) return;
     hashHydrationInitDone = true;
 
@@ -152,9 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /** Strips shell spinner from Mithril mount roots only (see index.html), not in-component spinners. */
-const SHELL_LOADING_ROOT_IDS = [
-  "desktop-app-root",
-];
+const SHELL_LOADING_ROOT_IDS = ["desktop-app-root"];
 
 function clearShellLoadingClass(): void {
   for (const id of SHELL_LOADING_ROOT_IDS) {

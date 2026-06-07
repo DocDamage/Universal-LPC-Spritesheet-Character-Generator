@@ -37,7 +37,15 @@ type SlotSelectorState = {
   importReferenceValue: string;
   importStatus: string;
   importing: boolean;
+  importOffsetX: number;
+  importOffsetY: number;
+  importScalePercent: number;
 };
+
+const IMPORT_OFFSET_MIN = -256;
+const IMPORT_OFFSET_MAX = 256;
+const IMPORT_SCALE_MIN = 10;
+const IMPORT_SCALE_MAX = 800;
 
 /** Build a simple list of recolor choices for an item. */
 function getRecolorChoices(
@@ -98,6 +106,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     vnode.state.importReferenceValue = "";
     vnode.state.importStatus = "";
     vnode.state.importing = false;
+    vnode.state.importOffsetX = 0;
+    vnode.state.importOffsetY = 0;
+    vnode.state.importScalePercent = 100;
   },
 
   view(vnode) {
@@ -172,6 +183,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
           bodyType: state.bodyType,
           selections: state.selections,
           catalog,
+          offsetX: vnode.state.importOffsetX,
+          offsetY: vnode.state.importOffsetY,
+          scalePercent: vnode.state.importScalePercent,
         });
         registerCustomPart(customPart);
         clearSlotSelections(slot, catalog);
@@ -196,6 +210,26 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         vnode.state.importing = false;
         m.redraw();
       }
+    };
+
+    const setImportNumber = (
+      key: "importOffsetX" | "importOffsetY" | "importScalePercent",
+      rawValue: string,
+      min: number,
+      max: number,
+    ): void => {
+      const nextValue = Number(rawValue);
+      vnode.state[key] = Number.isFinite(nextValue)
+        ? Math.max(min, Math.min(max, nextValue))
+        : key === "importScalePercent"
+          ? 100
+          : 0;
+    };
+
+    const resetImportTuning = (): void => {
+      vnode.state.importOffsetX = 0;
+      vnode.state.importOffsetY = 0;
+      vnode.state.importScalePercent = 100;
     };
 
     return m(
@@ -359,6 +393,80 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                   void handleWeaponImport(e);
                 },
               }),
+              m("div.desktop-slot-import-tuning", [
+                m("label.desktop-slot-import-tune", [
+                  m("span", "X"),
+                  m("input", {
+                    type: "number",
+                    min: String(IMPORT_OFFSET_MIN),
+                    max: String(IMPORT_OFFSET_MAX),
+                    step: "1",
+                    value: String(vnode.state.importOffsetX),
+                    title:
+                      "Horizontal alignment nudge in pixels; mirrored side rows use the opposite X offset",
+                    disabled: vnode.state.importing,
+                    oninput: (e: Event) => {
+                      setImportNumber(
+                        "importOffsetX",
+                        (e.target as HTMLInputElement).value,
+                        IMPORT_OFFSET_MIN,
+                        IMPORT_OFFSET_MAX,
+                      );
+                    },
+                  }),
+                ]),
+                m("label.desktop-slot-import-tune", [
+                  m("span", "Y"),
+                  m("input", {
+                    type: "number",
+                    min: String(IMPORT_OFFSET_MIN),
+                    max: String(IMPORT_OFFSET_MAX),
+                    step: "1",
+                    value: String(vnode.state.importOffsetY),
+                    title: "Vertical alignment nudge in pixels",
+                    disabled: vnode.state.importing,
+                    oninput: (e: Event) => {
+                      setImportNumber(
+                        "importOffsetY",
+                        (e.target as HTMLInputElement).value,
+                        IMPORT_OFFSET_MIN,
+                        IMPORT_OFFSET_MAX,
+                      );
+                    },
+                  }),
+                ]),
+                m("label.desktop-slot-import-tune", [
+                  m("span", "%"),
+                  m("input", {
+                    type: "number",
+                    min: String(IMPORT_SCALE_MIN),
+                    max: String(IMPORT_SCALE_MAX),
+                    step: "5",
+                    value: String(vnode.state.importScalePercent),
+                    title:
+                      "Scale applied after auto-alignment; 100 keeps the matched reference size",
+                    disabled: vnode.state.importing,
+                    oninput: (e: Event) => {
+                      setImportNumber(
+                        "importScalePercent",
+                        (e.target as HTMLInputElement).value,
+                        IMPORT_SCALE_MIN,
+                        IMPORT_SCALE_MAX,
+                      );
+                    },
+                  }),
+                ]),
+                m(
+                  "button.desktop-slot-import-reset",
+                  {
+                    type: "button",
+                    title: "Reset import alignment tuning",
+                    disabled: vnode.state.importing,
+                    onclick: resetImportTuning,
+                  },
+                  "↺",
+                ),
+              ]),
               vnode.state.importStatus
                 ? m("span.desktop-slot-import-status", vnode.state.importStatus)
                 : null,

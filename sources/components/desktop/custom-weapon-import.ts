@@ -26,11 +26,20 @@ type ImportWeaponOptions = {
   bodyType: string;
   selections: Selections;
   catalog: CatalogReader;
+  offsetX?: number;
+  offsetY?: number;
+  scalePercent?: number;
 };
 
 type ReferenceSprite = {
   img: HTMLImageElement;
   zPos: number;
+};
+
+type ImportAdjustment = {
+  offsetX: number;
+  offsetY: number;
+  scale: number;
 };
 
 const STANDARD_SHEET_WIDTH = 13 * FRAME_SIZE;
@@ -91,6 +100,7 @@ export async function buildImportedWeaponPart(
   const sourceImage = await loadImageFromFile(options.file);
   const sourceCanvas = canvasFromImage(sourceImage);
   const sourceMode = getSourceMode(sourceCanvas);
+  const adjustment = getImportAdjustment(options);
   const sourceBounds = getContentBounds(
     get2DContext(sourceCanvas, true),
     0,
@@ -125,6 +135,7 @@ export async function buildImportedWeaponPart(
       sourceMode,
       referenceSheet,
       animation,
+      adjustment,
     );
     if (sheetHasContent(sheet)) {
       sheets[animation] = sheet;
@@ -240,6 +251,7 @@ function alignSourceToReferenceSheet(
   sourceMode: SourceMode,
   referenceSheet: HTMLCanvasElement,
   animation: string,
+  adjustment: ImportAdjustment,
 ): HTMLCanvasElement {
   const out = document.createElement("canvas");
   out.width = referenceSheet.width;
@@ -285,6 +297,7 @@ function alignSourceToReferenceSheet(
         sourceFrameBounds,
         referenceBounds,
         sourceMode,
+        adjustment,
         row === 3,
       );
     }
@@ -299,21 +312,26 @@ function drawAlignedFrame(
   sourceBounds: Rect,
   referenceBounds: Rect,
   sourceMode: SourceMode,
+  adjustment: ImportAdjustment,
   mirrorX: boolean,
 ): void {
   const referenceCenterX = referenceBounds.x + referenceBounds.width / 2;
   const referenceCenterY = referenceBounds.y + referenceBounds.height / 2;
-  const scale =
+  const baseScale =
     sourceMode === "singleImage"
       ? Math.min(
           referenceBounds.width / sourceBounds.width,
           referenceBounds.height / sourceBounds.height,
         )
       : 1;
+  const scale = baseScale * adjustment.scale;
   const width = Math.max(1, Math.round(sourceBounds.width * scale));
   const height = Math.max(1, Math.round(sourceBounds.height * scale));
-  const targetX = Math.round(referenceCenterX - width / 2);
-  const targetY = Math.round(referenceCenterY - height / 2);
+  const directionalOffsetX = mirrorX ? -adjustment.offsetX : adjustment.offsetX;
+  const targetX = Math.round(referenceCenterX - width / 2 + directionalOffsetX);
+  const targetY = Math.round(
+    referenceCenterY - height / 2 + adjustment.offsetY,
+  );
 
   if (mirrorX) {
     targetCtx.save();
@@ -345,6 +363,18 @@ function drawAlignedFrame(
     width,
     height,
   );
+}
+
+function getImportAdjustment(options: ImportWeaponOptions): ImportAdjustment {
+  const scalePercent = Number.isFinite(options.scalePercent)
+    ? options.scalePercent!
+    : 100;
+
+  return {
+    offsetX: Number.isFinite(options.offsetX) ? options.offsetX! : 0,
+    offsetY: Number.isFinite(options.offsetY) ? options.offsetY! : 0,
+    scale: Math.max(0.1, Math.min(8, scalePercent / 100)),
+  };
 }
 
 function getSourceMode(sourceCanvas: HTMLCanvasElement): SourceMode {

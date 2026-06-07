@@ -2,7 +2,7 @@ import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { FRAME_SIZE } from "../../state/constants.ts";
 
 export type Direction = "front" | "back" | "left" | "right";
-export type EditorTool = "pen" | "eraser" | "picker" | "fill";
+export type EditorTool = "pen" | "eraser" | "picker" | "fill" | "select";
 export type Point = { x: number; y: number };
 
 export type PixelEditorToolState = {

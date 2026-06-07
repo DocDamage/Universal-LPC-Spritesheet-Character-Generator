@@ -42,6 +42,10 @@ type PartEditorState = PixelEditorToolState & {
   showGrid: boolean;
   isFullscreen: boolean;
   lastPoint: Point | null;
+  selectionRect: SelectionRect | null;
+  selectionDraftStart: Point | null;
+  selectionMove: SelectionMoveState | null;
+  clipboard: SelectionClipboard | null;
   keyboardHandler: ((e: KeyboardEvent) => void) | null;
 
   // Undo history
@@ -69,6 +73,28 @@ type EditorSnapshot = {
   activeLayerId: string | null;
   nextLayerNumber: number;
   layers: EditorLayerSnapshot[];
+};
+
+type SelectionRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type SelectionMoveState = {
+  startPoint: Point;
+  sourceRect: SelectionRect;
+  baseCanvas: HTMLCanvasElement;
+  imageData: ImageData;
+  direction: Direction;
+  layerId: string;
+};
+
+type SelectionClipboard = {
+  width: number;
+  height: number;
+  imageData: ImageData;
 };
 
 const QUICK_COLORS = [
@@ -154,6 +180,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.showGrid = true;
     vnode.state.isFullscreen = false;
     vnode.state.lastPoint = null;
+    vnode.state.selectionRect = null;
+    vnode.state.selectionDraftStart = null;
+    vnode.state.selectionMove = null;
+    vnode.state.clipboard = null;
     vnode.state.keyboardHandler = null;
     vnode.state.history = [];
     vnode.state.historyIndex = -1;
@@ -194,6 +224,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       vnode.state.loading = true;
       vnode.state.history = [];
       vnode.state.historyIndex = -1;
+      clearSelectionState(vnode.state, false);
 
       const meta = getItemMerged(editing.itemId).unwrapOr(null);
       if (meta) {
@@ -345,15 +376,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     };
 
     const drawOnMain = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
-      const rect = canvasEl.getBoundingClientRect();
-      const scaleX = 64 / rect.width;
-      const scaleY = 64 / rect.height;
-      const x = Math.floor((e.clientX - rect.left) * scaleX);
-      const y = Math.floor((e.clientY - rect.top) * scaleY);
-
-      if (x >= 0 && x < 64 && y >= 0 && y < 64) {
-        const point = { x, y };
+      const point = getCanvasPoint(e, canvasEl);
+      if (point) {
         const tool = e.altKey ? "picker" : vnode.state.tool;
+        if (tool === "select") return;
 
         if (tool === "picker") {
           const sampledColor = sampleColor(vnode.state, point);
@@ -388,6 +414,66 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
         refreshVisibleCanvas(canvasEl, vnode.state);
         vnode.state.lastPoint = point;
       }
+    };
+
+    const handleCanvasDown = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
+      const point = getCanvasPoint(e, canvasEl);
+      if (!point) return;
+
+      if (vnode.state.tool === "select" && !e.altKey) {
+        vnode.state.isDrawing = false;
+        startSelectionInteraction(vnode.state, point);
+        recomposeCanvases(vnode.state);
+        refreshVisibleCanvas(canvasEl, vnode.state);
+        return;
+      }
+
+      vnode.state.isDrawing = true;
+      drawOnMain(e, canvasEl);
+    };
+
+    const handleCanvasMove = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
+      const point = getCanvasPoint(e, canvasEl);
+      if (!point) return;
+
+      if (vnode.state.selectionDraftStart || vnode.state.selectionMove) {
+        updateSelectionInteraction(vnode.state, point);
+        recomposeCanvases(vnode.state);
+        refreshVisibleCanvas(canvasEl, vnode.state);
+        return;
+      }
+
+      if (vnode.state.isDrawing) {
+        drawOnMain(e, canvasEl);
+      }
+    };
+
+    const handleCanvasUp = (canvasEl: HTMLCanvasElement) => {
+      const movedSelection = finishSelectionInteraction(vnode.state);
+      if (movedSelection) {
+        saveHistory(vnode.state);
+      }
+
+      if (vnode.state.isDrawing) {
+        vnode.state.isDrawing = false;
+        saveHistory(vnode.state);
+      }
+
+      recomposeCanvases(vnode.state);
+      refreshVisibleCanvas(canvasEl, vnode.state);
+      m.redraw();
+    };
+
+    const handleCanvasLeave = (canvasEl: HTMLCanvasElement) => {
+      if (
+        !vnode.state.isDrawing &&
+        !vnode.state.selectionDraftStart &&
+        !vnode.state.selectionMove
+      ) {
+        return;
+      }
+
+      handleCanvasUp(canvasEl);
     };
 
     const handleSave = async () => {
@@ -548,6 +634,18 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                 ? m(
                     "button.button.is-small",
                     {
+                      class: vnode.state.tool === "select" ? "is-active" : "",
+                      onclick: () => (vnode.state.tool = "select"),
+                      title:
+                        "Rectangular selection (M). Drag to select; drag inside to move.",
+                    },
+                    "▧",
+                  )
+                : null,
+              vnode.state.isFullscreen
+                ? m(
+                    "button.button.is-small",
+                    {
                       class: vnode.state.tool === "fill" ? "is-active" : "",
                       onclick: () => (vnode.state.tool = "fill"),
                       title: "Flood fill tool (G)",
@@ -574,6 +672,16 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                   title: "Undo last stroke (Ctrl+Z)",
                 },
                 "↩",
+              ),
+              m(
+                "button.button.is-small",
+                {
+                  onclick: () => redo(vnode.state),
+                  disabled:
+                    vnode.state.historyIndex >= vnode.state.history.length - 1,
+                  title: "Redo edit (Ctrl+Y or Ctrl+Shift+Z)",
+                },
+                "↪",
               ),
               m(
                 "button.button.is-small",
@@ -686,44 +794,35 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                       cursor:
                         vnode.state.tool === "picker"
                           ? "crosshair"
-                          : vnode.state.tool === "eraser"
-                            ? "cell"
-                            : "crosshair",
+                          : vnode.state.tool === "select"
+                            ? "crosshair"
+                            : vnode.state.tool === "eraser"
+                              ? "cell"
+                              : "crosshair",
                     },
                     oncreate: (vnodeDOM) => {
                       const el = vnodeDOM.dom as HTMLCanvasElement;
                       const ctx = get2DContext(el);
                       ctx.imageSmoothingEnabled = false;
-                      drawMainGrid(ctx, activeCanvas);
+                      drawMainGrid(ctx, activeCanvas, vnode.state);
                     },
                     onupdate: (vnodeDOM) => {
                       const el = vnodeDOM.dom as HTMLCanvasElement;
                       const ctx = get2DContext(el);
                       ctx.imageSmoothingEnabled = false;
-                      drawMainGrid(ctx, activeCanvas);
+                      drawMainGrid(ctx, activeCanvas, vnode.state);
                     },
                     onmousedown: (e: MouseEvent) => {
-                      vnode.state.isDrawing = true;
-                      drawOnMain(e, e.target as HTMLCanvasElement);
+                      handleCanvasDown(e, e.target as HTMLCanvasElement);
                     },
                     onmousemove: (e: MouseEvent) => {
-                      if (vnode.state.isDrawing) {
-                        drawOnMain(e, e.target as HTMLCanvasElement);
-                      }
+                      handleCanvasMove(e, e.target as HTMLCanvasElement);
                     },
-                    onmouseup: () => {
-                      if (vnode.state.isDrawing) {
-                        vnode.state.isDrawing = false;
-                        saveHistory(vnode.state);
-                        m.redraw();
-                      }
+                    onmouseup: (e: MouseEvent) => {
+                      handleCanvasUp(e.target as HTMLCanvasElement);
                     },
-                    onmouseleave: () => {
-                      if (vnode.state.isDrawing) {
-                        vnode.state.isDrawing = false;
-                        saveHistory(vnode.state);
-                        m.redraw();
-                      }
+                    onmouseleave: (e: MouseEvent) => {
+                      handleCanvasLeave(e.target as HTMLCanvasElement);
                     },
                   }),
                 ],
@@ -823,7 +922,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           "button.part-editor-pro-button",
           {
             type: "button",
-            title: "Add a new edit layer",
+            title: "Add a new edit layer (Ctrl+Shift+N)",
             onclick: () => addEditLayer(stateObj),
           },
           "+",
@@ -832,7 +931,7 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
           "button.part-editor-pro-button",
           {
             type: "button",
-            title: "Duplicate active layer",
+            title: "Duplicate active layer (Ctrl+J)",
             disabled: activeLayerIndex < 0,
             onclick: () => duplicateActiveLayer(stateObj),
           },
@@ -1021,9 +1120,51 @@ function handleEditorShortcut(
     return;
   }
 
+  if (isCommand && key === "z" && e.shiftKey) {
+    e.preventDefault();
+    redo(stateObj);
+    return;
+  }
   if (isCommand && key === "z") {
     e.preventDefault();
     undo(stateObj);
+    return;
+  }
+  if (isCommand && key === "y") {
+    e.preventDefault();
+    redo(stateObj);
+    return;
+  }
+  if (isCommand && key === "n" && e.shiftKey && stateObj.isFullscreen) {
+    e.preventDefault();
+    addEditLayer(stateObj);
+    m.redraw();
+    return;
+  }
+  if (isCommand && key === "j" && stateObj.isFullscreen) {
+    e.preventDefault();
+    duplicateActiveLayer(stateObj);
+    m.redraw();
+    return;
+  }
+  if (isCommand && key === "c") {
+    if (copySelection(stateObj)) {
+      e.preventDefault();
+    }
+    return;
+  }
+  if (isCommand && key === "v") {
+    if (pasteClipboard(stateObj)) {
+      e.preventDefault();
+      m.redraw();
+    }
+    return;
+  }
+  if (isCommand && key === "d") {
+    if (clearSelectionState(stateObj, true)) {
+      e.preventDefault();
+      m.redraw();
+    }
     return;
   }
   if (isCommand && (key === "=" || key === "+")) {
@@ -1045,7 +1186,19 @@ function handleEditorShortcut(
     return;
   }
 
-  if (key === "escape" && stateObj.isFullscreen) {
+  if (isSelectionNudgeKey(key) && stateObj.selectionRect) {
+    e.preventDefault();
+    nudgeSelection(stateObj, key, e.shiftKey ? 4 : 1);
+  } else if (
+    (key === "backspace" || key === "delete") &&
+    stateObj.selectionRect
+  ) {
+    e.preventDefault();
+    clearSelectedPixels(stateObj);
+  } else if (key === "escape" && stateObj.selectionRect) {
+    e.preventDefault();
+    clearSelectionState(stateObj, true);
+  } else if (key === "escape" && stateObj.isFullscreen) {
     e.preventDefault();
     stateObj.isFullscreen = false;
   } else if (key === "f") {
@@ -1060,6 +1213,9 @@ function handleEditorShortcut(
   } else if (key === "i") {
     e.preventDefault();
     stateObj.tool = "picker";
+  } else if (key === "m" && stateObj.isFullscreen) {
+    e.preventDefault();
+    stateObj.tool = "select";
   } else if (key === "g" && stateObj.isFullscreen) {
     e.preventDefault();
     stateObj.tool = "fill";
@@ -1093,12 +1249,299 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
+function getCanvasPoint(
+  e: MouseEvent,
+  canvasEl: HTMLCanvasElement,
+): Point | null {
+  const rect = canvasEl.getBoundingClientRect();
+  const scaleX = FRAME_SIZE / rect.width;
+  const scaleY = FRAME_SIZE / rect.height;
+  const x = Math.floor((e.clientX - rect.left) * scaleX);
+  const y = Math.floor((e.clientY - rect.top) * scaleY);
+  if (x < 0 || x >= FRAME_SIZE || y < 0 || y >= FRAME_SIZE) return null;
+  return { x, y };
+}
+
+function isSelectionNudgeKey(key: string): boolean {
+  return (
+    key === "arrowleft" ||
+    key === "arrowright" ||
+    key === "arrowup" ||
+    key === "arrowdown"
+  );
+}
+
+function normalizeSelectionRect(start: Point, end: Point): SelectionRect {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  return {
+    x,
+    y,
+    width: Math.abs(end.x - start.x) + 1,
+    height: Math.abs(end.y - start.y) + 1,
+  };
+}
+
+function pointInSelection(point: Point, rect: SelectionRect): boolean {
+  return (
+    point.x >= rect.x &&
+    point.x < rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y < rect.y + rect.height
+  );
+}
+
+function clampSelectionPosition(
+  rect: SelectionRect,
+  x: number,
+  y: number,
+): Point {
+  return {
+    x: Math.min(FRAME_SIZE - rect.width, Math.max(0, x)),
+    y: Math.min(FRAME_SIZE - rect.height, Math.max(0, y)),
+  };
+}
+
+function cloneImageData(imageData: ImageData): ImageData {
+  return new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height,
+  );
+}
+
+function startSelectionInteraction(
+  stateObj: PartEditorState,
+  point: Point,
+): void {
+  const activeLayer = getActiveLayer(stateObj);
+  if (
+    activeLayer &&
+    stateObj.selectionRect &&
+    pointInSelection(point, stateObj.selectionRect)
+  ) {
+    const direction = stateObj.activeDirection;
+    const canvas = activeLayer.canvases[direction];
+    const ctx = get2DContext(canvas);
+    const sourceRect = { ...stateObj.selectionRect };
+    const imageData = ctx.getImageData(
+      sourceRect.x,
+      sourceRect.y,
+      sourceRect.width,
+      sourceRect.height,
+    );
+    ctx.clearRect(
+      sourceRect.x,
+      sourceRect.y,
+      sourceRect.width,
+      sourceRect.height,
+    );
+    const baseCanvas = document.createElement("canvas");
+    baseCanvas.width = FRAME_SIZE;
+    baseCanvas.height = FRAME_SIZE;
+    get2DContext(baseCanvas).drawImage(canvas, 0, 0);
+
+    stateObj.selectionDraftStart = null;
+    stateObj.selectionMove = {
+      startPoint: point,
+      sourceRect,
+      baseCanvas,
+      imageData,
+      direction,
+      layerId: activeLayer.id,
+    };
+    applySelectionMove(stateObj, point);
+    return;
+  }
+
+  stateObj.selectionDraftStart = point;
+  stateObj.selectionMove = null;
+  stateObj.selectionRect = { x: point.x, y: point.y, width: 1, height: 1 };
+}
+
+function updateSelectionInteraction(
+  stateObj: PartEditorState,
+  point: Point,
+): void {
+  if (stateObj.selectionMove) {
+    applySelectionMove(stateObj, point);
+    return;
+  }
+
+  if (stateObj.selectionDraftStart) {
+    stateObj.selectionRect = normalizeSelectionRect(
+      stateObj.selectionDraftStart,
+      point,
+    );
+  }
+}
+
+function applySelectionMove(stateObj: PartEditorState, point: Point): void {
+  const moveState = stateObj.selectionMove;
+  const activeLayer = getActiveLayer(stateObj);
+  if (
+    !moveState ||
+    !activeLayer ||
+    activeLayer.id !== moveState.layerId ||
+    stateObj.activeDirection !== moveState.direction
+  ) {
+    return;
+  }
+
+  const dx = point.x - moveState.startPoint.x;
+  const dy = point.y - moveState.startPoint.y;
+  const next = clampSelectionPosition(
+    moveState.sourceRect,
+    moveState.sourceRect.x + dx,
+    moveState.sourceRect.y + dy,
+  );
+  const canvas = activeLayer.canvases[moveState.direction];
+  const ctx = get2DContext(canvas);
+  ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
+  ctx.drawImage(moveState.baseCanvas, 0, 0);
+  ctx.putImageData(moveState.imageData, next.x, next.y);
+  stateObj.selectionRect = {
+    x: next.x,
+    y: next.y,
+    width: moveState.sourceRect.width,
+    height: moveState.sourceRect.height,
+  };
+}
+
+function finishSelectionInteraction(stateObj: PartEditorState): boolean {
+  const movedSelection = !!stateObj.selectionMove;
+  stateObj.selectionDraftStart = null;
+  stateObj.selectionMove = null;
+  return movedSelection;
+}
+
+function clearSelectionState(
+  stateObj: PartEditorState,
+  keepClipboard: boolean,
+): boolean {
+  const hadSelection =
+    !!stateObj.selectionRect ||
+    !!stateObj.selectionDraftStart ||
+    !!stateObj.selectionMove;
+  stateObj.selectionRect = null;
+  stateObj.selectionDraftStart = null;
+  stateObj.selectionMove = null;
+  if (!keepClipboard) {
+    stateObj.clipboard = null;
+  }
+  return hadSelection;
+}
+
+function copySelection(stateObj: PartEditorState): boolean {
+  const activeLayer = getActiveLayer(stateObj);
+  const rect = stateObj.selectionRect;
+  if (!activeLayer || !rect) return false;
+
+  const ctx = get2DContext(activeLayer.canvases[stateObj.activeDirection]);
+  stateObj.clipboard = {
+    width: rect.width,
+    height: rect.height,
+    imageData: cloneImageData(
+      ctx.getImageData(rect.x, rect.y, rect.width, rect.height),
+    ),
+  };
+  return true;
+}
+
+function pasteClipboard(stateObj: PartEditorState): boolean {
+  const activeLayer = getActiveLayer(stateObj);
+  const clipboard = stateObj.clipboard;
+  if (!activeLayer || !clipboard) return false;
+
+  const rect = {
+    x:
+      stateObj.selectionRect?.x ??
+      Math.floor((FRAME_SIZE - clipboard.width) / 2),
+    y:
+      stateObj.selectionRect?.y ??
+      Math.floor((FRAME_SIZE - clipboard.height) / 2),
+    width: clipboard.width,
+    height: clipboard.height,
+  };
+  const target = clampSelectionPosition(rect, rect.x, rect.y);
+  const ctx = get2DContext(activeLayer.canvases[stateObj.activeDirection]);
+  ctx.putImageData(cloneImageData(clipboard.imageData), target.x, target.y);
+  stateObj.selectionRect = {
+    x: target.x,
+    y: target.y,
+    width: clipboard.width,
+    height: clipboard.height,
+  };
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+  return true;
+}
+
+function clearSelectedPixels(stateObj: PartEditorState): boolean {
+  const activeLayer = getActiveLayer(stateObj);
+  const rect = stateObj.selectionRect;
+  if (!activeLayer || !rect) return false;
+
+  const ctx = get2DContext(activeLayer.canvases[stateObj.activeDirection]);
+  ctx.clearRect(rect.x, rect.y, rect.width, rect.height);
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+  return true;
+}
+
+function nudgeSelection(
+  stateObj: PartEditorState,
+  key: string,
+  distance: number,
+): boolean {
+  const activeLayer = getActiveLayer(stateObj);
+  const rect = stateObj.selectionRect;
+  if (!activeLayer || !rect) return false;
+
+  const delta = {
+    arrowleft: { x: -distance, y: 0 },
+    arrowright: { x: distance, y: 0 },
+    arrowup: { x: 0, y: -distance },
+    arrowdown: { x: 0, y: distance },
+  }[key];
+  if (!delta) return false;
+
+  const target = clampSelectionPosition(
+    rect,
+    rect.x + delta.x,
+    rect.y + delta.y,
+  );
+  if (target.x === rect.x && target.y === rect.y) return false;
+
+  const ctx = get2DContext(activeLayer.canvases[stateObj.activeDirection]);
+  const imageData = ctx.getImageData(rect.x, rect.y, rect.width, rect.height);
+  ctx.clearRect(rect.x, rect.y, rect.width, rect.height);
+  ctx.putImageData(imageData, target.x, target.y);
+  stateObj.selectionRect = { ...rect, x: target.x, y: target.y };
+  recomposeCanvases(stateObj);
+  saveHistory(stateObj);
+  return true;
+}
+
 function drawMainGrid(
   ctx: CanvasRenderingContext2D,
   offscreenCanvas: HTMLCanvasElement,
+  stateObj?: PartEditorState,
 ) {
-  ctx.clearRect(0, 0, 64, 64);
+  ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
   ctx.drawImage(offscreenCanvas, 0, 0);
+
+  const rect = stateObj?.selectionRect;
+  if (!rect) return;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(124, 109, 240, 0.14)";
+  ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 2]);
+  ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.width, rect.height);
+  ctx.restore();
 }
 
 function refreshVisibleCanvas(
@@ -1107,7 +1550,7 @@ function refreshVisibleCanvas(
 ): void {
   const ctx = get2DContext(canvasEl);
   ctx.imageSmoothingEnabled = false;
-  drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection]);
+  drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection], stateObj);
 }
 
 function createEditorLayer(
@@ -1435,6 +1878,15 @@ function undo(stateObj: PartEditorState): void {
   void loadSnapshot(stateObj, snapshot);
 }
 
+function redo(stateObj: PartEditorState): void {
+  if (stateObj.historyIndex >= stateObj.history.length - 1) return;
+  stateObj.historyIndex++;
+  const snapshot = JSON.parse(stateObj.history[stateObj.historyIndex]) as
+    | EditorSnapshot
+    | Partial<Record<Direction, string>>;
+  void loadSnapshot(stateObj, snapshot);
+}
+
 async function loadSnapshot(
   stateObj: PartEditorState,
   snapshot: EditorSnapshot | Partial<Record<Direction, string>>,
@@ -1459,6 +1911,7 @@ async function loadSnapshot(
       await loadLegacyCanvasSnapshot(stateObj, snapshot);
     }
 
+    clearSelectionState(stateObj, true);
     recomposeCanvases(stateObj);
     m.redraw();
   } catch (err) {

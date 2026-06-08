@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+/* eslint-disable no-console */
 import { itemMetadata } from "../dist/item-metadata.js";
 import { itemLayers } from "../dist/layers-metadata.js";
 import { metadataIndexes } from "../dist/index-metadata.js";

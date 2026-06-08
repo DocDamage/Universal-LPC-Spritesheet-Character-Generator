@@ -1,11 +1,19 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { itemMetadata } from '../dist/item-metadata.js';
-import { itemLayers } from '../dist/layers-metadata.js';
-import { metadataIndexes } from '../dist/index-metadata.js';
+/* eslint-disable no-console */
+import fs from "node:fs";
+import path from "node:path";
+import { itemMetadata } from "../dist/item-metadata.js";
+import { itemLayers } from "../dist/layers-metadata.js";
+import { metadataIndexes } from "../dist/index-metadata.js";
 
 const SLOT_CONFIG = [
-  { label: "Neck", kind: "typeName", typeNames: ["neck", "necklace", "charm"], panel: "right", hasColor: true, canRandomize: true }
+  {
+    label: "Neck",
+    kind: "typeName",
+    typeNames: ["neck", "necklace", "charm"],
+    panel: "right",
+    hasColor: true,
+    canRandomize: true,
+  },
 ];
 
 const ANIMATIONS = [
@@ -26,14 +34,22 @@ const ANIMATIONS = [
   { value: "ride", label: "Ride", folderName: "ride" },
   { value: "combat_idle", label: "Combat Idle", folderName: "combat_idle" },
   { value: "backslash", label: "Backslash", folderName: "backslash" },
-  { value: "halfslash", label: "Halfslash", folderName: "halfslash" }
+  { value: "halfslash", label: "Halfslash", folderName: "halfslash" },
 ];
 
 function variantToFilename(variant) {
   return variant ? variant.replace(/_/g, "-") : "";
 }
 
-function getSpritePath(itemId, variant, recolors, bodyType, animName, layerNum, meta) {
+function getSpritePath(
+  itemId,
+  variant,
+  recolors,
+  bodyType,
+  animName,
+  layerNum,
+  meta,
+) {
   const layerKey = `layer_${layerNum}`;
   const layer = meta.layers?.[layerKey];
   if (!layer) return null;
@@ -95,13 +111,23 @@ for (const slot of SLOT_CONFIG) {
               else if (animName === "1h_halfslash") queryAnim = "halfslash";
 
               const recolors = lite.recolors && lite.recolors.length > 0;
-              const pthResult = getSpritePath(itemId, variant, recolors, bodyType, queryAnim, layerNum, meta);
+              const pthResult = getSpritePath(
+                itemId,
+                variant,
+                recolors,
+                bodyType,
+                queryAnim,
+                layerNum,
+                meta,
+              );
               if (!pthResult) continue;
               if (pthResult.template) continue;
 
               const fullPath = path.resolve(pthResult);
               if (!fs.existsSync(fullPath)) {
-                console.log(`[Neck Missing] itemId: ${itemId}, variant: ${variant}, bodyType: ${bodyType}, anim: ${queryAnim}, path: ${pthResult}`);
+                console.log(
+                  `[Neck Missing] itemId: ${itemId}, variant: ${variant}, bodyType: ${bodyType}, anim: ${queryAnim}, path: ${pthResult}`,
+                );
               }
             }
           }

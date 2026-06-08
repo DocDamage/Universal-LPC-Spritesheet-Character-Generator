@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:5173";
+const BASE_URL =
+  process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:5173";
 
 /**
  * Navigate to the app and wait for it to be fully ready.
@@ -22,7 +23,8 @@ async function gotoAppReady(page) {
         return false;
       }
       if (
-        typeof globalThis.__LPC_arePaletteModalMetadataChunksReady === "function"
+        typeof globalThis.__LPC_arePaletteModalMetadataChunksReady ===
+        "function"
       ) {
         return globalThis.__LPC_arePaletteModalMetadataChunksReady();
       }
@@ -38,10 +40,13 @@ async function gotoAppReady(page) {
   ) {
     await page.evaluate(() => globalThis.__LPC_waitCatalogAllReady());
   }
-  await page.waitForSelector("#desktop-preview-canvas, #mithril-preview canvas", {
-    state: "visible",
-    timeout: 120_000,
-  });
+  await page.waitForSelector(
+    "#desktop-preview-canvas, #mithril-preview canvas",
+    {
+      state: "visible",
+      timeout: 120_000,
+    },
+  );
   await page.waitForFunction(
     () => {
       const preview =
@@ -69,7 +74,9 @@ function getSlotByLabel(page, label) {
   return page
     .locator(".desktop-slot")
     .filter({
-      has: page.locator(".desktop-slot-label", { hasText: new RegExp(`^${label}$`) }),
+      has: page.locator(".desktop-slot-label", {
+        hasText: new RegExp(`^${label}$`),
+      }),
     })
     .first();
 }
@@ -87,7 +94,9 @@ async function selectFirstOption(slot) {
     throw new Error("Slot has no non-empty options");
   }
   await selectElement.selectOption(nonEmptyValues[0]);
-  await selectElement.evaluate((el) => el.dispatchEvent(new Event("change", { bubbles: true })));
+  await selectElement.evaluate((el) =>
+    el.dispatchEvent(new Event("change", { bubbles: true })),
+  );
   return nonEmptyValues[0];
 }
 
@@ -118,22 +127,6 @@ async function getZoomValue(page) {
   return parseInt(zoomText.replace("x", "").trim(), 10);
 }
 
-/**
- * Get canvas pixel data at a specific coordinate.
- */
-async function getCanvasPixel(page, selector, x, y) {
-  return page.evaluate(
-    ({ sel, px, py }) => {
-      const canvas = document.querySelector(sel);
-      if (!canvas) return null;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      const d = ctx.getImageData(px, py, 1, 1).data;
-      return { r: d[0], g: d[1], b: d[2], a: d[3] };
-    },
-    { sel: selector, px: x, py: y },
-  );
-}
-
 test.describe.configure({ mode: "serial" });
 
 test.describe("Part Editor E2E", () => {
@@ -151,7 +144,7 @@ test.describe("Part Editor E2E", () => {
     await expect(emptyEditor).toBeVisible();
 
     // Open editor for Hair slot
-    const { partEditor } = await openEditorForSlot(page, "Hair");
+    await openEditorForSlot(page, "Hair");
 
     // Assert header and canvas are visible
     await expect(page.locator(".part-editor-header")).toBeVisible();
@@ -305,7 +298,9 @@ test.describe("Part Editor E2E", () => {
     await page.waitForTimeout(200);
 
     // Fill in a custom name
-    const nameInput = page.locator(".part-editor-body input[type=text]").first();
+    const nameInput = page
+      .locator(".part-editor-body input[type=text]")
+      .first();
     await nameInput.fill("E2E Custom Hair");
 
     // Click Save
@@ -315,7 +310,9 @@ test.describe("Part Editor E2E", () => {
     await saveButton.click();
 
     // Wait for the editor to close and the custom part to appear in the dropdown
-    await expect(page.locator(".part-editor-empty")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".part-editor-empty")).toBeVisible({
+      timeout: 10_000,
+    });
 
     const selectElement = slot.locator("select.desktop-slot-select");
     await page.waitForFunction(
@@ -346,7 +343,9 @@ test.describe("Part Editor E2E", () => {
     const optionTexts = await selectElement.evaluate((select) =>
       Array.from(select.options).map((opt) => opt.textContent.trim()),
     );
-    expect(optionTexts.some((text) => text.includes("E2E Custom Hair"))).toBe(true);
+    expect(optionTexts.some((text) => text.includes("E2E Custom Hair"))).toBe(
+      true,
+    );
 
     // Give IndexedDB persistence time to finish before the next test reloads
     await page.waitForTimeout(3000);
@@ -356,14 +355,12 @@ test.describe("Part Editor E2E", () => {
     await gotoAppReady(page);
 
     // Save a custom part first (same steps as the "Saving" test)
-    const { slot } = await openEditorForSlot(page, "Hair");
+    await openEditorForSlot(page, "Hair");
 
     // Draw something
     const canvas = page.locator(".editor-pixel-canvas");
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
     await page.evaluate(() => {
       const c = document.querySelector(".editor-pixel-canvas");
       if (!c) return;
@@ -371,26 +368,46 @@ test.describe("Part Editor E2E", () => {
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       c.dispatchEvent(
-        new MouseEvent("mousedown", { bubbles: true, clientX: cx, clientY: cy, buttons: 1 }),
+        new MouseEvent("mousedown", {
+          bubbles: true,
+          clientX: cx,
+          clientY: cy,
+          buttons: 1,
+        }),
       );
       c.dispatchEvent(
-        new MouseEvent("mousemove", { bubbles: true, clientX: cx + 8, clientY: cy + 8, buttons: 1 }),
+        new MouseEvent("mousemove", {
+          bubbles: true,
+          clientX: cx + 8,
+          clientY: cy + 8,
+          buttons: 1,
+        }),
       );
       c.dispatchEvent(
-        new MouseEvent("mouseup", { bubbles: true, clientX: cx + 8, clientY: cy + 8, buttons: 1 }),
+        new MouseEvent("mouseup", {
+          bubbles: true,
+          clientX: cx + 8,
+          clientY: cy + 8,
+          buttons: 1,
+        }),
       );
     });
     await page.waitForTimeout(300);
 
     // Name and save
-    const nameInput = page.locator(".part-editor-body input[type=text]").first();
+    const nameInput = page
+      .locator(".part-editor-body input[type=text]")
+      .first();
     await nameInput.fill("E2E Reload Hair");
-    const saveButton = page.locator("button", { hasText: /Save as New Custom Part/ });
+    const saveButton = page.locator("button", {
+      hasText: /Save as New Custom Part/,
+    });
     await saveButton.click();
-    await expect(page.locator(".part-editor-empty")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".part-editor-empty")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Wait for the custom part to appear in the dropdown
-    const selectElement = slot.locator("select.desktop-slot-select");
     await page.waitForFunction(
       () => {
         const slots = document.querySelectorAll(".desktop-slot");
@@ -421,7 +438,9 @@ test.describe("Part Editor E2E", () => {
     // After reload, check the slot still has the custom part
     const slotAfterReload = getSlotByLabel(page, "Hair");
     await slotAfterReload.waitFor({ state: "visible" });
-    const selectAfterReload = slotAfterReload.locator("select.desktop-slot-select");
+    const selectAfterReload = slotAfterReload.locator(
+      "select.desktop-slot-select",
+    );
 
     // Poll again after reload for IndexedDB hydration
     await page.waitForFunction(
@@ -455,7 +474,8 @@ test.describe("Part Editor E2E", () => {
 
     const customOptionAfterReload = optionValuesAfterReload.find(
       (opt) =>
-        opt.value.startsWith("custom_part_") && opt.text.includes("E2E Reload Hair"),
+        opt.value.startsWith("custom_part_") &&
+        opt.text.includes("E2E Reload Hair"),
     );
     expect(customOptionAfterReload).toBeDefined();
 

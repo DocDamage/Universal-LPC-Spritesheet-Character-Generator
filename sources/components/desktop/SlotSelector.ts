@@ -138,7 +138,8 @@ function drawPreviewWithCrosshair(
   const checkSize = 8;
   for (let y = 0; y < targetCanvas.height; y += checkSize) {
     for (let x = 0; x < targetCanvas.width; x += checkSize) {
-      ctx.fillStyle = (x / checkSize + y / checkSize) % 2 === 0 ? "#1a1a2e" : "#252540";
+      ctx.fillStyle =
+        (x / checkSize + y / checkSize) % 2 === 0 ? "#1a1a2e" : "#252540";
       ctx.fillRect(x, y, checkSize, checkSize);
     }
   }
@@ -525,12 +526,13 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         a.download = `lpc_custom_assets_${Date.now()}.zip`;
         a.click();
         URL.revokeObjectURL(url);
-        showToast(`Exported ${parts.length} custom assets.`, { kind: "success" });
+        showToast(`Exported ${parts.length} custom assets.`, {
+          kind: "success",
+        });
       } catch (err) {
-        showToast(
-          err instanceof Error ? err.message : "Export failed",
-          { kind: "error" },
-        );
+        showToast(err instanceof Error ? err.message : "Export failed", {
+          kind: "error",
+        });
       }
     };
 
@@ -543,14 +545,15 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         for (const part of imported) {
           registerCustomPart(part);
         }
-        showToast(`Imported ${imported.length} custom assets.`, { kind: "success" });
+        showToast(`Imported ${imported.length} custom assets.`, {
+          kind: "success",
+        });
         input.value = "";
         m.redraw();
       } catch (err) {
-        showToast(
-          err instanceof Error ? err.message : "Import backup failed",
-          { kind: "error" },
-        );
+        showToast(err instanceof Error ? err.message : "Import backup failed", {
+          kind: "error",
+        });
         input.value = "";
       }
     };
@@ -566,9 +569,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       m.redraw();
     };
 
-    const startEditTags = (
-      part: (typeof customAssetParts)[number],
-    ): void => {
+    const startEditTags = (part: (typeof customAssetParts)[number]): void => {
       vnode.state.editingTagsPartId = part.itemId;
       vnode.state.customAssetTagInput = (part.tags ?? []).join(", ");
     };
@@ -1163,10 +1164,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                         ])
                       : null,
                   ])
-                : m(
-                    "span.desktop-slot-custom-empty",
-                    "No saved imports yet.",
-                  ),
+                : m("span.desktop-slot-custom-empty", "No saved imports yet."),
             ])
           : null,
         // Inline color picker panel

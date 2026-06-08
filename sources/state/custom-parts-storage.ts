@@ -346,9 +346,20 @@ type WindowWithJSZip = Window & {
   JSZip?: new () => ZipFolder;
 };
 
-export async function exportCustomPartsZip(
-  parts: CustomPart[],
-): Promise<Blob> {
+type ZipLoader = ZipFolder & {
+  loadAsync(file: File): Promise<LoadedZip>;
+};
+
+type LoadedZipFile = {
+  async(type: "string"): Promise<string>;
+  async(type: "blob"): Promise<Blob>;
+};
+
+type LoadedZip = {
+  file(name: string): LoadedZipFile | null;
+};
+
+export async function exportCustomPartsZip(parts: CustomPart[]): Promise<Blob> {
   const w = window as WindowWithJSZip;
   if (!w.JSZip) {
     throw new Error("JSZip library not loaded");
@@ -367,7 +378,10 @@ export async function exportCustomPartsZip(
     sheets: Object.keys(part.sheets),
   }));
 
-  zip.file("manifest.json", JSON.stringify({ version: 1, parts: manifest }, null, 2));
+  zip.file(
+    "manifest.json",
+    JSON.stringify({ version: 1, parts: manifest }, null, 2),
+  );
 
   for (const part of parts) {
     const folder = zip.folder(part.itemId);
@@ -392,7 +406,8 @@ export async function importCustomPartsZip(
     throw new Error("JSZip library not loaded");
   }
   const JSZip = w.JSZip;
-  const zip = await new (JSZip as any)().loadAsync(zipFile);
+  const zipLoader = new JSZip() as ZipLoader;
+  const zip = await zipLoader.loadAsync(zipFile);
 
   const manifestFile = zip.file("manifest.json");
   if (!manifestFile) {

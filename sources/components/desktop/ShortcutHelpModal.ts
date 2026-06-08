@@ -39,7 +39,10 @@ function formatComboString(combo: CommandKeyCombo): string {
   if (combo.ctrlKey) parts.push("Ctrl");
   if (combo.altKey) parts.push("Alt");
   if (combo.shiftKey) parts.push("Shift");
-  const key = typeof combo.key === "string" ? combo.key : (combo.key as string[]).join("/");
+  const key =
+    typeof combo.key === "string"
+      ? combo.key
+      : (combo.key as string[]).join("/");
   parts.push(key);
   return parts.join("+");
 }
@@ -50,7 +53,10 @@ type ShortcutHelpModalState = {
   isEditMode: boolean;
 };
 
-export const ShortcutHelpModal: m.Component<{}, ShortcutHelpModalState> = {
+export const ShortcutHelpModal: m.Component<
+  Record<string, never>,
+  ShortcutHelpModalState
+> = {
   oninit(vnode) {
     vnode.state.editingCommandId = null;
     vnode.state.editError = "";
@@ -139,26 +145,32 @@ export const ShortcutHelpModal: m.Component<{}, ShortcutHelpModalState> = {
         [
           m("div.shortcut-help-header", [
             m("h3", [m("span.shortcut-help-icon", "⌘"), "Keyboard Shortcuts"]),
-            m("div", { style: { display: "flex", gap: "8px", alignItems: "center" } }, [
-              m(
-                "button.shortcut-help-edit-btn",
-                {
-                  type: "button",
-                  title: vnode.state.isEditMode ? "Done editing" : "Edit shortcuts",
-                  onclick: toggleEditMode,
-                },
-                vnode.state.isEditMode ? "Done" : "Edit",
-              ),
-              m(
-                "button.shortcut-help-close",
-                {
-                  type: "button",
-                  title: "Close keyboard shortcuts",
-                  onclick: handleClose,
-                },
-                "×",
-              ),
-            ]),
+            m(
+              "div",
+              { style: { display: "flex", gap: "8px", alignItems: "center" } },
+              [
+                m(
+                  "button.shortcut-help-edit-btn",
+                  {
+                    type: "button",
+                    title: vnode.state.isEditMode
+                      ? "Done editing"
+                      : "Edit shortcuts",
+                    onclick: toggleEditMode,
+                  },
+                  vnode.state.isEditMode ? "Done" : "Edit",
+                ),
+                m(
+                  "button.shortcut-help-close",
+                  {
+                    type: "button",
+                    title: "Close keyboard shortcuts",
+                    onclick: handleClose,
+                  },
+                  "×",
+                ),
+              ],
+            ),
           ]),
           m(
             "div.shortcut-help-body",
@@ -168,7 +180,8 @@ export const ShortcutHelpModal: m.Component<{}, ShortcutHelpModalState> = {
                 m("div.shortcut-list", [
                   cmds.map((cmd) => {
                     const isEditing =
-                      vnode.state.isEditMode && vnode.state.editingCommandId === cmd.id;
+                      vnode.state.isEditMode &&
+                      vnode.state.editingCommandId === cmd.id;
                     const hasConflict = conflictSet.has(cmd.id);
                     return m(
                       "div.shortcut-row",
@@ -196,7 +209,10 @@ export const ShortcutHelpModal: m.Component<{}, ShortcutHelpModalState> = {
                                 onblur: cancelEdit,
                               }),
                               vnode.state.editError
-                                ? m("span.shortcut-edit-error", vnode.state.editError)
+                                ? m(
+                                    "span.shortcut-edit-error",
+                                    vnode.state.editError,
+                                  )
                                 : null,
                             ])
                           : m("span.shortcut-keys", [

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { test, expect } from "@playwright/test";
 
 test("Verify all UI dropdowns select successfully without console errors", async ({
@@ -166,11 +167,9 @@ test("Verify Part Editor opens, allows drawing, auto-propagates, and saves a cus
   await expect(emptyEditor).toBeVisible();
 
   // Find slot for "Hair" and select the second option (first non-empty)
-  const hairSlot = page
-    .locator(".desktop-slot")
-    .filter({
-      has: page.locator(".desktop-slot-label", { hasText: /^Hair$/ }),
-    });
+  const hairSlot = page.locator(".desktop-slot").filter({
+    has: page.locator(".desktop-slot-label", { hasText: /^Hair$/ }),
+  });
   const selectElement = hairSlot.locator("select.desktop-slot-select");
 
   // Get non-empty values

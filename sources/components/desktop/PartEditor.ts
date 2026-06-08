@@ -16,6 +16,7 @@ import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { SLOT_CONFIG, clearSlotSelections } from "./slot-config.ts";
 import { customAnimations } from "../../custom-animations.ts";
 import { variantToFilename } from "../../utils/helpers.ts";
+import { debugWarn } from "../../utils/debug.ts";
 import { getMultiRecolors } from "../../state/palettes.ts";
 import {
   ANIMATION_CONFIGS,
@@ -378,7 +379,7 @@ export function createPartEditorStateForTests(
   return stateObj;
 }
 
-export const PartEditor: m.Component<{}, PartEditorState> = {
+export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
   oninit(vnode) {
     vnode.state.loading = false;
     vnode.state.baseItemId = null;
@@ -480,7 +481,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       window.removeEventListener("keydown", vnode.state.keyboardHandler);
     }
     if (vnode.state.beforeunloadHandler) {
-      window.removeEventListener("beforeunload", vnode.state.beforeunloadHandler);
+      window.removeEventListener(
+        "beforeunload",
+        vnode.state.beforeunloadHandler,
+      );
     }
     // Task 6: stop playback
     stopPlayback(vnode.state);
@@ -593,7 +597,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               m.redraw();
             })
             .catch((err) => {
-              console.warn(
+              debugWarn(
                 "Failed to load spritesheet for editing, starting with blank canvas:",
                 err,
               );
@@ -1164,7 +1168,8 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               m(
                 "div.part-editor-canvas-stage",
                 {
-                  title: "Scroll over the canvas to zoom. Two-finger drag to pan, pinch to zoom.",
+                  title:
+                    "Scroll over the canvas to zoom. Two-finger drag to pan, pinch to zoom.",
                   onwheel: handleCanvasWheel,
                   ontouchstart: (e: TouchEvent) => {
                     handleTouchStart(e, vnode.state);
@@ -1176,8 +1181,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                         x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
                         y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
                       };
-                      const dx = currentCenter.x - vnode.state.lastTouchCenter.x;
-                      const dy = currentCenter.y - vnode.state.lastTouchCenter.y;
+                      const dx =
+                        currentCenter.x - vnode.state.lastTouchCenter.x;
+                      const dy =
+                        currentCenter.y - vnode.state.lastTouchCenter.y;
                       const stage = e.currentTarget as HTMLElement;
                       stage.scrollLeft -= dx;
                       stage.scrollTop -= dy;
@@ -3155,7 +3162,7 @@ async function updateOnionCanvases(stateObj: PartEditorState): Promise<void> {
     stateObj.onionCanvases = { previous, next };
     m.redraw();
   } catch (err) {
-    console.warn("Failed to load onion skin frames:", err);
+    debugWarn("Failed to load onion skin frames:", err);
     stateObj.onionCanvases = null;
   }
 }
@@ -3864,7 +3871,7 @@ async function loadSnapshot(
     recomposeCanvases(stateObj);
     m.redraw();
   } catch (err) {
-    console.warn("Failed to restore editor history snapshot:", err);
+    debugWarn("Failed to restore editor history snapshot:", err);
   }
 }
 
@@ -3956,7 +3963,10 @@ function renderStatusBar(stateObj: PartEditorState): m.Children {
 
   return m("div.part-editor-status-bar", [
     m("span.part-editor-status-item", `Pos: ${cursorText}`),
-    m("span.part-editor-status-item", `Dir: ${stateObj.activeDirection.toUpperCase()}`),
+    m(
+      "span.part-editor-status-item",
+      `Dir: ${stateObj.activeDirection.toUpperCase()}`,
+    ),
     m("span.part-editor-status-item", `Zoom: ${stateObj.zoom}x`),
     m("span.part-editor-status-item", `Layer: ${layerName}`),
     m("span.part-editor-status-item", `Brush: ${stateObj.brushSize}px`),
@@ -3983,7 +3993,7 @@ function renderRecoveryPrompt(stateObj: PartEditorState): m.Children {
                   stateObj.globalEditorContext = context;
                   stateObj.unsavedChanges = true;
                 } catch (err) {
-                  console.warn("Failed to restore draft:", err);
+                  debugWarn("Failed to restore draft:", err);
                 }
               }
               stateObj.showRecoveryPrompt = false;
@@ -4028,7 +4038,12 @@ function renderTimelineThumbnails(
           class: isActive ? "active" : "",
           title: `Frame ${i + 1}${dirty ? " (edited)" : ""}`,
           onclick: () => {
-            void switchEditorContext(stateObj, true, stateObj.frameAnimation, i);
+            void switchEditorContext(
+              stateObj,
+              true,
+              stateObj.frameAnimation,
+              i,
+            );
           },
         },
         [
@@ -4040,10 +4055,7 @@ function renderTimelineThumbnails(
   ]);
 }
 
-function isFrameDirty(
-  stateObj: PartEditorState,
-  frameIndex: number,
-): boolean {
+function isFrameDirty(stateObj: PartEditorState, frameIndex: number): boolean {
   const key = getFrameContextKey(stateObj.frameAnimation, frameIndex);
   const frameContext = stateObj.frameEditorContexts[key];
   if (!frameContext) return false;

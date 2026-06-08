@@ -211,12 +211,19 @@ function formatShortcut(keyCombo: CommandKeyCombo): string {
   if (keyCombo.ctrlKey) parts.push("Ctrl");
   if (keyCombo.altKey) parts.push("Alt");
   if (keyCombo.shiftKey) parts.push("Shift");
-  const key = typeof keyCombo.key === "string" ? keyCombo.key : (keyCombo.key as string[]).join("/");
+  const rawKey =
+    typeof keyCombo.key === "string"
+      ? keyCombo.key
+      : (keyCombo.key as string[]).join("/");
+  const key = rawKey.length === 1 ? rawKey.toUpperCase() : rawKey;
   parts.push(key);
   return parts.join("+");
 }
 
-export function setCommandShortcut(commandId: string, keyCombo: CommandKeyCombo | null): boolean {
+export function setCommandShortcut(
+  commandId: string,
+  keyCombo: CommandKeyCombo | null,
+): boolean {
   if (!keyCombo) {
     clearShortcut(commandId);
     const cmd = getCommand(commandId);
@@ -264,7 +271,7 @@ export function resetAllShortcuts(): void {
 
 export function initDefaultCommands(): void {
   defaultKeyCombos = {};
-  
+
   function register(cmd: Command): void {
     if (cmd.keyCombo) {
       defaultKeyCombos[cmd.id] = cmd.keyCombo;

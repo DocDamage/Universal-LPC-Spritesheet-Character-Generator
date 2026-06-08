@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs from "node:fs";
 import path from "node:path";
 import { itemMetadata } from "../dist/item-metadata.js";
@@ -273,27 +274,6 @@ const SLOT_CONFIG = [
     canRandomize: true,
   },
 ];
-
-const ANIMATION_OFFSETS = {
-  cast: 0,
-  thrust: 256,
-  walk: 512,
-  slash: 768,
-  shoot: 1024,
-  hurt: 1280,
-  bow: 1344,
-  jump: 1536,
-  sit: 1664,
-  climb: 1728,
-  crawl: 1920,
-  fly: 2048,
-  swim: 2112,
-  ride: 2368,
-  spellcast: 2624,
-  combat_idle: 2880,
-  backslash: 2944,
-  halfslash: 3200,
-};
 
 const ANIMATIONS = [
   { value: "walk", label: "Walk Cycle", folderName: "walk" },

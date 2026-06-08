@@ -88,7 +88,10 @@ export function getAllOverrides(): Record<string, string> {
   return { ...overrides };
 }
 
-function findConflicts(comboString: string, excludeCommandId: string): string[] {
+function findConflicts(
+  comboString: string,
+  excludeCommandId: string,
+): string[] {
   const conflicts: string[] = [];
   for (const [cmdId, existing] of Object.entries(overrides)) {
     if (cmdId !== excludeCommandId && existing === comboString) {
@@ -103,7 +106,10 @@ function stringifyKeyCombo(combo: CommandKeyCombo): string {
   if (combo.ctrlKey) parts.push("Ctrl");
   if (combo.altKey) parts.push("Alt");
   if (combo.shiftKey) parts.push("Shift");
-  const key = typeof combo.key === "string" ? combo.key : (combo.key as string[]).join("/");
+  const key =
+    typeof combo.key === "string"
+      ? combo.key
+      : (combo.key as string[]).join("/");
   parts.push(key);
   return parts.join("+");
 }

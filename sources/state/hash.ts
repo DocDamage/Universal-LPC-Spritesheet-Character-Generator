@@ -112,6 +112,10 @@ export function resetState(): void {
   state.previewTweenMode = "off";
   state.previewTweenInbetweens = 1;
   state.previewTweenFps = 8;
+  state.previewTweenMotionStrength = 1;
+  state.previewTweenAlphaThreshold = 1;
+  state.previewTweenPreset = "original";
+  state.previewTweenOverrides = {};
 }
 
 // `window.location.hash` is immutable in tests, this is so we can use a stub to manage it.

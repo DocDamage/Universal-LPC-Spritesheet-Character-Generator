@@ -10,10 +10,10 @@ import {
   DEFAULT_TWEEN_SETTINGS,
   buildTweenSteps,
   drawTweenedCanvas,
-  normalizeTweenFps,
-  normalizeTweenInbetweens,
+  normalizeTweenSettings,
 } from "./tween.ts";
 import type { TweenSettings } from "./tween.ts";
+import { getTweenSettingsForAnimation } from "../state/tween-settings.ts";
 
 declare global {
   interface Window {
@@ -92,15 +92,7 @@ export function setPreviewTweenSettings(
   nextSettings: Partial<TweenSettings>,
 ): TweenSettings {
   tweenSettings = {
-    mode: nextSettings.mode ?? tweenSettings.mode,
-    inbetweens:
-      nextSettings.inbetweens === undefined
-        ? tweenSettings.inbetweens
-        : normalizeTweenInbetweens(nextSettings.inbetweens),
-    fps:
-      nextSettings.fps === undefined
-        ? tweenSettings.fps
-        : normalizeTweenFps(nextSettings.fps),
+    ...normalizeTweenSettings({ ...tweenSettings, ...nextSettings }),
   };
   currentFrameIndex = 0;
   return tweenSettings;
@@ -159,6 +151,7 @@ function paintPreviewTweenStep(stepIndex: number): void {
     toFrameCanvas,
     tweenSettings.mode,
     step.t,
+    tweenSettings,
   );
 }
 
@@ -286,6 +279,49 @@ export function repaintStaticPreviewFrameForTests(): void {
   }
 }
 
+export function renderPreviewAnimationFrameCanvases(
+  settings: TweenSettings = tweenSettings,
+): HTMLCanvasElement[] {
+  if (!canvas) {
+    throw new Error("Renderer canvas is not initialized");
+  }
+
+  const normalizedSettings = normalizeTweenSettings(settings);
+  const geometry = getPreviewGeometry();
+  const sourceCanvas = getSourceCanvas();
+  const steps = buildTweenSteps(animationFrames, normalizedSettings);
+  const frameCanvases: HTMLCanvasElement[] = [];
+
+  for (const step of steps) {
+    if (!step.isTween || normalizedSettings.mode === "off") {
+      frameCanvases.push(
+        renderCycleFrameToCanvas(sourceCanvas, geometry, step.sourceIndex),
+      );
+      continue;
+    }
+
+    const tweenCanvas = document.createElement("canvas");
+    tweenCanvas.width = geometry.previewWidth;
+    tweenCanvas.height = geometry.frameSize;
+    const tweenCtx = get2DContext(tweenCanvas, true);
+    drawTweenedCanvas(
+      tweenCtx,
+      renderCycleFrameToCanvas(sourceCanvas, geometry, step.sourceIndex),
+      renderCycleFrameToCanvas(
+        sourceCanvas,
+        geometry,
+        (step.sourceIndex + 1) % animationFrames.length,
+      ),
+      normalizedSettings.mode,
+      step.t,
+      normalizedSettings,
+    );
+    frameCanvases.push(tweenCanvas);
+  }
+
+  return frameCanvases;
+}
+
 export function startPreviewAnimation(): void {
   if (animationFrameId !== null) {
     return; // Already running
@@ -324,6 +360,12 @@ export function startPreviewAnimation(): void {
   }
 
   nextFrame();
+}
+
+export function syncPreviewTweenSettingsForAnimation(
+  animationName: string,
+): TweenSettings {
+  return setPreviewTweenSettings(getTweenSettingsForAnimation(animationName));
 }
 
 /**

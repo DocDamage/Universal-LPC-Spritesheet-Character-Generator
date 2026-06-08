@@ -25,8 +25,7 @@ import type { DrawCall } from "../canvas/renderer.ts";
 import {
   buildTweenSteps,
   drawTweenedCanvas,
-  normalizeTweenFps,
-  normalizeTweenInbetweens,
+  normalizeTweenSettings,
 } from "../canvas/tween.ts";
 import type { TweenSettings } from "../canvas/tween.ts";
 
@@ -377,11 +376,7 @@ export function expandExtractedFramesWithTweens(
   frames: ExtractedFrames,
   settings: TweenSettings,
 ): ExtractedFrames {
-  const normalizedSettings: TweenSettings = {
-    mode: settings.mode,
-    inbetweens: normalizeTweenInbetweens(settings.inbetweens),
-    fps: normalizeTweenFps(settings.fps),
-  };
+  const normalizedSettings = normalizeTweenSettings(settings);
 
   if (normalizedSettings.mode === "off") {
     return frames;
@@ -411,6 +406,7 @@ export function expandExtractedFramesWithTweens(
         step.to.canvas,
         normalizedSettings.mode,
         step.t,
+        normalizedSettings,
       );
 
       return {

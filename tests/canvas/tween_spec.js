@@ -4,6 +4,7 @@ import {
   buildTweenSteps,
   normalizeTweenFps,
   normalizeTweenInbetweens,
+  normalizeTweenSettings,
   tweenImageData,
 } from "../../sources/canvas/tween.ts";
 
@@ -63,6 +64,21 @@ describe("canvas/tween.ts", () => {
       expect(normalizeTweenFps(99)).to.equal(24);
       expect(normalizeTweenFps(12.4)).to.equal(12);
     });
+
+    it("normalizes motion tuning values", () => {
+      expect(
+        normalizeTweenSettings({
+          mode: "pixel-motion",
+          inbetweens: 2,
+          fps: 12,
+          motionStrength: 1.26,
+          alphaThreshold: 300,
+        }),
+      ).to.deep.include({
+        motionStrength: 1.3,
+        alphaThreshold: 255,
+      });
+    });
   });
 
   describe("tweenImageData", () => {
@@ -94,6 +110,17 @@ describe("canvas/tween.ts", () => {
       const tweened = tweenImageData(from, to, "pixel-motion", 0.5);
 
       expect(Array.from(tweened.data)).to.deep.equal([100, 110, 120, 255]);
+    });
+
+    it("honors pixel-motion alpha threshold", () => {
+      const from = makePixelImageData([10, 20, 30, 10]);
+      const to = makePixelImageData([100, 110, 120, 10]);
+
+      const tweened = tweenImageData(from, to, "pixel-motion", 0.5, {
+        alphaThreshold: 16,
+      });
+
+      expect(Array.from(tweened.data)).to.deep.equal([100, 110, 120, 10]);
     });
 
     it("rejects mismatched image dimensions", () => {

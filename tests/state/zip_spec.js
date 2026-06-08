@@ -240,13 +240,23 @@ describe("state/zip.ts", () => {
       expect(fakeZip.files.get(`tweened/standard/${ANIMATIONS[0].value}.png`))
         .to.exist;
       const metadata = JSON.parse(fakeZip.files.get("credits/metadata.json"));
-      expect(metadata.tweenedAnimations.settings).to.deep.equal({
+      expect(metadata.tweenedAnimations.settings).to.include({
         mode: "crossfade",
         inbetweens: 1,
         fps: 12,
       });
+      expect(metadata.tweenedAnimations.settings).to.include({
+        motionStrength: 1,
+        alphaThreshold: 1,
+      });
+      expect(
+        metadata.tweenedAnimations.estimate.generatedTweenFrames,
+      ).to.be.greaterThan(0);
       expect(metadata.tweenedAnimations.standard.exported).to.include(
         ANIMATIONS[0].value,
+      );
+      expect(fakeZip.files.get("credits/TWEEN_EXPORT_README.txt")).to.include(
+        "split-by-animation",
       );
     });
 
@@ -1379,11 +1389,21 @@ describe("state/zip.ts", () => {
       ).to.exist;
 
       const metadata = JSON.parse(fakeZip.files.get("credits/metadata.json"));
-      expect(metadata.tweening).to.deep.equal({
+      expect(metadata.tweening.settings).to.include({
         mode: "crossfade",
         inbetweens: 1,
         fps: 12,
       });
+      expect(metadata.tweening.settings).to.include({
+        motionStrength: 1,
+        alphaThreshold: 1,
+      });
+      expect(metadata.tweening.estimate.generatedTweenFrames).to.be.greaterThan(
+        0,
+      );
+      expect(fakeZip.files.get("credits/TWEEN_EXPORT_README.txt")).to.include(
+        "individual-frames",
+      );
     });
 
     it("includes character.json, credits credits.txt/credits.csv, and credits/metadata.json", async () => {

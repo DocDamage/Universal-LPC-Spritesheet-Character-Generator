@@ -11,7 +11,11 @@ export type TweenSettings = {
   mode: TweenMode;
   inbetweens: number;
   fps: number;
+  motionStrength: number;
+  alphaThreshold: number;
 };
+
+export type TweenPreset = "original" | "smooth" | "pixel-art" | "presentation";
 
 export type TweenStep<T> = {
   from: T;
@@ -25,6 +29,33 @@ export const DEFAULT_TWEEN_SETTINGS: TweenSettings = {
   mode: "off",
   inbetweens: 1,
   fps: 8,
+  motionStrength: 1,
+  alphaThreshold: 1,
+};
+
+export const TWEEN_PRESETS: Record<TweenPreset, TweenSettings> = {
+  original: { ...DEFAULT_TWEEN_SETTINGS },
+  smooth: {
+    mode: "crossfade",
+    inbetweens: 2,
+    fps: 12,
+    motionStrength: 1,
+    alphaThreshold: 1,
+  },
+  "pixel-art": {
+    mode: "pixel-motion",
+    inbetweens: 2,
+    fps: 12,
+    motionStrength: 1,
+    alphaThreshold: 16,
+  },
+  presentation: {
+    mode: "crossfade",
+    inbetweens: 4,
+    fps: 18,
+    motionStrength: 1,
+    alphaThreshold: 1,
+  },
 };
 
 export function normalizeTweenInbetweens(value: number): number {
@@ -39,6 +70,38 @@ export function normalizeTweenFps(value: number): number {
     return DEFAULT_TWEEN_SETTINGS.fps;
   }
   return Math.min(24, Math.max(1, Math.round(value)));
+}
+
+export function normalizeTweenMotionStrength(value: number): number {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_TWEEN_SETTINGS.motionStrength;
+  }
+  return Math.min(2, Math.max(0, Math.round(value * 10) / 10));
+}
+
+export function normalizeTweenAlphaThreshold(value: number): number {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_TWEEN_SETTINGS.alphaThreshold;
+  }
+  return Math.min(255, Math.max(1, Math.round(value)));
+}
+
+export function normalizeTweenSettings(
+  settings: Partial<TweenSettings>,
+): TweenSettings {
+  return {
+    mode: settings.mode && isTweenMode(settings.mode) ? settings.mode : "off",
+    inbetweens: normalizeTweenInbetweens(
+      settings.inbetweens ?? DEFAULT_TWEEN_SETTINGS.inbetweens,
+    ),
+    fps: normalizeTweenFps(settings.fps ?? DEFAULT_TWEEN_SETTINGS.fps),
+    motionStrength: normalizeTweenMotionStrength(
+      settings.motionStrength ?? DEFAULT_TWEEN_SETTINGS.motionStrength,
+    ),
+    alphaThreshold: normalizeTweenAlphaThreshold(
+      settings.alphaThreshold ?? DEFAULT_TWEEN_SETTINGS.alphaThreshold,
+    ),
+  };
 }
 
 export function isTweenMode(value: string): value is TweenMode {
@@ -86,6 +149,9 @@ export function tweenImageData(
   to: ImageData,
   mode: TweenMode,
   t: number,
+  settings: Partial<
+    Pick<TweenSettings, "motionStrength" | "alphaThreshold">
+  > = {},
 ): ImageData {
   if (from.width !== to.width || from.height !== to.height) {
     throw new Error("Cannot tween ImageData with different dimensions");
@@ -96,7 +162,7 @@ export function tweenImageData(
   }
 
   if (mode === "pixel-motion") {
-    return pixelMotionImageData(from, to, clampUnit(t));
+    return pixelMotionImageData(from, to, clampUnit(t), settings);
   }
 
   return copyImageData(t < 1 ? from : to);
@@ -108,6 +174,9 @@ export function drawTweenedCanvas(
   toCanvas: HTMLCanvasElement,
   mode: TweenMode,
   t: number,
+  settings: Partial<
+    Pick<TweenSettings, "motionStrength" | "alphaThreshold">
+  > = {},
 ): void {
   if (
     fromCanvas.width !== toCanvas.width ||
@@ -123,6 +192,7 @@ export function drawTweenedCanvas(
     toCtx.getImageData(0, 0, toCanvas.width, toCanvas.height),
     mode,
     t,
+    settings,
   );
 
   const tweenCanvas = document.createElement("canvas");
@@ -156,23 +226,34 @@ function pixelMotionImageData(
   from: ImageData,
   to: ImageData,
   t: number,
+  settings: Partial<Pick<TweenSettings, "motionStrength" | "alphaThreshold">>,
 ): ImageData {
   const output = new ImageData(from.width, from.height);
-  const fromCentroid = getOpaqueCentroid(from);
-  const toCentroid = getOpaqueCentroid(to);
+  const motionStrength = normalizeTweenMotionStrength(
+    settings.motionStrength ?? DEFAULT_TWEEN_SETTINGS.motionStrength,
+  );
+  const alphaThreshold = normalizeTweenAlphaThreshold(
+    settings.alphaThreshold ?? DEFAULT_TWEEN_SETTINGS.alphaThreshold,
+  );
+  const fromCentroid = getOpaqueCentroid(from, alphaThreshold);
+  const toCentroid = getOpaqueCentroid(to, alphaThreshold);
 
   if (!fromCentroid || !toCentroid) {
     return copyImageData(t < 0.5 ? from : to);
   }
 
   if (t < 0.5) {
-    const dx = Math.round((toCentroid.x - fromCentroid.x) * t);
-    const dy = Math.round((toCentroid.y - fromCentroid.y) * t);
-    blitShiftedOpaquePixels(from, output, dx, dy);
+    const dx = Math.round((toCentroid.x - fromCentroid.x) * t * motionStrength);
+    const dy = Math.round((toCentroid.y - fromCentroid.y) * t * motionStrength);
+    blitShiftedOpaquePixels(from, output, dx, dy, alphaThreshold);
   } else {
-    const dx = Math.round((fromCentroid.x - toCentroid.x) * (1 - t));
-    const dy = Math.round((fromCentroid.y - toCentroid.y) * (1 - t));
-    blitShiftedOpaquePixels(to, output, dx, dy);
+    const dx = Math.round(
+      (fromCentroid.x - toCentroid.x) * (1 - t) * motionStrength,
+    );
+    const dy = Math.round(
+      (fromCentroid.y - toCentroid.y) * (1 - t) * motionStrength,
+    );
+    blitShiftedOpaquePixels(to, output, dx, dy, alphaThreshold);
   }
 
   return output;
@@ -180,6 +261,7 @@ function pixelMotionImageData(
 
 function getOpaqueCentroid(
   imageData: ImageData,
+  alphaThreshold: number,
 ): { x: number; y: number } | null {
   let totalX = 0;
   let totalY = 0;
@@ -188,7 +270,7 @@ function getOpaqueCentroid(
   for (let y = 0; y < imageData.height; y += 1) {
     for (let x = 0; x < imageData.width; x += 1) {
       const alpha = imageData.data[(y * imageData.width + x) * 4 + 3];
-      if (alpha && alpha > 0) {
+      if (alpha && alpha >= alphaThreshold) {
         totalX += x;
         totalY += y;
         count += 1;
@@ -211,12 +293,13 @@ function blitShiftedOpaquePixels(
   target: ImageData,
   dx: number,
   dy: number,
+  alphaThreshold: number,
 ): void {
   for (let y = 0; y < source.height; y += 1) {
     for (let x = 0; x < source.width; x += 1) {
       const sourceIndex = (y * source.width + x) * 4;
       const alpha = source.data[sourceIndex + 3];
-      if (!alpha || alpha === 0) {
+      if (!alpha || alpha < alphaThreshold) {
         continue;
       }
 

@@ -47,6 +47,12 @@ import {
 } from "../utils/zip-export-ui-suspend.ts";
 import type { State } from "./state.ts";
 import { showToast } from "./notifications.ts";
+import {
+  buildTweenExportReadme,
+  estimateTweenExportFrames,
+  getGlobalTweenSettings,
+  getTweenSettingsForAnimation,
+} from "./tween-settings.ts";
 
 declare global {
   interface Window {
@@ -153,12 +159,9 @@ export const exportSplitAnimations = async (
     const failedStandard: string[] = [];
     const exportedTweenedStandard: string[] = [];
     const failedTweenedStandard: string[] = [];
-    const tweenSettings = {
-      mode: state.previewTweenMode,
-      inbetweens: state.previewTweenInbetweens,
-      fps: state.previewTweenFps,
-    };
-    const shouldExportTweenedSheets = tweenSettings.mode !== "off";
+    const globalTweenSettings = getGlobalTweenSettings();
+    const tweenEstimate = estimateTweenExportFrames();
+    const shouldExportTweenedSheets = tweenEstimate.enabled;
 
     for (const anim of animationList) {
       try {
@@ -187,6 +190,7 @@ export const exportSplitAnimations = async (
               anim.value,
               DIRECTIONS,
             );
+            const tweenSettings = getTweenSettingsForAnimation(anim.value);
             const tweenedFrames = expandExtractedFramesWithTweensFn(
               extractedFrames,
               tweenSettings,
@@ -257,6 +261,7 @@ export const exportSplitAnimations = async (
                 anim,
                 DIRECTIONS,
               );
+              const tweenSettings = getTweenSettingsForAnimation(animName);
               const tweenedFrames = expandExtractedFramesWithTweensFn(
                 extractedFrames,
                 tweenSettings,
@@ -308,7 +313,9 @@ export const exportSplitAnimations = async (
         failed: failedCustom,
       },
       tweenedAnimations: {
-        settings: tweenSettings,
+        settings: globalTweenSettings,
+        overrides: state.previewTweenOverrides,
+        estimate: tweenEstimate,
         standard: {
           exported: exportedTweenedStandard,
           failed: failedTweenedStandard,
@@ -323,6 +330,12 @@ export const exportSplitAnimations = async (
       performance: profiler.toMetadata(),
     };
     creditsFolder.file("metadata.json", JSON.stringify(metadata, null, 2));
+    if (tweenEstimate.enabled) {
+      creditsFolder.file(
+        "TWEEN_EXPORT_README.txt",
+        buildTweenExportReadme("split-by-animation"),
+      );
+    }
 
     const zipBlob = await zipGenerateBlobWithProfiler(profiler, zip);
     downloadZipBlob(zipBlob, `lpc_${bodyType}_animations_${timestamp}.zip`);
@@ -817,11 +830,8 @@ export const exportIndividualFrames = async (
     const exportedCustom: string[] = [];
     const failedCustom: string[] = [];
     let y = SHEET_HEIGHT;
-    const tweenSettings = {
-      mode: state.previewTweenMode,
-      inbetweens: state.previewTweenInbetweens,
-      fps: state.previewTweenFps,
-    };
+    const globalTweenSettings = getGlobalTweenSettings();
+    const tweenEstimate = estimateTweenExportFrames();
 
     for (const anim of ANIMATIONS) {
       try {
@@ -857,6 +867,7 @@ export const exportIndividualFrames = async (
                 animationName,
                 directions,
               );
+              const tweenSettings = getTweenSettingsForAnimation(animationName);
               const frames = expandExtractedFramesWithTweensFn(
                 extractedFrames,
                 tweenSettings,
@@ -930,6 +941,7 @@ export const exportIndividualFrames = async (
                 customAnimDef,
                 directions,
               );
+              const tweenSettings = getTweenSettingsForAnimation(animName);
               const frames = expandExtractedFramesWithTweensFn(
                 extractedFrames,
                 tweenSettings,
@@ -1028,11 +1040,21 @@ export const exportIndividualFrames = async (
       },
       animationConfigs: ANIMATION_CONFIGS,
       directions: directions,
-      tweening: tweenSettings,
+      tweening: {
+        settings: globalTweenSettings,
+        overrides: state.previewTweenOverrides,
+        estimate: tweenEstimate,
+      },
       note: "Individual animation frames organized by standard/custom > animation > direction > frame number",
       performance: profiler.toMetadata(),
     };
     creditsFolder.file("metadata.json", JSON.stringify(metadata, null, 2));
+    if (tweenEstimate.enabled) {
+      creditsFolder.file(
+        "TWEEN_EXPORT_README.txt",
+        buildTweenExportReadme("individual-frames"),
+      );
+    }
 
     debugLog("Generating ZIP file...");
     const zipBlob = await zipGenerateBlobWithProfiler(profiler, zip);

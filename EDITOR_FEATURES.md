@@ -91,22 +91,31 @@ This session added generated tweening for sprite animation previews and ZIP
 exports:
 
 - **Preview controls:** the animation preview now supports Off, Hold,
-  Crossfade, and Pixel Motion tween modes, with configurable in-between frames
-  and FPS.
+  Crossfade, and Pixel Motion tween modes, with presets, configurable
+  in-between frames, FPS, and per-animation overrides.
 - **Pixel-art-friendly motion:** Pixel Motion estimates opaque-pixel movement
   between neighboring frames and shifts silhouettes instead of blending colors.
+  Motion strength and alpha threshold can be tuned from the preview controls.
 - **State persistence:** tween mode, in-between count, and playback FPS live in
-  app state and are reset with the rest of the character state.
+  app state with preset, tuning, and override data, and are reset with the rest
+  of the character state.
 - **Individual-frame ZIPs:** when tweening is enabled, exports include tween
   PNGs beside the original source frames and record the tween settings in
   metadata.
 - **Split-by-animation ZIPs:** original `standard/` and `custom/` spritesheets
   remain unchanged, while generated tweened sheets are added under
   `tweened/standard/` and `tweened/custom/`.
+- **Export README and estimates:** tween-enabled ZIPs include
+  `credits/TWEEN_EXPORT_README.txt`, metadata now records global settings,
+  per-animation overrides, and estimated generated frame counts, and large
+  tween exports ask for confirmation.
+- **Animated preview export:** the Download panel can export the currently
+  selected animation preview as an animated GIF using the active tween settings.
 - **Download hint:** export controls surface a short "Tween frames enabled"
   notice so users know ZIP exports will include generated frames.
 - **Coverage:** tween helpers, ZIP metadata/paths, recomposed tweened sheets,
-  and the download hint are covered by focused tests.
+  settings helpers, GIF encoding, and the download hint are covered by focused
+  tests.
 
 ## Autosave & Recovery
 
@@ -272,6 +281,9 @@ The primary implementation points are:
   map UI.
 - `sources/state/notifications.ts` and `sources/components/notifications/*`
   for toasts and confirmations.
+- `sources/canvas/tween.ts`, `sources/state/tween-settings.ts`, and
+  `sources/canvas/preview-gif.ts` for tween modes, presets, export estimates,
+  per-animation overrides, and animated GIF preview export.
 - `tests/visual/editor-e2e.spec.js` for Playwright end-to-end coverage of the
   editor (open, fullscreen, zoom, draw, save, reload persistence).
 

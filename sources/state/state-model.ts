@@ -1,5 +1,5 @@
 import { LICENSE_CONFIG, ANIMATIONS, BODY_TYPES } from "./constants.ts";
-import type { TweenMode } from "../canvas/tween.ts";
+import type { TweenMode, TweenPreset } from "../canvas/tween.ts";
 
 /** A single item selection within a selection group (e.g. body, head, ears). */
 export type Selection = {
@@ -38,6 +38,19 @@ export type State = {
   previewTweenMode: TweenMode;
   previewTweenInbetweens: number;
   previewTweenFps: number;
+  previewTweenMotionStrength: number;
+  previewTweenAlphaThreshold: number;
+  previewTweenPreset: TweenPreset;
+  previewTweenOverrides: Record<
+    string,
+    {
+      mode: TweenMode;
+      inbetweens: number;
+      fps: number;
+      motionStrength: number;
+      alphaThreshold: number;
+    }
+  >;
   fullSpritesheetCanvasZoomLevel: number;
   /** True after `main.js` runs the first bootstrap `renderCharacter`. */
   previewBootstrapRenderDone: boolean;
@@ -80,6 +93,10 @@ export const state: State = {
   previewTweenMode: "off",
   previewTweenInbetweens: 1,
   previewTweenFps: 8,
+  previewTweenMotionStrength: 1,
+  previewTweenAlphaThreshold: 1,
+  previewTweenPreset: "original",
+  previewTweenOverrides: {},
   fullSpritesheetCanvasZoomLevel: 1,
   previewBootstrapRenderDone: false,
   isRenderingCharacter: false,

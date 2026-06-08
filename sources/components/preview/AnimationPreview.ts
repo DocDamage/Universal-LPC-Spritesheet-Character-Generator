@@ -10,9 +10,23 @@ import {
   startPreviewAnimation,
   stopPreviewAnimation,
   getCustomAnimations,
+  syncPreviewTweenSettingsForAnimation,
 } from "../../canvas/preview-animation.ts";
-import { TWEEN_MODES, isTweenMode } from "../../canvas/tween.ts";
-import type { TweenMode } from "../../canvas/tween.ts";
+import { TWEEN_MODES, TWEEN_PRESETS, isTweenMode } from "../../canvas/tween.ts";
+import type {
+  TweenMode,
+  TweenPreset,
+  TweenSettings,
+} from "../../canvas/tween.ts";
+import {
+  applyTweenPreset,
+  clearTweenOverrideForAnimation,
+  getGlobalTweenSettings,
+  getTweenSettingsForAnimation,
+  hasTweenOverride,
+  setGlobalTweenSettings,
+  setTweenOverrideForAnimation,
+} from "../../state/tween-settings.ts";
 import {
   initPreviewCanvas,
   setPreviewCanvasZoom,
@@ -27,6 +41,8 @@ type PreviewCanvasAttrs = {
   tweenMode: TweenMode;
   tweenInbetweens: number;
   tweenFps: number;
+  tweenMotionStrength: number;
+  tweenAlphaThreshold: number;
   onFrameCycleUpdate: (frameCycle: string) => void;
 };
 
@@ -36,6 +52,8 @@ type PreviewCanvasState = {
   lastTweenMode: TweenMode;
   lastTweenInbetweens: number;
   lastTweenFps: number;
+  lastTweenMotionStrength: number;
+  lastTweenAlphaThreshold: number;
   _pinchUnmounted: boolean;
   pinch: PinchToZoom | null;
 };
@@ -48,6 +66,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       tweenMode,
       tweenInbetweens,
       tweenFps,
+      tweenMotionStrength,
+      tweenAlphaThreshold,
       onFrameCycleUpdate,
     } = vnode.attrs;
     const zoomLevel = vnode.attrs.zoomLevel || 1;
@@ -63,6 +83,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       mode: tweenMode,
       inbetweens: tweenInbetweens,
       fps: tweenFps,
+      motionStrength: tweenMotionStrength,
+      alphaThreshold: tweenAlphaThreshold,
     });
     startPreviewAnimation();
 
@@ -75,6 +97,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
     vnode.state.lastTweenMode = tweenMode;
     vnode.state.lastTweenInbetweens = tweenInbetweens;
     vnode.state.lastTweenFps = tweenFps;
+    vnode.state.lastTweenMotionStrength = tweenMotionStrength;
+    vnode.state.lastTweenAlphaThreshold = tweenAlphaThreshold;
     vnode.state._pinchUnmounted = false;
     vnode.state.pinch = null;
     PinchToZoom.create(
@@ -101,10 +125,13 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
   onupdate(vnode) {
     const { selectedAnimation, tweenMode, tweenInbetweens, tweenFps } =
       vnode.attrs;
+    const { tweenMotionStrength, tweenAlphaThreshold } = vnode.attrs;
     const didTweenSettingsChange =
       vnode.state.lastTweenMode !== tweenMode ||
       vnode.state.lastTweenInbetweens !== tweenInbetweens ||
-      vnode.state.lastTweenFps !== tweenFps;
+      vnode.state.lastTweenFps !== tweenFps ||
+      vnode.state.lastTweenMotionStrength !== tweenMotionStrength ||
+      vnode.state.lastTweenAlphaThreshold !== tweenAlphaThreshold;
 
     if (
       vnode.state.lastAnimation !== selectedAnimation ||
@@ -117,6 +144,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
           mode: tweenMode,
           inbetweens: tweenInbetweens,
           fps: tweenFps,
+          motionStrength: tweenMotionStrength,
+          alphaThreshold: tweenAlphaThreshold,
         });
         initPreviewCanvas(vnode.dom as HTMLCanvasElement);
         startPreviewAnimation();
@@ -125,6 +154,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       vnode.state.lastTweenMode = tweenMode;
       vnode.state.lastTweenInbetweens = tweenInbetweens;
       vnode.state.lastTweenFps = tweenFps;
+      vnode.state.lastTweenMotionStrength = tweenMotionStrength;
+      vnode.state.lastTweenAlphaThreshold = tweenAlphaThreshold;
     }
 
     vnode.state.zoomLevel = state.previewCanvasZoomLevel || 1;
@@ -152,6 +183,11 @@ type AnimationPreviewState = {
   tweenMode: TweenMode;
   tweenInbetweens: number;
   tweenFps: number;
+  tweenMotionStrength: number;
+  tweenAlphaThreshold: number;
+  tweenPreset: TweenPreset;
+  useAnimationOverride: boolean;
+  compareOriginal: boolean;
 };
 
 const TWEEN_LABELS: Record<TweenMode, string> = {
@@ -161,6 +197,41 @@ const TWEEN_LABELS: Record<TweenMode, string> = {
   "pixel-motion": "Pixel Motion",
 };
 
+const TWEEN_PRESET_LABELS: Record<TweenPreset, string> = {
+  original: "Original",
+  smooth: "Smooth",
+  "pixel-art": "Pixel Art",
+  presentation: "Presentation",
+};
+
+function assignTweenState(
+  vnode: m.Vnode<Record<string, never>, AnimationPreviewState>,
+  settings: TweenSettings,
+): void {
+  vnode.state.tweenMode = settings.mode;
+  vnode.state.tweenInbetweens = settings.inbetweens;
+  vnode.state.tweenFps = settings.fps;
+  vnode.state.tweenMotionStrength = settings.motionStrength;
+  vnode.state.tweenAlphaThreshold = settings.alphaThreshold;
+}
+
+function persistTweenSettings(
+  vnode: m.Vnode<Record<string, never>, AnimationPreviewState>,
+): void {
+  const settings = {
+    mode: vnode.state.tweenMode,
+    inbetweens: vnode.state.tweenInbetweens,
+    fps: vnode.state.tweenFps,
+    motionStrength: vnode.state.tweenMotionStrength,
+    alphaThreshold: vnode.state.tweenAlphaThreshold,
+  };
+  if (vnode.state.useAnimationOverride) {
+    setTweenOverrideForAnimation(vnode.state.selectedAnimation, settings);
+  } else {
+    setGlobalTweenSettings(settings);
+  }
+}
+
 export const AnimationPreview: m.Component<
   Record<string, never>,
   AnimationPreviewState
@@ -168,9 +239,10 @@ export const AnimationPreview: m.Component<
   oninit(vnode) {
     vnode.state.selectedAnimation = "walk";
     vnode.state.zoomLevel = state.previewCanvasZoomLevel || 1;
-    vnode.state.tweenMode = state.previewTweenMode;
-    vnode.state.tweenInbetweens = state.previewTweenInbetweens;
-    vnode.state.tweenFps = state.previewTweenFps;
+    vnode.state.tweenPreset = state.previewTweenPreset;
+    vnode.state.useAnimationOverride = hasTweenOverride("walk");
+    vnode.state.compareOriginal = false;
+    assignTweenState(vnode, getTweenSettingsForAnimation("walk"));
     if (window.canvasRenderer) {
       const frames = setPreviewAnimation("walk");
       vnode.state.frameCycle = frames ? frames.join("-") : "";
@@ -231,8 +303,18 @@ export const AnimationPreview: m.Component<
                             vnode.state.selectedAnimation = target.value;
                             state.selectedAnimation =
                               vnode.state.selectedAnimation;
+                            vnode.state.useAnimationOverride = hasTweenOverride(
+                              target.value,
+                            );
+                            assignTweenState(
+                              vnode,
+                              getTweenSettingsForAnimation(target.value),
+                            );
                             if (window.canvasRenderer) {
                               const frames = setPreviewAnimation(target.value);
+                              syncPreviewTweenSettingsForAnimation(
+                                target.value,
+                              );
                               vnode.state.frameCycle = frames
                                 ? frames.join("-")
                                 : "";
@@ -292,13 +374,40 @@ export const AnimationPreview: m.Component<
                       m(
                         "select",
                         {
+                          value: vnode.state.tweenPreset,
+                          title: "Apply a tween preset to the global settings",
+                          onchange: (e: Event) => {
+                            const target = e.target as HTMLSelectElement;
+                            const preset = target.value as TweenPreset;
+                            if (preset in TWEEN_PRESETS) {
+                              vnode.state.tweenPreset = preset;
+                              assignTweenState(vnode, applyTweenPreset(preset));
+                              vnode.state.useAnimationOverride = false;
+                            }
+                          },
+                        },
+                        Object.keys(TWEEN_PRESETS).map((preset) =>
+                          m(
+                            "option",
+                            { value: preset },
+                            TWEEN_PRESET_LABELS[preset as TweenPreset],
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ]),
+                  m("div.control", [
+                    m("div.select", [
+                      m(
+                        "select",
+                        {
                           value: vnode.state.tweenMode,
                           onchange: (e: Event) => {
                             const target = e.target as HTMLSelectElement;
                             vnode.state.tweenMode = isTweenMode(target.value)
                               ? target.value
                               : "off";
-                            state.previewTweenMode = vnode.state.tweenMode;
+                            persistTweenSettings(vnode);
                           },
                         },
                         TWEEN_MODES.map((mode) =>
@@ -312,6 +421,50 @@ export const AnimationPreview: m.Component<
                       `${vnode.state.tweenInbetweens} in-between`,
                       vnode.state.tweenInbetweens === 1 ? "" : "s",
                     ]),
+                  ]),
+                  m("div.control", [
+                    m(
+                      "button.button.is-small",
+                      {
+                        title: vnode.state.useAnimationOverride
+                          ? "Use global tween settings for this animation"
+                          : "Customize tween settings for this animation only",
+                        onclick: () => {
+                          vnode.state.useAnimationOverride =
+                            !vnode.state.useAnimationOverride;
+                          if (vnode.state.useAnimationOverride) {
+                            setTweenOverrideForAnimation(
+                              vnode.state.selectedAnimation,
+                              getGlobalTweenSettings(),
+                            );
+                          } else {
+                            clearTweenOverrideForAnimation(
+                              vnode.state.selectedAnimation,
+                            );
+                          }
+                          assignTweenState(
+                            vnode,
+                            getTweenSettingsForAnimation(
+                              vnode.state.selectedAnimation,
+                            ),
+                          );
+                        },
+                      },
+                      vnode.state.useAnimationOverride ? "Override" : "Global",
+                    ),
+                  ]),
+                  m("div.control", [
+                    m(
+                      "button.button.is-small",
+                      {
+                        title: "Temporarily preview original frame timing",
+                        onclick: () => {
+                          vnode.state.compareOriginal =
+                            !vnode.state.compareOriginal;
+                        },
+                      },
+                      vnode.state.compareOriginal ? "Tweened" : "Original",
+                    ),
                   ]),
                 ]),
               ]),
@@ -337,8 +490,7 @@ export const AnimationPreview: m.Component<
                           target.value,
                           10,
                         );
-                        state.previewTweenInbetweens =
-                          vnode.state.tweenInbetweens;
+                        persistTweenSettings(vnode);
                       },
                     }),
                   ]),
@@ -351,10 +503,51 @@ export const AnimationPreview: m.Component<
                       oninput: (e: Event) => {
                         const target = e.target as HTMLInputElement;
                         vnode.state.tweenFps = parseInt(target.value, 10);
-                        state.previewTweenFps = vnode.state.tweenFps;
+                        persistTweenSettings(vnode);
                       },
                     }),
                   ]),
+                  vnode.state.tweenMode === "pixel-motion"
+                    ? [
+                        m("div.control.is-expanded.mt-2", [
+                          m("label.label.is-small.mb-1", [
+                            `Motion: ${vnode.state.tweenMotionStrength.toFixed(1)}x`,
+                          ]),
+                          m("input.is-fullwidth[type=range]", {
+                            min: 0,
+                            max: 2,
+                            step: 0.1,
+                            value: vnode.state.tweenMotionStrength,
+                            oninput: (e: Event) => {
+                              const target = e.target as HTMLInputElement;
+                              vnode.state.tweenMotionStrength = parseFloat(
+                                target.value,
+                              );
+                              persistTweenSettings(vnode);
+                            },
+                          }),
+                        ]),
+                        m("div.control.is-expanded.mt-2", [
+                          m("label.label.is-small.mb-1", [
+                            `Alpha: ${vnode.state.tweenAlphaThreshold}`,
+                          ]),
+                          m("input.is-fullwidth[type=range]", {
+                            min: 1,
+                            max: 255,
+                            step: 1,
+                            value: vnode.state.tweenAlphaThreshold,
+                            oninput: (e: Event) => {
+                              const target = e.target as HTMLInputElement;
+                              vnode.state.tweenAlphaThreshold = parseInt(
+                                target.value,
+                                10,
+                              );
+                              persistTweenSettings(vnode);
+                            },
+                          }),
+                        ]),
+                      ]
+                    : null,
                 ]),
               ]),
             ]),
@@ -368,8 +561,14 @@ export const AnimationPreview: m.Component<
                   selectedAnimation: vnode.state.selectedAnimation,
                   zoomLevel: vnode.state.zoomLevel,
                   tweenMode: vnode.state.tweenMode,
-                  tweenInbetweens: vnode.state.tweenInbetweens,
-                  tweenFps: vnode.state.tweenFps,
+                  tweenInbetweens: vnode.state.compareOriginal
+                    ? 0
+                    : vnode.state.tweenInbetweens,
+                  tweenFps: vnode.state.compareOriginal
+                    ? 8
+                    : vnode.state.tweenFps,
+                  tweenMotionStrength: vnode.state.tweenMotionStrength,
+                  tweenAlphaThreshold: vnode.state.tweenAlphaThreshold,
                   onFrameCycleUpdate: (frameCycle) => {
                     vnode.state.frameCycle = frameCycle;
                   },

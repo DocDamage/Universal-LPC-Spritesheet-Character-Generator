@@ -9,6 +9,7 @@ import {
 } from "../../utils/credits.ts";
 import { CollapsibleSection } from "../CollapsibleSection.ts";
 import { downloadFile, downloadAsPNG } from "../../canvas/download.ts";
+import { downloadPreviewAnimationGif } from "../../canvas/preview-gif.ts";
 import {
   importStateFromJSON,
   exportStateAsJSON,
@@ -22,7 +23,8 @@ import {
 } from "../../state/zip.ts";
 import { debugLog } from "../../utils/debug.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
-import { showToast } from "../../state/notifications.ts";
+import { requestConfirmation, showToast } from "../../state/notifications.ts";
+import { estimateTweenExportFrames } from "../../state/tween-settings.ts";
 
 const zipExportTitle = "Wait for layer data to finish loading";
 
@@ -38,6 +40,19 @@ function getTweenExportHint(): string | null {
   const inbetweenLabel =
     state.previewTweenInbetweens === 1 ? "in-between" : "in-betweens";
   return `Tween exports include ${state.previewTweenInbetweens} ${inbetweenLabel} per source frame at ${state.previewTweenFps} FPS. Split-by-animation ZIPs add tweened spritesheets under tweened/. Individual-frame ZIPs add tween PNGs beside source frames.`;
+}
+
+async function confirmLargeTweenExport(): Promise<boolean> {
+  const estimate = estimateTweenExportFrames();
+  if (!estimate.enabled || estimate.generatedTweenFrames < 400) {
+    return true;
+  }
+
+  return requestConfirmation({
+    title: "Large tween export",
+    message: `Current tween settings will generate about ${estimate.generatedTweenFrames} tween frames (${estimate.totalFrames} total frame PNGs for individual-frame export). Continue?`,
+    confirmLabel: "Export",
+  });
 }
 
 export const Download: m.Component<DownloadAttrs> = {
@@ -99,6 +114,20 @@ export const Download: m.Component<DownloadAttrs> = {
       downloadAsPNG("character-spritesheet.png");
     };
 
+    const savePreviewGif = async () => {
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
+      try {
+        await downloadPreviewAnimationGif();
+        showToast("Animated GIF exported.", { kind: "success" });
+      } catch (err) {
+        console.error("Failed to export GIF:", err);
+        showToast("Failed to export animated GIF.", { kind: "error" });
+      }
+    };
+
     return m(
       CollapsibleSection,
       {
@@ -111,6 +140,11 @@ export const Download: m.Component<DownloadAttrs> = {
             "button.button.is-small.is-primary",
             { onclick: saveAsPNG },
             "Spritesheet (PNG)",
+          ),
+          m(
+            "button.button.is-small.is-primary",
+            { onclick: savePreviewGif },
+            "Animation Preview (GIF)",
           ),
           m(
             "button.button.is-small",
@@ -145,7 +179,11 @@ export const Download: m.Component<DownloadAttrs> = {
             {
               disabled: zipDisabled,
               title: zipDisabled ? zipExportTitle : undefined,
-              onclick: exportSplitAnimations,
+              onclick: async () => {
+                if (await confirmLargeTweenExport()) {
+                  await exportSplitAnimations();
+                }
+              },
             },
             "ZIP: Split by animation",
           ),
@@ -175,7 +213,11 @@ export const Download: m.Component<DownloadAttrs> = {
             {
               disabled: zipDisabled,
               title: zipDisabled ? zipExportTitle : undefined,
-              onclick: exportIndividualFrames,
+              onclick: async () => {
+                if (await confirmLargeTweenExport()) {
+                  await exportIndividualFrames();
+                }
+              },
             },
             "ZIP: Split by animation and frame",
           ),

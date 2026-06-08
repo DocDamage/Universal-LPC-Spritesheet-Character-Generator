@@ -17,6 +17,9 @@ describe("Download", () => {
     state.previewTweenMode = "off";
     state.previewTweenInbetweens = 1;
     state.previewTweenFps = 8;
+    state.previewTweenMotionStrength = 1;
+    state.previewTweenAlphaThreshold = 1;
+    state.previewTweenOverrides = {};
   });
 
   afterEach(() => {
@@ -25,12 +28,21 @@ describe("Download", () => {
     state.previewTweenMode = "off";
     state.previewTweenInbetweens = 1;
     state.previewTweenFps = 8;
+    state.previewTweenMotionStrength = 1;
+    state.previewTweenAlphaThreshold = 1;
+    state.previewTweenOverrides = {};
   });
 
   it("hides the tween export hint by default", () => {
     m.render(container, m(Download, { catalog: readyCatalog }));
 
     expect(container.textContent).to.not.include("Tween frames enabled");
+  });
+
+  it("includes an animated GIF preview export button", () => {
+    m.render(container, m(Download, { catalog: readyCatalog }));
+
+    expect(container.textContent).to.include("Animation Preview (GIF)");
   });
 
   it("shows the tween export hint when preview tweening is enabled", () => {

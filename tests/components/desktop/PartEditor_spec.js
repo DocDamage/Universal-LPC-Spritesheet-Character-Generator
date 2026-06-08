@@ -1,3 +1,4 @@
+
 import { expect } from "chai";
 import { describe, it } from "mocha-globals";
 import { get2DContext } from "../../../sources/canvas/canvas-utils.ts";
@@ -204,5 +205,127 @@ describe("components/desktop/PartEditor.ts", () => {
     expect(getPixel(stateObj.canvases.front, 6, 6)).to.deep.equal([
       0, 255, 0, 255,
     ]);
+  });
+
+  it("populates thumbnail cache after recomposing canvases", () => {
+    const stateObj = createPartEditorStateForTests();
+    paintActiveLayer(stateObj, "#abcdef", 10, 10);
+
+    expect(stateObj.thumbnailCache).to.equal(null);
+    partEditorTestApi.recomposeCanvases(stateObj);
+
+    expect(stateObj.thumbnailCache).to.not.equal(null);
+    expect(stateObj.thumbnailCache.front).to.be.instanceof(HTMLCanvasElement);
+    expect(stateObj.thumbnailCache.front.width).to.equal(64);
+    expect(stateObj.thumbnailCache.front.height).to.equal(64);
+    expect(getPixel(stateObj.thumbnailCache.front, 10, 10)).to.deep.equal([
+      171, 205, 239, 255,
+    ]);
+  });
+
+  it("copies selection with source direction and mirrors on left-right paste", () => {
+    const stateObj = createPartEditorStateForTests();
+    paintActiveLayer(stateObj, "#ff0000", 5, 5);
+    stateObj.selectionRect = { x: 4, y: 4, width: 3, height: 3 };
+    stateObj.activeDirection = "left";
+
+    const copied = partEditorTestApi.copySelection(stateObj);
+    expect(copied).to.equal(true);
+    expect(stateObj.clipboard.sourceDirection).to.equal("left");
+    expect(getPixel(stateObj.clipboard.imageData, 1, 1)).to.deep.equal([
+      255, 0, 0, 255,
+    ]);
+
+    stateObj.activeDirection = "right";
+    const pasted = partEditorTestApi.pasteClipboard(stateObj);
+    expect(pasted).to.equal(true);
+    // Pasted image should be horizontally flipped: pixel at (1,1) in 3x3 becomes (1,1) in flipped
+    // because width=3, x=0->2, x=1->1, x=2->0, so center stays center
+    expect(getPixel(getActiveLayer(stateObj).canvases.right, 5, 5)).to.deep.equal([
+      255, 0, 0, 255,
+    ]);
+  });
+
+  it("nudges selection by 1px and 10px", () => {
+    const stateObj = createPartEditorStateForTests();
+    paintActiveLayer(stateObj, "#ff0000", 5, 5);
+    stateObj.selectionRect = { x: 4, y: 4, width: 3, height: 3 };
+
+    const nudged1 = partEditorTestApi.nudgeSelection(stateObj, "arrowright", 1);
+    expect(nudged1).to.equal(true);
+    expect(stateObj.selectionRect).to.deep.equal({
+      x: 5,
+      y: 4,
+      width: 3,
+      height: 3,
+    });
+
+    const nudged10 = partEditorTestApi.nudgeSelection(stateObj, "arrowdown", 10);
+    expect(nudged10).to.equal(true);
+    expect(stateObj.selectionRect).to.deep.equal({
+      x: 5,
+      y: 14,
+      width: 3,
+      height: 3,
+    });
+  });
+
+  it("transforms only selected pixels when selection exists", () => {
+    const stateObj = createPartEditorStateForTests();
+    paintActiveLayer(stateObj, "#ff0000", 5, 5);
+    paintActiveLayer(stateObj, "#00ff00", 20, 20);
+    stateObj.selectionRect = { x: 4, y: 4, width: 3, height: 3 };
+
+    partEditorTestApi.transformActivePixels(stateObj, "clear");
+
+    // Selected pixel should be cleared
+    expect(getPixel(getActiveLayer(stateObj).canvases.front, 5, 5)).to.deep.equal([
+      0, 0, 0, 0,
+    ]);
+    // Unselected pixel should remain
+    expect(getPixel(getActiveLayer(stateObj).canvases.front, 20, 20)).to.deep.equal([
+      0, 255, 0, 255,
+    ]);
+  });
+
+  it("detects dirty frames by comparing against global context", () => {
+    const stateObj = createPartEditorStateForTests({
+      availableFrameAnimations: ["walk"],
+    });
+    stateObj.globalEditorContext = partEditorTestApi.createEditorContextSnapshot(stateObj);
+
+    expect(partEditorTestApi.isFrameDirty(stateObj, 0)).to.equal(false);
+
+    const frameState = createPartEditorStateForTests({
+      availableFrameAnimations: ["walk"],
+    });
+    paintActiveLayer(frameState, "#0000ff", 5, 5);
+    stateObj.frameEditorContexts[
+      partEditorTestApi.getFrameContextKey("walk", 0)
+    ] = partEditorTestApi.createEditorContextSnapshot(frameState);
+
+    expect(partEditorTestApi.isFrameDirty(stateObj, 0)).to.equal(true);
+    expect(partEditorTestApi.isFrameDirty(stateObj, 1)).to.equal(false);
+  });
+
+  it("applies global edits to the current frame", async () => {
+    const stateObj = createPartEditorStateForTests({
+      availableFrameAnimations: ["walk"],
+    });
+    paintActiveLayer(stateObj, "#ff0000", 5, 5);
+    stateObj.globalEditorContext = partEditorTestApi.createEditorContextSnapshot(stateObj);
+
+    await partEditorTestApi.switchEditorContext(stateObj, true, "walk", 0);
+    paintActiveLayer(stateObj, "#00ff00", 6, 6);
+
+    expect(getPixel(stateObj.canvases.front, 5, 5)).to.deep.equal([0, 0, 0, 0]);
+    expect(getPixel(stateObj.canvases.front, 6, 6)).to.deep.equal([0, 255, 0, 255]);
+
+    await partEditorTestApi.applyGlobalToFrame(stateObj);
+
+    expect(getPixel(stateObj.canvases.front, 5, 5)).to.deep.equal([
+      255, 0, 0, 255,
+    ]);
+    expect(getPixel(stateObj.canvases.front, 6, 6)).to.deep.equal([0, 0, 0, 0]);
   });
 });

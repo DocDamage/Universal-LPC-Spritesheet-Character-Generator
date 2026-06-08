@@ -2742,3 +2742,227 @@
   letter-spacing: 0.5px;
   flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   EDITOR CORE ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Status Bar ─── */
+.part-editor-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 10px;
+  background: var(--bg-darkest);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 10px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.part-editor-status-item {
+  white-space: nowrap;
+}
+
+/* ─── Recovery Prompt ─── */
+.part-editor-recovery-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 14, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.part-editor-recovery-dialog {
+  width: min(420px, calc(100vw - 32px));
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+
+  h4 {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0 0 16px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+}
+
+.part-editor-recovery-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ─── Timeline ─── */
+.part-editor-playback-controls {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.part-editor-timeline-strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary) var(--bg-darkest);
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--bg-darkest);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 2px;
+  }
+}
+
+.part-editor-timeline-thumb {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--border-mid);
+    background: var(--bg-hover);
+  }
+
+  &.active {
+    border-color: var(--accent-primary);
+    background: rgba(124, 109, 240, 0.2);
+    box-shadow: 0 0 8px rgba(124, 109, 240, 0.2);
+
+    .part-editor-timeline-label {
+      color: var(--text-accent);
+      font-weight: 700;
+    }
+  }
+}
+
+.part-editor-timeline-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.part-editor-timeline-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-rose);
+}
+
+/* ─── Mobile / Touch ─── */
+@media (hover: none) {
+  .part-editor-toolbar .button {
+    min-width: 36px;
+    height: 32px;
+    padding: 4px 10px;
+  }
+
+  .part-editor-zoom-button {
+    width: 32px;
+    height: 28px;
+  }
+
+  .part-editor-dir-thumb {
+    padding: 8px 4px;
+
+    canvas {
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  .part-editor-pro-button {
+    padding: 8px 10px;
+    min-height: 32px;
+  }
+
+  .part-editor-layer-control {
+    height: 30px;
+    font-size: 10px;
+  }
+
+  .part-editor-status-bar {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+.part-editor-mobile.part-editor-fullscreen .part-editor-body {
+  flex-direction: column;
+  height: auto;
+  overflow-y: auto;
+}
+
+.part-editor-mobile.part-editor-fullscreen .part-editor-main-tools {
+  flex: 0 0 auto;
+  grid-template-rows: auto;
+  width: 100%;
+  height: max-content;
+  min-height: max-content;
+  overflow: visible;
+}
+
+.part-editor-mobile.part-editor-fullscreen .part-editor-pro-panel {
+  width: 100% !important;
+  flex: 0 0 auto;
+  max-height: none;
+}
+
+@media (max-width: 768px) {
+  .part-editor-fullscreen .part-editor-body {
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .part-editor-fullscreen .part-editor-main-tools {
+    flex: 0 0 auto;
+    grid-template-rows: auto;
+    width: 100%;
+    height: max-content;
+    min-height: max-content;
+    overflow: visible;
+  }
+
+  .part-editor-fullscreen .part-editor-pro-panel {
+    width: 100% !important;
+    flex: 0 0 auto;
+    max-height: none;
+  }
+}

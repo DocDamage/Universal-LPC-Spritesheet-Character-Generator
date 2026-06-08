@@ -4,6 +4,14 @@ import { getCanvas, type CanvasNotInitialized } from "./renderer.ts";
 
 type GetCanvasBlobFn = () => ResultAsync<Blob, CanvasNotInitialized>;
 
+type TexturePackerFrame = {
+  frame: { x: number; y: number; w: number; h: number };
+  rotated: boolean;
+  trimmed: boolean;
+  spriteSourceSize: { x: number; y: number; w: number; h: number };
+  sourceSize: { w: number; h: number };
+};
+
 /**
  * Download canvas as PNG (exports the offscreen canvas directly).
  * `getCanvasBlobFunc` defaults to the real renderer canvas; tests inject a stub.
@@ -55,11 +63,11 @@ export function generateGameEngineMetadata(): string {
     { name: "run", startRow: 38, dirs: 4, cols: 8 },
     { name: "combat_idle", startRow: 42, dirs: 4, cols: 3 },
     { name: "backslash", startRow: 46, dirs: 4, cols: 7 },
-    { name: "halfslash", startRow: 50, dirs: 4, cols: 7 }
+    { name: "halfslash", startRow: 50, dirs: 4, cols: 7 },
   ];
 
   const directionsList = ["up", "left", "down", "right"];
-  const frames: Record<string, any> = {};
+  const frames: Record<string, TexturePackerFrame> = {};
 
   for (const anim of animationsList) {
     const numDirs = anim.dirs;
@@ -73,7 +81,7 @@ export function generateGameEngineMetadata(): string {
           rotated: false,
           trimmed: false,
           spriteSourceSize: { x: 0, y: 0, w: 64, h: 64 },
-          sourceSize: { w: 64, h: 64 }
+          sourceSize: { w: 64, h: 64 },
         };
       }
     }
@@ -87,8 +95,8 @@ export function generateGameEngineMetadata(): string {
       image: "character-spritesheet.png",
       format: "RGBA8888",
       size: { w: 832, h: 3456 },
-      scale: "1"
-    }
+      scale: "1",
+    },
   };
 
   return JSON.stringify(result, null, 2);

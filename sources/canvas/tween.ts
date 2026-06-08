@@ -7,9 +7,22 @@ export const TWEEN_MODES = [
 
 export type TweenMode = (typeof TWEEN_MODES)[number];
 
-export type TweenEasing = "linear" | "ease-in" | "ease-out" | "ease-in-out" | "bounce" | "elastic";
+export type TweenEasing =
+  | "linear"
+  | "ease-in"
+  | "ease-out"
+  | "ease-in-out"
+  | "bounce"
+  | "elastic";
 
-export const TWEEN_EASINGS: TweenEasing[] = ["linear", "ease-in", "ease-out", "ease-in-out", "bounce", "elastic"];
+export const TWEEN_EASINGS: TweenEasing[] = [
+  "linear",
+  "ease-in",
+  "ease-out",
+  "ease-in-out",
+  "bounce",
+  "elastic",
+];
 
 export type TweenSettings = {
   mode: TweenMode;
@@ -140,7 +153,9 @@ function applyEasing(t: number, easing: TweenEasing): number {
   if (easing === "elastic") {
     if (t === 0 || t === 1) return t;
     const p = 0.3;
-    return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+    return (
+      Math.pow(2, -10 * t) * Math.sin(((t - p / 4) * (2 * Math.PI)) / p) + 1
+    );
   }
   return t;
 }

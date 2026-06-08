@@ -9,14 +9,18 @@ import { showToast } from "../../state/notifications.ts";
 import {
   repaintStaticPreviewFrameForTests,
   setPreviewAnimation,
-  setPreviewAnimation,
   setPreviewTweenSettings,
   startPreviewAnimation,
   stopPreviewAnimation,
   getCustomAnimations,
   syncPreviewTweenSettingsForAnimation,
 } from "../../canvas/preview-animation.ts";
-import { TWEEN_MODES, TWEEN_PRESETS, isTweenMode } from "../../canvas/tween.ts";
+import {
+  TWEEN_EASINGS,
+  TWEEN_MODES,
+  TWEEN_PRESETS,
+  isTweenMode,
+} from "../../canvas/tween.ts";
 import type {
   TweenMode,
   TweenPreset,
@@ -133,8 +137,13 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
     });
   },
   onupdate(vnode) {
-    const { selectedAnimation, tweenMode, tweenInbetweens, tweenFps, tweenEasing } =
-      vnode.attrs;
+    const {
+      selectedAnimation,
+      tweenMode,
+      tweenInbetweens,
+      tweenFps,
+      tweenEasing,
+    } = vnode.attrs;
     const { tweenMotionStrength, tweenAlphaThreshold } = vnode.attrs;
     const didTweenSettingsChange =
       vnode.state.lastTweenMode !== tweenMode ||
@@ -525,27 +534,58 @@ export const AnimationPreview: m.Component<
                   ]),
                   m("div.control.is-expanded.mt-2", [
                     m("label.label.is-small.mb-1", "Motion Easing"),
-                    m("div.select.is-small.is-fullwidth", {
-                      style: { width: "100%", display: "block" }
-                    }, [
-                      m("select", {
-                        value: vnode.state.tweenEasing || "linear",
-                        disabled: vnode.state.tweenMode === "off",
-                        onchange: (e: Event) => {
-                          const target = e.target as HTMLSelectElement;
-                          vnode.state.tweenEasing = target.value as any;
-                          persistTweenSettings(vnode);
-                        },
-                        style: { width: "100%" }
-                      }, [
-                        m("option", { value: "linear" }, "Linear (Fixed Speed)"),
-                        m("option", { value: "ease-in" }, "Ease-In (Accelerate)"),
-                        m("option", { value: "ease-out" }, "Ease-Out (Decelerate)"),
-                        m("option", { value: "ease-in-out" }, "Ease-In-Out (Smooth)"),
-                        m("option", { value: "bounce" }, "Bounce"),
-                        m("option", { value: "elastic" }, "Elastic (Snap)"),
-                      ]),
-                    ]),
+                    m(
+                      "div.select.is-small.is-fullwidth",
+                      {
+                        style: { width: "100%", display: "block" },
+                      },
+                      [
+                        m(
+                          "select",
+                          {
+                            value: vnode.state.tweenEasing || "linear",
+                            disabled: vnode.state.tweenMode === "off",
+                            onchange: (e: Event) => {
+                              const target = e.target as HTMLSelectElement;
+                              if (
+                                TWEEN_EASINGS.includes(
+                                  target.value as TweenEasing,
+                                )
+                              ) {
+                                vnode.state.tweenEasing =
+                                  target.value as TweenEasing;
+                              }
+                              persistTweenSettings(vnode);
+                            },
+                            style: { width: "100%" },
+                          },
+                          [
+                            m(
+                              "option",
+                              { value: "linear" },
+                              "Linear (Fixed Speed)",
+                            ),
+                            m(
+                              "option",
+                              { value: "ease-in" },
+                              "Ease-In (Accelerate)",
+                            ),
+                            m(
+                              "option",
+                              { value: "ease-out" },
+                              "Ease-Out (Decelerate)",
+                            ),
+                            m(
+                              "option",
+                              { value: "ease-in-out" },
+                              "Ease-In-Out (Smooth)",
+                            ),
+                            m("option", { value: "bounce" }, "Bounce"),
+                            m("option", { value: "elastic" }, "Elastic (Snap)"),
+                          ],
+                        ),
+                      ],
+                    ),
                   ]),
                   vnode.state.tweenMode === "pixel-motion"
                     ? [
@@ -593,30 +633,50 @@ export const AnimationPreview: m.Component<
             ]),
           ]),
         ]),
-        m("div.is-flex.is-justify-content-center.mb-3", { style: { gap: "8px" } }, [
-          m("button.button.is-small.is-primary", {
-            onclick: async () => {
-              try {
-                await downloadPreviewAnimationGif();
-                showToast("Animated GIF exported successfully!", { kind: "success" });
-              } catch (err) {
-                console.error(err);
-                showToast("Failed to export preview GIF.", { kind: "error" });
-              }
-            }
-          }, "Export Loop as GIF"),
-          m("button.button.is-small.is-primary", {
-            onclick: async () => {
-              try {
-                await downloadPreviewAnimationWebp();
-                showToast("Animated WebP exported successfully!", { kind: "success" });
-              } catch (err) {
-                console.error(err);
-                showToast("Failed to export preview WebP.", { kind: "error" });
-              }
-            }
-          }, "Export Loop as WebP"),
-        ]),
+        m(
+          "div.is-flex.is-justify-content-center.mb-3",
+          { style: { gap: "8px" } },
+          [
+            m(
+              "button.button.is-small.is-primary",
+              {
+                onclick: async () => {
+                  try {
+                    await downloadPreviewAnimationGif();
+                    showToast("Animated GIF exported successfully!", {
+                      kind: "success",
+                    });
+                  } catch (err) {
+                    console.error(err);
+                    showToast("Failed to export preview GIF.", {
+                      kind: "error",
+                    });
+                  }
+                },
+              },
+              "Export Loop as GIF",
+            ),
+            m(
+              "button.button.is-small.is-primary",
+              {
+                onclick: async () => {
+                  try {
+                    await downloadPreviewAnimationWebp();
+                    showToast("Animated WebP exported successfully!", {
+                      kind: "success",
+                    });
+                  } catch (err) {
+                    console.error(err);
+                    showToast("Failed to export preview WebP.", {
+                      kind: "error",
+                    });
+                  }
+                },
+              },
+              "Export Loop as WebP",
+            ),
+          ],
+        ),
         m("div.mt-3", [
           m("div.preview-canvas-area", [
             m(ScrollableContainer, { classes: "spritesheet-preview" }, [

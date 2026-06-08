@@ -8,7 +8,11 @@ import {
   creditsToTxt,
 } from "../../utils/credits.ts";
 import { CollapsibleSection } from "../CollapsibleSection.ts";
-import { downloadFile, downloadAsPNG, downloadGameEngineMetadata } from "../../canvas/download.ts";
+import {
+  downloadFile,
+  downloadAsPNG,
+  downloadGameEngineMetadata,
+} from "../../canvas/download.ts";
 import { downloadPreviewAnimationGif } from "../../canvas/preview-gif.ts";
 import { downloadPreviewAnimationWebp } from "../../canvas/preview-webp.ts";
 import {
@@ -195,7 +199,8 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
             "button.button.is-small.is-info",
             {
               onclick: saveGameEngineMetadata,
-              title: "Export TexturePacker-style frame-slicing JSON for Godot, Unity, etc."
+              title:
+                "Export TexturePacker-style frame-slicing JSON for Godot, Unity, etc.",
             },
             "Game Engine Metadata (JSON)",
           ),

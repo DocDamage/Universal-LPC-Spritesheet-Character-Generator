@@ -1,5 +1,4 @@
-LPC Spritesheet Character Generator
-=============================================
+# LPC Spritesheet Character Generator
 
 #### Translations
 
@@ -13,6 +12,22 @@ The Liberated Pixel Effort is a collaborative effort from a number of different 
 **If you wish to use LPC sprites in your project, you will need to credit everyone who helped contribute to the LPC sprites you are using.** See [below](#licensing-and-attribution-credits) for how to do this.
 
 Although this particular repository focuses on character sprites, LPC includes many tilesets and some other artwork as well. Tileset collections can be found on [OpenGameArt.org](https://opengameart.org)
+
+### Current App Capabilities
+
+The generator now includes a desktop sprite-building workflow with an integrated pixel editor, custom asset imports, keyboard shortcuts, and in-app notifications. See [Sprite Editor Features](EDITOR_FEATURES.md) for the detailed editor guide.
+
+Highlights:
+
+- Compose LPC characters from body, clothing, armor, weapons, tools, and accessory slots with animation-aware previews.
+- Edit selected parts directly in the browser and save the result as a new custom part without modifying the original LPC asset.
+- Zoom the preview and editor canvas with shortcuts, controls, and mouse-wheel zoom in the editor.
+- Open a fullscreen pro editor with selection tools, shape drawing, flood fill, color replacement, transform tools, symmetry toggles, layers, and an animation-frame tab.
+- Add as many editor layers as needed, with visibility, opacity, rename, duplicate, merge, flatten, pixel lock, and alpha lock controls.
+- Edit animation frames in a dedicated Animation tab with timeline controls and onion-skin previews.
+- Import custom weapons and tools from PNG files, align them automatically to built-in references, tune offset/scale, and save them to a persistent IndexedDB-backed custom asset library.
+- Use `Ctrl+K` for the command palette and `Ctrl+/` for shortcut help.
+- Export PNG spritesheets, character JSON, credits, and ZIP packs with shared toast notifications and confirmation dialogs.
 
 ### History
 
@@ -81,6 +96,17 @@ If you don't want to _show_ the entire credits file directly, should include a s
 You can look at [the Animation Guide in Eliza's repository](https://github.com/ElizaWy/LPC/blob/f07f7f5892e67c932c68f70bb04472f2c64e46bc/Characters/_%20Guides%20%26%20Palettes/Animation%20Guides) for a detailed suggested guide to how she recommends you display your animations.
 
 Also, each animation has a frame cycle documented which you can see next to the animation preview.
+
+### Sprite Editing and Custom Imports
+
+Open the editor from a selected desktop slot to paint directly on a sprite part. The normal editor includes pencil, eraser, eyedropper, undo/redo, direction thumbnails, front-view propagation, canvas zoom controls, and mouse-wheel zoom over the canvas.
+
+Fullscreen mode adds the pro workspace:
+
+- **Edit tab:** marquee selection, shape tools, flood fill, palette extraction, color replacement, transforms, symmetry, layer management, pixel grid controls, and higher-zoom editing.
+- **Animation tab:** global vs frame editing, animation and frame selection, neighboring-frame onion skins, and frame navigation shortcuts.
+
+Weapon and tool slots include an importer for custom PNG assets. Choose a built-in weapon/tool as the alignment reference, import either a single image or compatible sheet, and adjust x-offset, y-offset, and scale after auto-alignment. Imported parts are saved locally and can be renamed, deleted, or selected again from the saved imports list.
 
 ### Run This Project Locally for Development
 
@@ -157,6 +183,7 @@ If an engine is not listed above, try Google. However, it is very likely that yo
 - **Lint:** `npm run lint`
 - **Format:** `npm run format:check` (verify) or `npm run format` (apply)
 - **Tests:** `npm test` (Node checks plus browser tests). Visual regression: `npm run test:visual`. Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Editor feature map:** [EDITOR_FEATURES.md](EDITOR_FEATURES.md) lists the sprite editor, importer, shortcut, notification, and custom-part persistence surfaces added to the desktop app.
 
 **Generated files:** [CREDITS.csv](CREDITS.csv) and the z-position CSV under **`scripts/zPositioning/`** are updated by **`npm run validate-site-sources`**. **Vite** runs the metadata plugin; when inputs or **`dist/`** output warrant it, it can refresh those CSVs and always writes the **five** modules under **`dist/`** (`index-`, `palette-`, `item-`, `credits-`, `layers-metadata.js`). The app registers them in **`sources/state/catalog.ts`**. The **`dist/`** tree is gitignored—do not edit generated files by hand. **`npm run dev`** pretty-prints embedded JSON; **`npm run build`** writes compact (see [PR #432](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/pull/432)). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow, catalog API, and staged loading.
 

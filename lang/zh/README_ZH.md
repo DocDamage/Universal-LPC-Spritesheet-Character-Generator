@@ -1,6 +1,7 @@
-# LPC 精灵表角色生成器  
+# LPC 精灵表角色生成器
 
- #### 翻译
+#### 翻译
+
 [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/blob/master/README.md) [![zh](https://img.shields.io/badge/lang-zh-green.svg)](https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/blob/master/lang/zh/README_ZH.md)
 
 本生成器尝试整合迄今为止所有由[LPC](https://lpc.opengameart.org)创作的角色素材。
@@ -11,6 +12,20 @@ Liberated Pixel Effort 是由多位优秀艺术家共同协作的成果，他们
 **若您希望在项目中使用LPC精灵素材，必须为所有贡献者署名**，具体方式请参见[下方署名要求](#许可协议与署名要求)。
 
 虽然本仓库主要聚焦角色精灵素材，但LPC还包含许多瓦片集和其他艺术作品。瓦片集合集可在[OpenGameArt.org](https://opengameart.org)获取。
+
+### 当前应用功能
+
+生成器现在包含桌面版角色组合流程、内置像素编辑器、自定义武器/工具导入、键盘快捷键和应用内通知。详细英文说明见[Sprite Editor Features](../../EDITOR_FEATURES.md)。
+
+- 可从身体、服装、护甲、武器、工具和饰品槽组合 LPC 角色，并按动画预览。
+- 可直接编辑选中的素材部件，并保存为新的自定义部件，不会覆盖原始 LPC 素材。
+- 编辑器支持缩放滑块、快捷键和鼠标滚轮缩放。
+- 全屏专业编辑器包含选择、线条、矩形、椭圆、填充、颜色替换、变换、镜像、图层和动画帧编辑。
+- 图层数量不做固定限制，支持显示/隐藏、透明度、重命名、复制、合并、扁平化、像素锁定和透明像素锁定。
+- 动画编辑器已放在独立的 Animation 标签页，支持时间轴、逐帧编辑和洋葱皮预览。
+- 武器/工具槽可导入自定义 PNG，并根据已有素材自动对齐；也可手动微调 x/y 偏移和缩放。
+- 导入的自定义素材会保存在本地 IndexedDB，可再次选择、重命名或删除。
+- `Ctrl+K` 打开命令面板，`Ctrl+/` 打开快捷键帮助。
 
 ### 历史沿革
 
@@ -38,7 +53,8 @@ Liberated Pixel Cup的概念由Bart Kelsey和Chris Webber提出，最初是[Open
 - [GPL](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text)  
   衍生作品必须采用GPL 3.0或更高版本发布
 
-[^1]: 关于DRM条款的注意事项：若计划在Steam/iOS等DRM平台发布游戏，建议优先使用CC0或OGA-BY协议素材以避免法律风险。  
+[^1]: 关于DRM条款的注意事项：若计划在Steam/iOS等DRM平台发布游戏，建议优先使用CC0或OGA-BY协议素材以避免法律风险。
+
 [^2]: 这是本生成器中最严格的许可协议，遵守该协议即可使用仓库内所有素材（包括商业游戏）。
 
 **使用本工具生成的精灵或直接使用`spritesheets`目录中的素材时，必须为非CC0素材的所有作者署名。**
@@ -49,6 +65,7 @@ Liberated Pixel Cup的概念由Bart Kelsey和Chris Webber提出，最初是[Open
 您也可以直接使用[CREDITS.csv](/CREDITS.csv)文件，其中列出了所有素材的作者、许可协议及原始链接。
 
 合规署名方式任选其一：
+
 - 在项目中完整分发[CREDITS.csv](/CREDITS.csv)文件
 - 制作仅包含所用素材的署名清单
 
@@ -58,9 +75,9 @@ Liberated Pixel Cup的概念由Bart Kelsey和Chris Webber提出，最初是[Open
 
 若不愿直接展示完整署名文件，建议在制作人员界面添加如下声明：
 
-> - 精灵素材作者：Johannes Sjölund (wulax)、Michael Whitlock (bigbeargames) 等（完整列表见下方链接）  
-> - 素材来源：OpenGameArt.org的Liberated Pixel Cup项目  
-> - 许可协议：CC-BY-SA 3.0  
+> - 精灵素材作者：Johannes Sjölund (wulax)、Michael Whitlock (bigbeargames) 等（完整列表见下方链接）
+> - 素材来源：OpenGameArt.org的Liberated Pixel Cup项目
+> - 许可协议：CC-BY-SA 3.0
 > - 详细署名信息：[CREDITS.csv文件链接]
 
 更多授权信息请参考[OpenGameArt.org常见问题](https://opengameart.org/content/faq#q-proprietary)。
@@ -71,17 +88,22 @@ Liberated Pixel Cup的概念由Bart Kelsey和Chris Webber提出，最初是[Open
 
 建议参考[Eliza仓库中的动画指南](https://github.com/ElizaWy/LPC/blob/f07f7f5892e67c932c68f70bb04472f2c64e46bc/Characters/_%20Guides%20%26%20Palettes/Animation%20Guides)了解推荐的动画实现方式。每个动画的帧循环信息可在预览界面查看。
 
+### 精灵编辑和自定义导入
+
+在桌面版槽位中打开编辑器即可编辑当前部件。普通编辑器包含铅笔、橡皮、取色器、撤销/重做、四方向缩略图、前视图自动传播和画布缩放。全屏模式会打开专业工作区：Edit 标签页用于绘制、选区、颜色、变换和图层，Animation 标签页用于独立的动画帧编辑。
+
+武器和工具槽提供自定义 PNG 导入器。选择已有武器/工具作为对齐参考后，可导入单张图片或兼容表格图，并通过偏移和缩放控件微调。保存后的导入素材会出现在 Saved imports 列表中。
+
 ### 本地运行
 
-传统方式可直接在浏览器打开`index.html`，但现代浏览器的安全限制可能导致问题。推荐以下本地服务器方案：
-- IIS（仅Windows）
-- Python（`py -m http.server <端口>`）
-- Rust（Simple Http Server）
-- Node.js（`require('http')`）
-- nginx
-- npx serve
-- brew serve（仅Mac）
-- Lighttpd
+本项目使用 [Vite](https://vitejs.dev/) 构建界面。请使用开发服务器，不要直接以 `file://` 方式打开 `index.html`，因为 ES modules 和素材路径需要 HTTP 环境。
+
+推荐流程：
+
+1. 首次运行 `npm install`。
+2. 使用 `npm run dev` 启动应用，默认地址为 `http://localhost:5173`。也可以使用 `npm run serve:open` 自动打开浏览器。
+
+如需本地预览生产构建，运行 `npm run build` 后再运行 `npm run preview`。
 
 ### 常见问题
 
@@ -93,9 +115,6 @@ Liberated Pixel Cup的概念由Bart Kelsey和Chris Webber提出，最初是[Open
 <dt>我下载了图片，但忘了保存&lt;网址、署名等&gt;，如何找回？</dt>
 <dd>建议以后使用“导出为 JSON”功能，并将 json 文件与 png 图片一并保存，参见<a href="https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/issues/143">Issue #143</a>。</dd>
 </dl>
-
-
-
 
 ### 术语表
 
@@ -110,18 +129,18 @@ Liberated Pixel Cup的概念由Bart Kelsey和Chris Webber提出，最初是[Open
     <dd>由 <a href="https://github.com/ElizaWy">@ElizaWy</a> 等人提出的进一步扩展，新增了射箭、攀爬、奔跑、跳跃等动画，以及儿童、老人等基底。本仓库中大量资源尚未覆盖这些新动画与基底，欢迎贡献素材。</dd>
 </dl>
 
-
 ### 其他LPC角色生成器
 
-- https://pflat.itch.io/lpc-character-generator  
+- https://pflat.itch.io/lpc-character-generator
 - https://vitruvianstudio.github.io/
 
 ### 工具集
 
-- [lpctools](https://github.com/bluecarrot16/lpctools)  操纵像素艺术精灵和tilesets的工具。
-- [安装指南](tools/LPCTOOLS.md)  
-- [使用lpctools重新编译完整精灵表](tools/REBUILD.md)  
-- [素材转换工具](tools/VITRUVIAN.md)  
+- [lpctools](https://github.com/bluecarrot16/lpctools) 操纵像素艺术精灵和tilesets的工具。
+- [安装指南](tools/LPCTOOLS.md)
+- [使用lpctools重新编译完整精灵表](tools/REBUILD.md)
+- [素材转换工具](tools/VITRUVIAN.md)
 
 ### 效果示例
+
 ![示例图片](/readme-images/example.png)

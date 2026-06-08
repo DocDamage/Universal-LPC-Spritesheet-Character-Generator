@@ -14,6 +14,8 @@ import {
   stopPreviewAnimation,
   getCustomAnimations,
   syncPreviewTweenSettingsForAnimation,
+  setPreviewShowTransparencyGrid,
+  setPreviewApplyTransparencyMask,
 } from "../../canvas/preview-animation.ts";
 import {
   TWEEN_EASINGS,
@@ -99,6 +101,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       alphaThreshold: tweenAlphaThreshold,
       easing: tweenEasing,
     });
+    setPreviewShowTransparencyGrid(state.showTransparencyGrid);
+    setPreviewApplyTransparencyMask(state.applyTransparencyMask);
     startPreviewAnimation();
 
     if (frames) {
@@ -168,6 +172,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
           alphaThreshold: tweenAlphaThreshold,
           easing: tweenEasing,
         });
+        setPreviewShowTransparencyGrid(state.showTransparencyGrid);
+        setPreviewApplyTransparencyMask(state.applyTransparencyMask);
         initPreviewCanvas(vnode.dom as HTMLCanvasElement);
         startPreviewAnimation();
       }
@@ -642,7 +648,10 @@ export const AnimationPreview: m.Component<
               {
                 onclick: async () => {
                   try {
-                    await downloadPreviewAnimationGif();
+                    await downloadPreviewAnimationGif(
+                      state.selectedAnimation,
+                      state.bodyType,
+                    );
                     showToast("Animated GIF exported successfully!", {
                       kind: "success",
                     });
@@ -661,7 +670,10 @@ export const AnimationPreview: m.Component<
               {
                 onclick: async () => {
                   try {
-                    await downloadPreviewAnimationWebp();
+                    await downloadPreviewAnimationWebp(
+                      state.selectedAnimation,
+                      state.bodyType,
+                    );
                     showToast("Animated WebP exported successfully!", {
                       kind: "success",
                     });

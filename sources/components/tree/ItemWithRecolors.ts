@@ -97,30 +97,32 @@ export const ItemWithRecolors: m.Component<
     ) {
       const idx = rootViewNode.state.showPaletteModal;
       const opt = paletteOptions[idx];
-      paletteModal = m(PaletteSelectModal, {
-        itemId,
-        opt,
-        selectedColors,
-        compactDisplay,
-        rootViewNode,
-        catalog,
-        onClose: () => {
-          rootViewNode.state.showPaletteModal = null;
-          rootViewNode.state._palettePreviewLastTotal = undefined;
-          m.redraw();
-        },
-        onSelect: (recolor) => {
-          const subSelectGroup =
-            opt.type_name !== meta.type_name ? opt.type_name : null;
-          selectItem(
-            itemId,
-            recolor,
-            isSelected &&
-              selectedColors[subSelectGroup ?? meta.type_name] === recolor,
-            opt.type_name ? idx : null,
-          );
-        },
-      });
+      if (opt) {
+        paletteModal = m(PaletteSelectModal, {
+          itemId,
+          opt,
+          selectedColors,
+          compactDisplay,
+          rootViewNode,
+          catalog,
+          onClose: () => {
+            rootViewNode.state.showPaletteModal = null;
+            rootViewNode.state._palettePreviewLastTotal = undefined;
+            m.redraw();
+          },
+          onSelect: (recolor) => {
+            const subSelectGroup =
+              opt.type_name !== meta.type_name ? opt.type_name : null;
+            selectItem(
+              itemId,
+              recolor,
+              isSelected &&
+                selectedColors[subSelectGroup ?? meta.type_name] === recolor,
+              opt.type_name ? idx : null,
+            );
+          },
+        });
+      }
     }
 
     return m(
@@ -185,6 +187,9 @@ export const ItemWithRecolors: m.Component<
                             meta,
                             canvas,
                             selectedColors,
+                            compactDisplay,
+                            state.bodyType,
+                            state.selections,
                             signal,
                           );
                         },
@@ -201,6 +206,9 @@ export const ItemWithRecolors: m.Component<
                             meta,
                             canvas,
                             selectedColors,
+                            compactDisplay,
+                            state.bodyType,
+                            state.selections,
                             signal,
                           );
                         },
@@ -304,6 +312,9 @@ export const ItemWithRecolors: m.Component<
                               meta,
                               canvas,
                               selectedColors,
+                              compactDisplay,
+                              state.bodyType,
+                              state.selections,
                               signal,
                             );
                             if (signal.aborted) return;
@@ -327,6 +338,9 @@ export const ItemWithRecolors: m.Component<
                               meta,
                               canvas,
                               selectedColors,
+                              compactDisplay,
+                              state.bodyType,
+                              state.selections,
                               signal,
                             );
                             if (signal.aborted) return;

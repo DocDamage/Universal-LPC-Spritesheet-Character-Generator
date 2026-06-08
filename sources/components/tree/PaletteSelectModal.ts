@@ -63,7 +63,9 @@ function prepareAndCountPalettePreviewCanvases(
   }
   let n = 0;
   for (const cat of opt.versions) {
-    const [material, version] = cat.split(".");
+    const parts = cat.split(".");
+    const material = parts[0]!;
+    const version = parts[1]!;
     const nodePath = `${itemId}-${opt.idx}-${cat}`;
     const materialMeta = paletteMeta.materials[material];
     const recolors = materialMeta?.palettes?.[version] ?? {};
@@ -172,7 +174,9 @@ function renderModal(
         m(
           "section",
           opt.versions.map((cat) => {
-            const [material, version] = cat.split(".");
+            const parts = cat.split(".");
+            const material = parts[0]!;
+            const version = parts[1]!;
             const nodePath = `${itemId}-${opt.idx}-${cat}`;
             const paletteVersionMeta = paletteMeta.versions?.[version];
             const materialMeta = paletteMeta.materials[material];
@@ -206,7 +210,7 @@ function renderModal(
                 ),
                 isExpanded
                   ? m("div.variants-container.is-flex.is-flex-wrap-wrap", [
-                      ...Object.entries(recolors).map(([palette, colors]) => {
+                      ...Object.entries(recolors as Record<string, string[]>).map(([palette, colors]) => {
                         const gradient = colors.slice().reverse();
                         const key =
                           (material !== opt.material ? material + "." : "") +
@@ -269,6 +273,9 @@ function renderModal(
                                     meta,
                                     canvas,
                                     itemColors,
+                                    compactDisplay,
+                                    state.bodyType,
+                                    state.selections,
                                     signal,
                                   ).then(() => {
                                     if (

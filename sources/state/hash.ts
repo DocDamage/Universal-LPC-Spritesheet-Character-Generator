@@ -53,7 +53,7 @@ function createDefaultHashDeps(): HashDeps {
         if (!nameAndVariant.startsWith(`${customName}_`)) continue;
 
         const suffix = nameAndVariant.slice(customName.length + 1);
-        const [variantOrRecolor, recolor = ""] = suffix.split("|");
+        const [variantOrRecolor = "", recolor = ""] = suffix.split("|");
         const baseMeta = getItemLite(part.baseItemId).unwrapOr(null);
         const suffixIsVariant =
           !!variantOrRecolor && baseMeta?.variants?.includes(variantOrRecolor);
@@ -254,7 +254,7 @@ export function getHashParamsforSelections(
   const params: Record<string, string> = {};
 
   // Add body type (using 'sex' for backwards compatibility with old URLs).
-  params.sex = state.bodyType;
+  params['sex'] = state.bodyType;
 
   // Add selections — old format: `type_name=Name_variant`.
   // e.g., "body=Body_color_light", "shoes=Sara_sara".
@@ -278,7 +278,7 @@ export function getHashParamsforSelections(
     if (!meta || !meta.type_name) {
       // Check if an alias is overriding this entry
       // (e.g., "sash=Waistband_rose" instead of "waistband=Waistband_rose").
-      const name = selection.name.split(" (")[0]; // Get base name without variant
+      const name = selection.name.split(" (")[0]!; // Get base name without variant
       const nameAndVariant =
         name.replaceAll(" ", "_") +
         (selection.variant ? `_${selection.variant}` : "");
@@ -437,7 +437,7 @@ export function loadSelectionsFromHash(hashString: string | null = null): void {
     const parts = nameAndVariant.split("_");
     for (let i = 1; i <= parts.length; i++) {
       const variants = parts.slice(i).join("_");
-      const recolorToMatch = variants.split("|")[1] ?? variants.split("|")[0];
+      const recolorToMatch = variants.split("|")[1] ?? variants.split("|")[0]!;
       const lookupKey = `${subType}${subItemKeySeparator}${recolorToMatch}`;
       const subItem = subItemLookup.get(lookupKey);
 
@@ -465,8 +465,8 @@ export function loadSelectionsFromHash(hashString: string | null = null): void {
   state.selections = newSelections;
 
   // Load body type
-  if (params.bodyType) {
-    state.bodyType = params.bodyType;
+  if (params['bodyType']) {
+    state.bodyType = params['bodyType'];
   }
 
   // Ensure hash is in sync with loaded selections (handles any normalization).

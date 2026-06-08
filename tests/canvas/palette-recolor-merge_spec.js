@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tests for the single-pass multi-palette merge — `recolorImage` now accepts
  * an array of `{source, target}` mappings and applies them all in one pass.

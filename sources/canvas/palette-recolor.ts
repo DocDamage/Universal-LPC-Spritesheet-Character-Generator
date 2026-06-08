@@ -11,7 +11,7 @@ import { debugLog, debugWarn } from "../utils/debug.ts";
 import { createCanvas } from "./canvas-utils.ts";
 import { getItemLite } from "../state/catalog.ts";
 import type { ItemMerged } from "../state/catalog.ts";
-import { state } from "../state/state.ts";
+import type { Selections } from "../state/app-state.ts";
 import { getLayersToLoad } from "../state/meta.ts";
 import { getPalettesFromMeta, getTargetPalette } from "../state/palettes.ts";
 import type { PaletteForItem } from "../state/palettes.ts";
@@ -45,9 +45,9 @@ function hexToRgb(hex: string): Rgb | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
+        r: parseInt(result[1]!, 16),
+        g: parseInt(result[2]!, 16),
+        b: parseInt(result[3]!, 16),
       }
     : null;
 }
@@ -63,8 +63,8 @@ function buildColorMap(
   const colorPairs: ColorPair[] = [];
 
   for (let i = 0; i < sourcePalette.length; i++) {
-    const sourceRgb = hexToRgb(sourcePalette[i]);
-    const targetRgb = hexToRgb(targetPalette[i]);
+    const sourceRgb = hexToRgb(sourcePalette[i]!);
+    const targetRgb = hexToRgb(targetPalette[i]!);
 
     if (sourceRgb && targetRgb) {
       colorPairs.push({ source: sourceRgb, target: targetRgb });
@@ -126,10 +126,10 @@ function recolorImageCPU(
 
   // Recolor pixels with tolerance matching (like WebGL)
   for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
-    const a = pixels[i + 3];
+    const r = pixels[i]!;
+    const g = pixels[i + 1]!;
+    const b = pixels[i + 2]!;
+    const a = pixels[i + 3]!;
 
     // Skip transparent pixels
     if (a === 0) continue;
@@ -344,9 +344,15 @@ export async function recolorWithPalette(
   // in a single shader pass.
   const mappings: PaletteMapping[] = [];
   for (const [typeName, palette] of Object.entries(sourcePalettes)) {
+    const targetColor = targetColors[typeName];
+    if (targetColor === undefined) {
+      throw new Error(
+        `Unknown target palette color: ${JSON.stringify(targetColors)}`,
+      );
+    }
     const targetPalette = getTargetPalette(
       palette.material,
-      targetColors[typeName],
+      targetColor,
     ).unwrapOr(null);
     if (!targetPalette) {
       throw new Error(
@@ -382,6 +388,9 @@ export async function drawRecolorPreview(
   meta: ItemMerged,
   canvas: HTMLCanvasElement,
   selectedColors: Record<string, string>,
+  compactDisplay: boolean,
+  bodyType: string,
+  selections: Selections,
   signal?: AbortSignal,
 ): Promise<number> {
   if (!canvas.isConnected) {
@@ -397,14 +406,13 @@ export async function drawRecolorPreview(
   }
 
   // Only show the idle preview for the asset
-  const compactDisplay = state.compactDisplay;
   const previewRow = meta.preview_row ?? 2;
   const previewCol = (meta as { preview_column?: number }).preview_column ?? 0;
   const previewXOffset =
     (meta as { preview_x_offset?: number }).preview_x_offset ?? 0;
   const previewYOffset =
     (meta as { preview_y_offset?: number }).preview_y_offset ?? 0;
-  const layersToLoad = getLayersToLoad(meta, state.bodyType, state.selections);
+  const layersToLoad = getLayersToLoad(meta, bodyType, selections);
 
   // Load and draw all layers
   let imagesLoaded = 0;

@@ -1,9 +1,11 @@
+// @ts-nocheck
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
+import { withWriteFileSync } from "../../test-helpers.js";
 import { METADATA_MODULE_BASENAMES } from "../../../../scripts/generateSources/state.js";
 import { vitePluginItemMetadata } from "../../../../vite/vite-plugin-item-metadata.js";
 import {
@@ -108,29 +110,30 @@ test("vitePluginItemMetadata buildStart invokes generateSources with writeMetada
   assert.equal(typeof opts.writeFileSync, "function");
 });
 
-test("vitePluginItemMetadata does not set writeCredits in metadata-only temp roots", () => {
+test("vitePluginItemMetadata does not set writeCredits in metadata-only temp roots", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "vite-credits-skip-"));
   const calls = [];
-  const originalWrite = fs.writeFileSync;
   const captured = [];
-  fs.writeFileSync = (filePath, contents) => {
-    captured.push([filePath, String(contents)]);
-    return originalWrite(filePath, contents);
-  };
 
-  try {
-    const plugin = vitePluginItemMetadata("production", {
-      generateSources: (opts) => {
-        calls.push(opts);
-        opts.writeFileSync(path.join(root, "dist", "item-metadata.js"), "js");
-      },
-    });
-    plugin.configResolved({ root });
-    plugin.buildStart();
-  } finally {
-    fs.writeFileSync = originalWrite;
-    fs.rmSync(root, { recursive: true, force: true });
-  }
+  await withWriteFileSync(
+    fs,
+    (filePath, contents, original) => {
+      captured.push([filePath, String(contents)]);
+      return original(filePath, contents);
+    },
+    async () => {
+      const plugin = vitePluginItemMetadata("production", {
+        generateSources: (opts) => {
+          calls.push(opts);
+          opts.writeFileSync(path.join(root, "dist", "item-metadata.js"), "js");
+        },
+      });
+      plugin.configResolved({ root });
+      plugin.buildStart();
+    },
+  );
+
+  fs.rmSync(root, { recursive: true, force: true });
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].writeCredits, false);

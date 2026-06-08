@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test } from "@playwright/test";
 import { argosScreenshot } from "@argos-ci/playwright";
 import {

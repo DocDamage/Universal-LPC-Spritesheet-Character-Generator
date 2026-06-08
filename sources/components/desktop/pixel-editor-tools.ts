@@ -44,9 +44,9 @@ export function sampleColor(
   const ctx = get2DContext(canvas);
   const pixel = ctx.getImageData(point.x, point.y, 1, 1).data;
   if (pixel[3] === 0) return null;
-  const r = pixel[0].toString(16).padStart(2, "0");
-  const g = pixel[1].toString(16).padStart(2, "0");
-  const b = pixel[2].toString(16).padStart(2, "0");
+  const r = pixel[0]!.toString(16).padStart(2, "0");
+  const g = pixel[1]!.toString(16).padStart(2, "0");
+  const b = pixel[2]!.toString(16).padStart(2, "0");
   return `#${r}${g}${b}`;
 }
 
@@ -250,10 +250,10 @@ function floodFillCanvas(
 function getPixel(image: ImageData, x: number, y: number): Rgba {
   const idx = (y * FRAME_SIZE + x) * 4;
   return {
-    r: image.data[idx],
-    g: image.data[idx + 1],
-    b: image.data[idx + 2],
-    a: image.data[idx + 3],
+    r: image.data[idx]!,
+    g: image.data[idx + 1]!,
+    b: image.data[idx + 2]!,
+    a: image.data[idx + 3]!,
   };
 }
 
@@ -265,7 +265,7 @@ function setPixel(
   preserveAlpha = false,
 ): void {
   const idx = (y * FRAME_SIZE + x) * 4;
-  const alpha = image.data[idx + 3];
+  const alpha = image.data[idx + 3]!;
   image.data[idx] = color.r;
   image.data[idx + 1] = color.g;
   image.data[idx + 2] = color.b;

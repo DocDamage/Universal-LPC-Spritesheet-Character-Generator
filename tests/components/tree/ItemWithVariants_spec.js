@@ -1,3 +1,4 @@
+// @ts-nocheck
 import m from "mithril";
 import { assert } from "chai";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";

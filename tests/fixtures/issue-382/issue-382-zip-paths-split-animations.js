@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * exportSplitAnimations — sorted zip paths
  *

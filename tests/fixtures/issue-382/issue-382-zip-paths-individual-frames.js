@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * exportIndividualFrames — sorted zip paths
  *

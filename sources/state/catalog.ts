@@ -134,7 +134,7 @@ export function duplicateCustomPart(
     newSheets[animation] = newCanvas;
   }
 
-  const firstSheet = newSheets.walk ?? Object.values(newSheets)[0];
+  const firstSheet = newSheets['walk'] ?? Object.values(newSheets)[0];
   const duplicated: CustomPart = {
     itemId: newItemId,
     name: `${part.name} (Copy)`,
@@ -213,6 +213,15 @@ export type ItemLite = {
   variants: string[];
   path: string[];
   preview_row?: number;
+};
+
+/** Complete item metadata as emitted by the build pipeline (includes layers,
+ *  credits, and optional interned indices `v` / `r`). */
+export type FullItemMetadata = ItemLite & {
+  layers?: Record<string, LayerEntry>;
+  credits?: Credit[];
+  v?: number;
+  r?: number;
 };
 
 export type Credit = {
@@ -354,7 +363,7 @@ export type CatalogWriter = {
     itemLayers: Record<string, Record<string, LayerEntry>>;
   }): void;
   loadCatalogFromFixtures(fixtureGlobals: {
-    itemMetadata: Record<string, unknown>;
+    itemMetadata: Record<string, FullItemMetadata>;
     aliasMetadata: AliasMetadata;
     categoryTree: CategoryTree;
     metadataIndexes: MetadataIndexes;
@@ -392,7 +401,7 @@ function makeStage(): Stage {
 }
 
 function splitFullItemMetadataForCatalog(
-  fullItemMetadata: Record<string, unknown>,
+  fullItemMetadata: Record<string, FullItemMetadata>,
 ): {
   itemMetadataLite: Record<string, ItemLite>;
   itemCredits: Record<string, Credit[]>;
@@ -403,11 +412,8 @@ function splitFullItemMetadataForCatalog(
   const itemLayers: Record<string, Record<string, LayerEntry>> = {};
 
   for (const [itemId, meta] of Object.entries(fullItemMetadata)) {
-    const { layers, credits, ...lite } = meta as {
-      layers?: Record<string, LayerEntry>;
-      credits?: Credit[];
-    } & Omit<ItemLite, "layers" | "credits">;
-    itemMetadataLite[itemId] = lite as ItemLite;
+    const { layers, credits, ...lite } = meta;
+    itemMetadataLite[itemId] = lite;
     itemCredits[itemId] = credits ?? [];
     itemLayers[itemId] = layers ?? {};
   }
@@ -451,7 +457,7 @@ export function createCatalog(): Catalog {
       return;
     }
     for (const itemId of Object.keys(itemLiteStore)) {
-      const cur = itemLiteStore[itemId];
+      const cur = itemLiteStore[itemId]!;
       if (isInternedItemLite(cur)) {
         itemLiteStore[itemId] = expandInternedItemLite(
           cur,
@@ -542,10 +548,10 @@ export function createCatalog(): Catalog {
       const credits = creditsStage.resolved
         ? (itemCreditsStore?.[lookupId] ?? [])
         : [];
-      const merged = { ...lite, layers, credits } as typeof lite & {
-        layers: typeof layers;
-        credits: typeof credits;
-        itemId?: string;
+      const merged: ItemMerged & { itemId?: string } = {
+        ...lite,
+        layers,
+        credits,
       };
       if (custom) {
         merged.itemId = id;
@@ -600,19 +606,19 @@ export function createCatalog(): Catalog {
       for (const [id, lite] of Object.entries(itemLiteStore)) {
         synthetic[id] = { ...lite, layers: {}, credits: [] };
       }
-      return buildItemsByTypeNameLite(synthetic) as Record<
-        string,
-        SlimByTypeNameRow[]
-      >;
+      return buildItemsByTypeNameLite(synthetic);
     },
 
     // writer — only `install-item-metadata.ts` and test setup should call these
     registerFromIndexModule(exports_) {
       aliasMetadataStore = exports_.aliasMetadata;
       categoryTreeStore = exports_.categoryTree;
-      metadataIndexesStore = expandMetadataIndexesWithInternedArrays(
+      const expanded = expandMetadataIndexesWithInternedArrays(
         exports_.metadataIndexes,
-      ) as MetadataIndexes;
+      );
+      if (expanded) {
+        metadataIndexesStore = expanded;
+      }
       indexStage.resolve();
       expandInternedItemLitesInStore();
     },
@@ -764,7 +770,7 @@ export const registerFromLayersModule = (exports_: {
 }): void => defaultCatalog.registerFromLayersModule(exports_);
 
 export const loadCatalogFromFixtures = (fixtureGlobals: {
-  itemMetadata: Record<string, unknown>;
+  itemMetadata: Record<string, FullItemMetadata>;
   aliasMetadata: AliasMetadata;
   categoryTree: CategoryTree;
   metadataIndexes: MetadataIndexes;

@@ -228,7 +228,7 @@ export function replaceInPath(
       }),
     );
 
-    const resolved = pathDeps.es6DynamicTemplate(path, replacements);
+    const resolved = pathDeps.es6DynamicTemplate(path, replacements as Record<string, string>);
     cacheReplacementPath(meta, cacheKey, resolved);
     return resolved;
   }
@@ -255,7 +255,7 @@ function getVariantFromItemId(itemId: string): string {
   const delimited = splitDelimitedNameAndVariant(itemId);
   if (delimited) return delimited.variant;
   const parts = itemId.split("_");
-  return parts[parts.length - 1];
+  return parts[parts.length - 1]!;
 }
 
 function getCachedNameWithoutVariant(

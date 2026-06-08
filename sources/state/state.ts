@@ -3,11 +3,11 @@ import m from "mithril";
 import { syncSelectionsToHash, loadSelectionsFromHash } from "./hash.ts";
 import { getItemMerged, type ItemMerged } from "./catalog.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
-import { state } from "./state-model.ts";
-import type { Selections } from "./state-model.ts";
+import { state } from "./app-state.ts";
+import type { Selections } from "./app-state.ts";
 
 export { state };
-export type { Selection, Selections, State } from "./state-model.ts";
+export type { Selection, Selections, State } from "./app-state.ts";
 
 /**
  * State.ts treats catalog metadata defensively — fields like `type_name` are

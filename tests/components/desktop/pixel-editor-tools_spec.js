@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it } from "mocha-globals";
 import { FRAME_SIZE } from "../../../sources/state/constants.ts";

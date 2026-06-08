@@ -59,20 +59,20 @@ export function drawFramesToCustomAnimation(
   const isSingleAnimation = src.height <= 256;
 
   for (let i = 0; i < customAnimationDefinition.frames.length; ++i) {
-    const frames = customAnimationDefinition.frames[i];
+    const frames = customAnimationDefinition.frames[i]!;
     for (let j = 0; j < frames.length; ++j) {
-      const frameSpec = frames[j]; // e.g. "sit-n,2"
+      const frameSpec = frames[j]!; // e.g. "sit-n,2"
       const [srcRowName, srcColumnStr] = frameSpec.split(",");
-      const srcColumn = parseInt(srcColumnStr);
+      const srcColumn = parseInt(srcColumnStr!);
 
       let srcRow: number;
       if (isSingleAnimation) {
         // Rows 0-3 = n, w, s, e. Extract direction from e.g. "sit-n".
-        const direction = srcRowName.split("-")[1];
+        const direction = srcRowName!.split("-")[1]!;
         const directionMap: Record<string, number> = { n: 0, w: 1, s: 2, e: 3 };
         srcRow = directionMap[direction] || 0;
       } else {
-        srcRow = animationRowsLayout ? animationRowsLayout[srcRowName] : i;
+        srcRow = animationRowsLayout ? animationRowsLayout[srcRowName!] ?? i : i;
       }
 
       const srcX = FRAME_SIZE * srcColumn;

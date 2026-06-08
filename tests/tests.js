@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "./vitest-setup.js";
 import { config } from "chai";
 
@@ -57,5 +58,10 @@ import "./utils/zip-export-ui-suspend_spec.js";
 import "./state/zip_spec.js";
 import "./state/zip-issue-382_spec.js";
 import "./performance-profiler_spec.js";
+
+import "./state/export-options_spec.js";
+import "./state/export-progress_spec.js";
+import "./state/custom-asset-validation_spec.js";
+import "./components/download/ExportWizard_spec.js";
 
 mocha.run();

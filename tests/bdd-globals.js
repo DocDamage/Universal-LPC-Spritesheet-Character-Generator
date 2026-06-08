@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * After mocha.setup('bdd'), Mocha attaches BDD helpers to the global object.
  * ES module code does not resolve those as free identifiers; import them here.

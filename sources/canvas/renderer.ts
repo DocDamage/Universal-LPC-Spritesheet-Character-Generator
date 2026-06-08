@@ -31,8 +31,15 @@ import {
 } from "../state/catalog.ts";
 import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
-import { state as appState, type Selections } from "../state/state-model.ts";
+import { state as appState, type Selections } from "../state/app-state.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
+import {
+  type CustomAreaItem,
+  type LayerSource,
+  renderState,
+} from "../state/render-state.ts";
+
+const { drawCalls, addedCustomAnimations, customAreaItems } = renderState;
 
 declare global {
   interface Window {
@@ -84,28 +91,6 @@ function getRuntimeCustomPart(itemId: string) {
  * fetch through `loadImage`; `custom` items carry the already-decoded image
  * from the user's file upload.
  */
-export type LayerSource =
-  | { kind: "catalog"; spritePath: string }
-  | { kind: "custom"; image: HTMLCanvasElement | HTMLImageElement };
-
-/**
- * One queued draw operation produced by `runRenderCharacter`: one `(item,
- * layer, animation)` triple, corresponding 1:1 with a `drawImage` call in the
- * draw loop. The exported `drawCalls` array is `DrawCall[]`.
- */
-export type DrawCall = {
-  itemId: string;
-  name?: string;
-  variant: string | null;
-  recolors?: Recolors;
-  zPos: number;
-  layerNum: number;
-  animation: string;
-  yPos: number;
-  needsRecolor?: boolean;
-  source: LayerSource;
-};
-
 type CustomAnimationItem = {
   itemId: string;
   name?: string;
@@ -116,31 +101,6 @@ type CustomAnimationItem = {
   layerNum: number;
   customAnimation: string;
 };
-
-type CustomSpriteAreaItem = {
-  type: "custom_sprite";
-  zPos: number;
-  source: LayerSource;
-  itemId: string;
-  animation: string;
-  recolors: Recolors;
-  variant: string | null;
-  name?: string;
-};
-
-type ExtractedFramesAreaItem = {
-  type: "extracted_frames";
-  zPos: number;
-  source: { kind: "catalog"; spritePath: string };
-  itemId: string;
-  animation: string;
-  needsRecolor?: boolean;
-  recolors?: Recolors;
-  variant: string | null;
-  name?: string;
-};
-
-export type CustomAreaItem = CustomSpriteAreaItem | ExtractedFramesAreaItem;
 
 type LoadedCustomAreaImage = {
   item: CustomAreaItem;
@@ -192,9 +152,6 @@ export const SHEET_WIDTH = 832; // 13 frames * 64px
 
 export let canvas: HTMLCanvasElement | null = null;
 export let ctx: CanvasRenderingContext2D | null = null;
-export let drawCalls: DrawCall[] = [];
-export let addedCustomAnimations: Set<string> = new Set();
-export let customAreaItems: Record<string, CustomAreaItem[]> = {};
 /** True after `initCanvas()` — offscreen buffer exists (main bootstrap runs this after S1∧S2). */
 let offscreenCanvasInitialized = false;
 
@@ -264,10 +221,9 @@ async function runRenderCharacter(
   const profiler = window.profiler;
 
   // Build list of draw calls
-  drawCalls = [];
-  addedCustomAnimations = new Set(); // Track which custom animations we've added
+  renderState.drawCalls = [];
+  renderState.addedCustomAnimations = new Set(); // Track which custom animations we've added
 
-  appState.renderCharacter.isRendering = true;
   appState.isRenderingCharacter = true;
   m.redraw();
 
@@ -459,7 +415,7 @@ async function runRenderCharacter(
           const animHeight =
             customAnimDef.frameSize * customAnimDef.frames.length;
           const animWidth =
-            customAnimDef.frameSize * customAnimDef.frames[0].length;
+            customAnimDef.frameSize * customAnimDef.frames[0]!.length;
           totalHeight += animHeight;
           totalWidth = Math.max(totalWidth, animWidth);
           currentCustomAnimations[customAnimName] = customAnimDef;
@@ -529,7 +485,7 @@ async function runRenderCharacter(
       }
     }
 
-    customAreaItems = {};
+    renderState.customAreaItems = {};
 
     // Now handle custom animations (wheelchair, etc.)
     if (addedCustomAnimations.size > 0 && customAnimations) {
@@ -604,13 +560,13 @@ async function runRenderCharacter(
 
             if (areaItem.type === "custom_sprite") {
               // Draw custom sprite directly (wheelchair background or foreground)
-              renderCtx.drawImage(imageToUse, 0, offsetY);
+              renderCtx.drawImage(imageToUse, 0, offsetY!);
             } else if (areaItem.type === "extracted_frames") {
               // Extract and draw frames from standard sprite
               drawFramesToCustomAnimation(
                 renderCtx,
                 customAnimDef,
-                offsetY,
+                offsetY!,
                 imageToUse,
               );
             }
@@ -619,7 +575,6 @@ async function runRenderCharacter(
       }
     }
   } finally {
-    appState.renderCharacter.isRendering = false;
     appState.isRenderingCharacter = false;
     m.redraw();
 
@@ -702,7 +657,7 @@ export async function renderSingleItem(
   const customPart = getRuntimeCustomPart(itemId);
   if (customPart) {
     return (
-      customPart.sheets.walk ?? Object.values(customPart.sheets)[0] ?? null
+      customPart.sheets['walk'] ?? Object.values(customPart.sheets)[0] ?? null
     );
   }
 
@@ -737,7 +692,7 @@ export async function renderSingleItem(
     }
 
     const animHeight = customAnimDef.frameSize * customAnimDef.frames.length;
-    const animWidth = customAnimDef.frameSize * customAnimDef.frames[0].length;
+    const animWidth = customAnimDef.frameSize * customAnimDef.frames[0]!.length;
 
     const customLayers = Object.values(meta.layers).filter(
       (l) => l.custom_animation,
@@ -941,7 +896,7 @@ export async function renderSingleItemAnimation(
   }
 
   // Check if this is a custom animation item
-  const layer1 = meta.layers?.layer_1;
+  const layer1 = meta.layers?.['layer_1'];
   const hasCustomAnimation = layer1 && layer1.custom_animation;
 
   if (hasCustomAnimation && customAnimations) {

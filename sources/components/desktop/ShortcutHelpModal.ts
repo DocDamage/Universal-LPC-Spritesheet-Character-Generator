@@ -72,7 +72,7 @@ export const ShortcutHelpModal: m.Component<
       if (!categories[cmd.category]) {
         categories[cmd.category] = [];
       }
-      categories[cmd.category].push(cmd);
+      categories[cmd.category]!.push(cmd);
     }
 
     const conflicts = getAllShortcutConflicts();

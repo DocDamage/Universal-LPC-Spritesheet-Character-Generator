@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it } from "mocha-globals";
 import { get2DContext } from "../../../sources/canvas/canvas-utils.ts";

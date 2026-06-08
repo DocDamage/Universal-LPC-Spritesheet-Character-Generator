@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Use this script in order to recompose universal spritesheets from the separate animations.
 // This script traverses all files inside `sheetsFolder` and concat the animations
 // spellcast, thrust, walk ,slash, shoot, hurt into a new image file

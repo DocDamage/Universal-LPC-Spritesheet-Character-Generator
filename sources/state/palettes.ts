@@ -72,6 +72,8 @@ export function fixMissingRecolor(
  * Build the recolor map for an item across the current selections — keyed by
  * `type_name`, valued by recolor variant. Returns null when no recolors apply.
  */
+export type Recolors = ReturnType<typeof getMultiRecolors>;
+
 export function getMultiRecolors(
   itemId: string,
   selections: Selections,
@@ -185,8 +187,8 @@ export function getBasePalette(
   const [version, recolor] = base
     ? base.split(".")
     : [materialMeta.default, materialMeta.base];
-  const colors = materialMeta.palettes[version]?.[recolor];
-  return ok([version, recolor, colors]);
+  const colors = materialMeta.palettes[version!]?.[recolor!];
+  return ok([version!, recolor!, colors as string[]]);
 }
 
 /** Resolve the target color array for a recolor key. */

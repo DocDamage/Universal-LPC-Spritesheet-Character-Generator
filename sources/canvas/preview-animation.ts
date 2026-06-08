@@ -1,5 +1,4 @@
 import { previewCanvas, previewCtx } from "./preview-canvas.ts";
-import { state } from "../state/state.ts";
 import { FRAME_SIZE, ANIMATION_CONFIGS } from "../state/constants.ts";
 import { createCanvas, drawTransparencyBackground } from "./canvas-utils.ts";
 import { applyTransparencyMaskToCanvas } from "./mask.ts";
@@ -14,6 +13,19 @@ import {
 } from "./tween.ts";
 import type { TweenSettings } from "./tween.ts";
 import { getTweenSettingsForAnimation } from "../state/tween-settings.ts";
+
+// Preview options mirrored from app state (set by component layer to avoid
+// canvas → state circular dependency).
+let previewShowTransparencyGrid = true;
+let previewApplyTransparencyMask = false;
+
+export function setPreviewShowTransparencyGrid(enabled: boolean): void {
+  previewShowTransparencyGrid = enabled;
+}
+
+export function setPreviewApplyTransparencyMask(enabled: boolean): void {
+  previewApplyTransparencyMask = enabled;
+}
 
 declare global {
   interface Window {
@@ -53,7 +65,7 @@ export function setPreviewAnimation(animationName: string): number[] {
 
     // Extract frame cycle from custom animation definition
     // Custom animations have 4 rows (n, w, s, e), we'll show all columns from first row
-    const frameCount = customAnimDef.frames[0].length;
+    const frameCount = customAnimDef.frames[0]!.length;
 
     // Check if we should skip the first frame (frame 0)
     const skipFirstFrame = customAnimDef.skipFirstFrameInPreview || false;
@@ -196,7 +208,7 @@ function drawPreviewBackground(): void {
     return;
   }
 
-  if (state.showTransparencyGrid) {
+  if (previewShowTransparencyGrid) {
     drawTransparencyBackground(
       previewCtx,
       previewCanvas.width,
@@ -210,7 +222,7 @@ function getSourceCanvas(): HTMLCanvasElement {
     throw new Error("Renderer canvas is not initialized");
   }
 
-  if (state.applyTransparencyMask) {
+  if (previewApplyTransparencyMask) {
     // using a tmpCanvas here to avoid modifying the original offscreen canvas
     // which causes a bug if the user toggles the checkbox multiple times
     const { canvas: tmpCanvas, ctx: tmpCtx } = createCanvas(
@@ -246,6 +258,9 @@ function drawAnimationCycleFrame(
   cycleIndex: number,
 ): void {
   const currentFrame = animationFrames[cycleIndex];
+  if (currentFrame === undefined) {
+    return;
+  }
 
   // Draw stacked rows from main canvas to preview
   for (let i = 0; i < animRowNum; i++) {

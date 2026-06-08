@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it } from "mocha-globals";
 import { encodeCanvasesAsGif } from "../../sources/canvas/preview-gif.ts";

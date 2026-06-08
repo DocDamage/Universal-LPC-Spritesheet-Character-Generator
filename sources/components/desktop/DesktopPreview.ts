@@ -11,6 +11,8 @@ import {
   startPreviewAnimation,
   stopPreviewAnimation,
   getCustomAnimations,
+  setPreviewShowTransparencyGrid,
+  setPreviewApplyTransparencyMask,
 } from "../../canvas/preview-animation.ts";
 
 type DesktopPreviewState = {
@@ -42,6 +44,8 @@ export const DesktopPreview: m.Component<
 
     initPreviewCanvas(canvas);
     setPreviewAnimation(vnode.state.selectedAnimation);
+    setPreviewShowTransparencyGrid(state.showTransparencyGrid);
+    setPreviewApplyTransparencyMask(state.applyTransparencyMask);
     startPreviewAnimation();
     setPreviewCanvasZoom(vnode.state.zoomLevel);
 

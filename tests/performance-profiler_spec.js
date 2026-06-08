@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import sinon from "sinon";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
@@ -110,22 +111,22 @@ describe("performance-profiler.ts", () => {
     });
 
     it("sums repeated phase names", async () => {
-      // Enough work that phase durations survive ms rounding; one profiler so we
-      // compare accumulated "same" vs a single block (two instances can both
-      // round to the same phasesMs when timers are coarse).
-      const heavy = 6_000_000;
+      // Mock performance.now() so the test is deterministic and does not rely
+      // on real CPU work or coarse timer rounding on throttled CI VMs.
+      const nowStub = sandbox.stub(globalThis.performance, "now");
+      nowStub.onCall(0).returns(0);
+      nowStub.onCall(1).returns(5);
+      nowStub.onCall(2).returns(5);
+      nowStub.onCall(3).returns(12);
+
       const z = createZipExportProfiler("accum");
-      await z.phase("same", async () => {
-        cpuWork(heavy);
-      });
+      await z.phase("same", async () => {});
       const afterFirst = z.toMetadata().phasesMs.same;
-      await z.phase("same", async () => {
-        cpuWork(heavy);
-      });
+      await z.phase("same", async () => {});
       const afterBoth = z.toMetadata().phasesMs.same;
 
-      expect(afterFirst).to.be.greaterThan(0);
-      expect(afterBoth).to.be.greaterThan(afterFirst);
+      expect(afterFirst).to.equal(5);
+      expect(afterBoth).to.equal(12);
     });
 
     it("logReport() does nothing when window.DEBUG is false", async () => {

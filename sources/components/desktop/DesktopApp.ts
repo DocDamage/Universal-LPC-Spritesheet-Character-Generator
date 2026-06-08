@@ -1,8 +1,6 @@
 // Main desktop app layout component
 import m from "mithril";
 import { state } from "../../state/state.ts";
-import { syncSelectionsToHash } from "../../state/hash.ts";
-import { renderCharacter } from "../../canvas/renderer.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import { SlotSelector } from "./SlotSelector.ts";
 import { DesktopPreview } from "./DesktopPreview.ts";
@@ -20,11 +18,12 @@ import { CommandPaletteModal } from "./CommandPaletteModal.ts";
 import { ShortcutHelpModal } from "./ShortcutHelpModal.ts";
 import { ConfirmDialogModal } from "../notifications/ConfirmDialogModal.ts";
 import { NotificationCenter } from "../notifications/NotificationCenter.ts";
+import { buildRenderKey, triggerRender } from "../render-effect.ts";
 
 type DesktopAppAttrs = { catalog: CatalogReader };
 
 type DesktopAppState = {
-  prevSelectionsKey: string;
+  prevKey: string;
   slotSearch: string;
 };
 
@@ -33,12 +32,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
     initDefaultCommands();
     setupGlobalShortcutListener();
 
-    vnode.state.prevSelectionsKey =
-      JSON.stringify(state.selections) +
-      "|" +
-      state.bodyType +
-      "|" +
-      state.customImageZPos;
+    vnode.state.prevKey = buildRenderKey();
     vnode.state.slotSearch = "";
   },
 
@@ -47,23 +41,10 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
   },
 
   onupdate(vnode) {
-    // Build a single key covering all render-relevant state
-    const key =
-      JSON.stringify(state.selections) +
-      "|" +
-      state.bodyType +
-      "|" +
-      state.customImageZPos;
-    if (key !== vnode.state.prevSelectionsKey) {
-      vnode.state.prevSelectionsKey = key;
-      syncSelectionsToHash();
-      if (window.canvasRenderer) {
-        renderCharacter(state.selections, state.bodyType)
-          .then(() => m.redraw())
-          .catch((err) =>
-            console.error("[DesktopApp] renderCharacter failed:", err),
-          );
-      }
+    const key = buildRenderKey();
+    if (key !== vnode.state.prevKey) {
+      vnode.state.prevKey = key;
+      triggerRender();
     }
   },
 

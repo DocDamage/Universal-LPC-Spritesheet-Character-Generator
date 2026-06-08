@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Export progress tests — covers progress creation, phase updates,
  * ticking, cancellation, completion, and failure.

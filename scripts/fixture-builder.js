@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Build issue #382 regression fixtures from an exported selections JSON file.
  *

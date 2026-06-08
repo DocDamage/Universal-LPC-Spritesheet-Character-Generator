@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "lib": ["esnext", "dom", "dom.iterable"],
     "allowJs": true,
-    "checkJs": false,
+    "checkJs": true,
     "noEmit": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
@@ -14,21 +14,16 @@
 
     // Flags from @tsconfig/strictest we deliberately turn OFF:
 
-    // noUncheckedIndexedAccess — pixel-index loops (e.g. `pix[i+3]` in
-    // mask.ts) and layer/frame array access would need a guard or `!` at
-    // every site. Noise > signal for this codebase.
-    // TODO: revisit once we have migrated to ts completely
-    "noUncheckedIndexedAccess": false,
+    "noUncheckedIndexedAccess": true,
 
     // exactOptionalPropertyTypes — interacts awkwardly with JSON and
     // external data; the distinction between `x?: T` and `x: T | undefined`
     // rarely matters in practice here.
     "exactOptionalPropertyTypes": false,
 
-    // noPropertyAccessFromIndexSignature — noisy on config-bag patterns
-    // (state, metadata objects) that use dotted access extensively.
-    // TODO: Revisit when the migration is done
-    "noPropertyAccessFromIndexSignature": false
+    // noPropertyAccessFromIndexSignature — enabled now that TS migration is
+    // complete.  Some config-bag patterns may need bracket access.
+    "noPropertyAccessFromIndexSignature": true
   },
   "include": ["sources", "scripts", "vite", "tests"]
 }

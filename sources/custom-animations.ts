@@ -556,12 +556,12 @@ const customAnimations: Record<string, CustomAnimationDefinition> = {
 const customAnimationSize = (
   customAnimation: CustomAnimationDefinition,
 ): { width: number; height: number } => ({
-  width: customAnimation.frameSize * customAnimation.frames[0].length,
+  width: customAnimation.frameSize * customAnimation.frames[0]!.length,
   height: customAnimation.frameSize * customAnimation.frames.length,
 });
 
 const customAnimationBase = (custAnim: CustomAnimationDefinition): string =>
-  custAnim.frames[0][0].split(",")[0].split("-")[0];
+  custAnim.frames[0]![0]!.split(",")[0]!.split("-")[0]!;
 
 // Expose for use in other scripts
 export {

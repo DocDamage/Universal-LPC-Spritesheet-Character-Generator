@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from "node:fs";
 import path from "node:path";
 import { buildSlimByTypeNameRow } from "../../sources/state/resolve-hash-param.ts";

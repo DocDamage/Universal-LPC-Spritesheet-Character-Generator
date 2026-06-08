@@ -1,138 +1,64 @@
-# LPC Character Generator — Editor Enhancement Plan
+# Technical Debt Remediation Plan
 
-## Overview
+**Source:** `TECHNICAL_DEBT_AUDIT.md`  
+**Workspace:** `D:\LPC character generator\LPC character generator\Universal-LPC-Spritesheet-Character-Generator`
 
-Implement 10 major editor enhancements for the Universal LPC Spritesheet Character Generator.
+---
 
-## Current State
+## Stage 1 — P0: Fix Immediately (blocks correctness or hides bugs)
 
-- Branch: `codex/editor-pro-tools`
-- Baseline commit: `3228f6373d` (established agent baseline)
-- Stack: Mithril.js + TypeScript + Vite + Bulma CSS + Playwright + Testem
-- Key files:
-  - `sources/components/desktop/PartEditor.ts` (3753 lines) — main pixel editor
-  - `sources/components/desktop/custom-weapon-import.ts` — weapon/tool import alignment
-  - `sources/components/desktop/SlotSelector.ts` — slot controls + custom asset library UI
-  - `sources/state/commands.ts` — global command registry + shortcuts
-  - `sources/state/custom-parts-storage.ts` — IndexedDB persistence for custom parts
-  - `sources/components/desktop/pixel-editor-tools.ts` — brush, fill, selection, canvas helpers
-  - `tests/visual/` — Playwright E2E tests
-  - `styles/` — SCSS/CSS styles
+| # | Action | File(s) | Status |
+|---|--------|---------|--------|
+| 1 | **Add 4 orphaned spec files to `tests/tests.js`** | `tests/tests.js` | **done** |
+| 2 | **Fix `for...in` array loops** in z-position scripts | `scripts/zPositioning/update_zpos.js`, `write_z_positions_from_sheets.js` | **done** |
+| 3 | **Run `npm audit fix`** to resolve 3 moderate `uuid` vulnerabilities | `package-lock.json` | **done** (0 vulnerabilities) |
+| 4 | **Remove stale TODOs** in `tsconfig.json` (migration is complete) | `tsconfig.json` | **done** |
 
-## Task Groups
+## Stage 2 — P1: High Impact, Medium Effort
 
-### Worker 1: Editor Core (PartEditor.ts + pixel-editor-tools.ts + new modules)
+| # | Action | File(s) | Status |
+|---|--------|---------|--------|
+| 5 | **Break `PartEditor.ts` into sub-components** (layer panel, toolbar, canvas stage, timeline, modals) | `sources/components/desktop/PartEditor.ts` | **in progress** (sub-agent) |
+| 6 | **Deduplicate ZIP export boilerplate** in `zip.ts` (~70% shared code) | `sources/state/zip.ts` | **in progress** (sub-agent) |
+| 7 | **Break state↔canvas circular dependency** — move `drawCalls`, `addedCustomAnimations`, `customAreaItems` into a render-state object in `state/` | `sources/canvas/renderer.ts`, `sources/state/*.ts` | **in progress** (sub-agent) |
+| 8 | **Consolidate duplicate render-trigger logic** from `App.ts` + `DesktopApp.ts` into one effect | `sources/components/App.ts`, `DesktopApp.ts` | **done** (`render-effect.ts`) |
+| 9 | **Replace hard `waitForTimeout` in visual tests** with explicit readiness signals | `tests/visual/editor-e2e.spec.js`, `test_dropdowns.spec.js` | **in progress** (sub-agent) |
+| 10 | **Extract `SLOT_CONFIG`, `getSpritePath`, `expandTemplatePaths`** into `scripts/audit/shared.js` | `scripts/audit_*.js` | **done** |
+| 11 | **Define proper `FullItemMetadata` type** and eliminate `Record<string, unknown>` + `as unknown as ItemLite` chain | `sources/state/catalog.ts` | **done** |
 
-**Tasks:** 1 (Autosave), 2 (Status bar), 5 (Selection upgrades), 6 (Animation polish), 8 (Mobile/touch), 9 (Performance polish)
+## Stage 3 — P2: Medium Impact, Medium Effort
 
-**Deliverables:**
+| # | Action | File(s) | Status |
+|---|--------|---------|--------|
+| 12 | **Introduce shared Node mocking helper** (or adopt `sinon` in Node tests) | `tests/node/**/*_spec.js` | **done** (`test-helpers.js`) |
+| 13 | **Make `tests/node/run-node-tests.js` recursively discover** all `tests/node/**/*_spec.js` | `tests/node/run-node-tests.js` | **done** |
+| 14 | **Refactor `performance-profiler_spec.js` timing test** to mock `performance.now()` or use tolerance | `tests/performance-profiler_spec.js` | **done** |
+| 15 | **Remove `state.ts` re-export indirection** — merge `state-model.ts` into `state.ts` or rename unambiguously | `sources/state/state.ts`, `state-model.ts` | **done** (renamed to `app-state.ts`) |
+| 16 | **Remove duplicate `isRenderingCharacter` / `renderCharacter.isRendering`** flags | `sources/state/state-model.ts` → `app-state.ts` | **done** |
+| 17 | **Replace `@babel/eslint-parser`** with native ESLint parser for ESM | `eslint.config.js` | **done** |
+| 18 | **Expand Prettier config** (`printWidth`, `tabWidth`, `semi`, `singleQuote`, `trailingComma`) | `.prettierrc.json` | **done** |
+| 19 | **Expand `.editorconfig`** to `.ts`, `.json`, `.html`, `.css`, `.scss` | `.editorconfig` | **done** |
+| 20 | **Remove redundant `serve` script** and consolidate `profile:zip:*` scripts | `package.json` | **done** |
+| 21 | **Remove obsolete `mocha` npm override** | `package.json` | **done** |
 
-- **Autosave & Recovery:**
-  - New module `sources/state/editor-autosave.ts` with IndexedDB storage for draft edits
-  - Auto-save on every history change (debounced 500ms)
-  - Recovery prompt on editor open if draft exists
-  - "Unsaved changes" warning before closing editor (beforeunload + custom confirm)
-  - Clear autosave on successful save
-- **Status Bar:**
-  - Bottom status bar in editor showing: cursor pixel position (x,y), active direction, zoom level, active layer name, brush size, frame number (in frame mode)
-  - Update on mousemove over canvas
-- **Selection Upgrades:**
-  - Copy/paste between directions (Ctrl+C/Ctrl+V works across directions)
-  - Move selection with arrow keys (1px normal, 10px with Shift)
-  - Flip/rotate selected pixels only (when selection exists, apply to selection; otherwise layer)
-  - Nudge selection by 1px or 10px (already partially implemented, verify and enhance)
-- **Animation Polish:**
-  - Live playback inside Animation tab (play/pause button, loop through frames)
-  - Scrubbable timeline (click/drag on frame strip to jump to frame)
-  - Per-frame dirty indicators (dot on frames that have edits)
-  - "Copy global edits into selected frames" button (applies global context to current frame)
-- **Mobile/Touch:**
-  - Two-finger pan/zoom on canvas (touchmove with 2 touches)
-  - Larger tool controls on touch devices (CSS media query `hover: none`)
-  - Dedicated mobile editing layout (stacked panels, full-width canvas)
-- **Performance Polish:**
-  - Thumbnail caching for custom parts/imports (cache 64x64 thumbnails in memory + sessionStorage)
-  - Faster layer recomposition for large edit histories (batch canvas operations, avoid per-layer clearRect when possible)
-  - Avoid unnecessary redraws while moving sliders (debounce slider oninput, only redraw on onchange or after 100ms idle)
+## Stage 4 — P3: Polish / Long-Term
 
-### Worker 2: Import, Shortcuts & Asset Library
+| # | Action | File(s) | Status |
+|---|--------|---------|--------|
+| 22 | **Evaluate unifying test runners** under Vitest (single config, TS tests, Node + DOM environments) | `tests/`, `vite.config.js`, `testem.cjs` | pending |
+| 23 | **Convert tests from `.js` to `.ts`** to match source language | `tests/` | pending |
+| 24 | **Enable `checkJs: true`** in `tsconfig.json` to type-check scripts | `tsconfig.json` | pending |
+| 25 | **Enable `noUncheckedIndexedAccess`** and `noPropertyAccessFromIndexSignature` now that TS migration is complete | `tsconfig.json` | pending |
+| 26 | **Add pre-audit guard** that auto-generates `dist/` before scripts import from it | `scripts/audit_*.js` | pending |
+| 27 | **Use a CSV library** in `scripts/generateSources/credits.js` | `scripts/generateSources/credits.js` | **done** (`csv-helpers.js`) |
+| 28 | **Document architecture layering rules** (components → state → canvas → utils) and enforce via ESLint `no-restricted-imports` | `AGENTS.md`, `eslint.config.js` | pending |
 
-**Tasks:** 3 (Import alignment UI), 4 (Editable shortcuts), 7 (Custom asset library)
+---
 
-**Deliverables:**
+## Execution Notes
 
-- **Better Import Alignment UI:**
-  - Overlay imported weapon/tool against reference asset in import panel (side-by-side canvas preview)
-  - Hand/socket guide markers (draw crosshairs at estimated grip point)
-  - "Reset alignment" button (sets offsetX/Y to 0, scale to 100)
-  - "Center on reference" button (auto-center imported image on reference bounds)
-  - "Nudge by 1px" controls (arrow buttons around offset fields)
-- **Editable Shortcut Map:**
-  - New module `sources/state/shortcut-preferences.ts` with localStorage persistence
-  - UI in ShortcutHelpModal to edit shortcuts (click shortcut → press new keys)
-  - Conflict detection (highlight duplicate shortcuts)
-  - Reset to defaults button
-  - Load preferences on app init, apply to commands.ts
-- **Custom Asset Library Management:**
-  - Folders/tags for imported tools and edited parts (tag input in save flow, filter by tag in library)
-  - Export custom assets as backup zip/json (new button in SlotSelector, uses JSZip)
-  - Import custom assets from backup zip/json (file input, validate, merge)
-  - Duplicate custom assets ("Duplicate" button next to rename/delete)
-
-### Worker 3: E2E Tests
-
-**Task:** 10 (More E2E coverage)
-
-**Deliverables:**
-
-- Playwright tests in `tests/visual/editor-e2e.spec.js`:
-  - Open editor from slot selector
-  - Toggle fullscreen mode
-  - Wheel zoom on canvas
-  - Drawing on canvas (pen tool, verify pixel change)
-  - Save custom part
-  - Reload import (verify custom part persists after reload)
-- Update `playwright.config.js` if needed for editor test isolation
-
-## Shared Contracts
-
-### PartEditor.ts Integration Points
-
-- Worker 1 owns all PartEditor.ts changes. Do not modify PartEditor.ts in other workers.
-- New modules should export clean APIs:
-  - `editor-autosave.ts`: `saveDraft(state)`, `loadDraft(itemId): Promise<Partial<PartEditorState>|null>`, `clearDraft(itemId)`, `hasUnsavedDraft(itemId)`
-  - `shortcut-preferences.ts`: `loadShortcutPrefs()`, `saveShortcutPrefs(prefs)`, `getShortcut(commandId)`, `resetShortcuts()`
-
-### CSS Conventions
-
-- Use existing BEM-style classes: `.part-editor-*`, `.desktop-slot-*`
-- Mobile styles: add `.part-editor-mobile` class when touch detected, use `@media (hover: none)`
-- Status bar: `.part-editor-status-bar`
-
-### Test Conventions
-
-- Browser tests: `tests/components/desktop/PartEditor_spec.js` for unit-style
-- Node tests: `tests/node/state/editor-autosave_spec.js` for autosave logic
-- Playwright: `tests/visual/editor-e2e.spec.js` for E2E
-
-## Merge Order
-
-1. Worker 1 (Editor Core) — largest, establishes new APIs
-2. Worker 2 (Import/Shortcuts/Assets) — independent, touches different files
-3. Worker 3 (Tests) — independent
-
-## Validation Commands
-
-```bash
-npm run type-check
-npm run test:node
-node ./node_modules/testem/testem.js ci --launch "headless chrome"
-npm run test:visual
-```
-
-## Worktrees
-
-- Main: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator`
-- Worker 1: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator/../.worktrees/editor-core`
-- Worker 2: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator/../.worktrees/import-shortcuts-assets`
-- Worker 3: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator/../.worktrees/e2e-tests`
+- **P0 items** are executed first, in parallel where file-independent. ✅
+- **P1 items** require reading large files before editing; delegated to sub-agents where appropriate. 4 sub-agents running.
+- **P2 items** completed directly by orchestrator. ✅
+- **P3-27** completed directly by orchestrator. ✅
+- All direct changes verified with `node --check` for JS files.

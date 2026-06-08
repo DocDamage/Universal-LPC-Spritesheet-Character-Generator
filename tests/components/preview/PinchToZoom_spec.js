@@ -1,3 +1,4 @@
+// @ts-nocheck
 import sinon from "sinon";
 import { assert } from "chai";
 import { describe, it, afterEach } from "mocha-globals";

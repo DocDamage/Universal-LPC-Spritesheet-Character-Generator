@@ -136,7 +136,7 @@ export class PerformanceProfiler {
 
       const measures = performance.getEntriesByName(measureName, "measure");
       if (measures.length > 0) {
-        const measure = measures[measures.length - 1];
+        const measure = measures[measures.length - 1]!;
         const duration = measure.duration;
 
         if (this.logSlowOperations && duration > this.slowThresholdMs) {

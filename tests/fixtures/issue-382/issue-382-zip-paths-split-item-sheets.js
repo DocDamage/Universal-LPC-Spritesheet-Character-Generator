@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * exportSplitItemSheets — sorted zip paths
  *

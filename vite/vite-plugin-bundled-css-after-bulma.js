@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Vite injects the extracted entry CSS after module scripts in built HTML.
  * Keep Bulma first, then the app bundle (same cascade as source index.html).

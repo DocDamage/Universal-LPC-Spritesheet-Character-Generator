@@ -115,7 +115,7 @@ export function getSortedLayersByAnim(
       // Sort each animation's layers by zPos.
       const result: Record<string, AnimationLayer[]> = {};
       for (const animName in animsList) {
-        result[animName] = animsList[animName]
+        result[animName] = animsList[animName]!
           .sort((a, b) => a.zPos - b.zPos)
           .map((layer, index) => ({
             layerNum: layer.layerNum,

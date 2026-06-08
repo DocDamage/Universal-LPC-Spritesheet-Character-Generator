@@ -16,6 +16,8 @@ import {
   setPreviewAnimation,
   stopPreviewAnimation,
   startPreviewAnimation,
+  setPreviewShowTransparencyGrid,
+  setPreviewApplyTransparencyMask,
 } from "../../canvas/preview-animation.ts";
 import { renderCharacter } from "../../canvas/renderer.ts";
 import { customAnimations } from "../../custom-animations.ts";
@@ -96,9 +98,9 @@ function getRecolorChoices(
     const paletteMeta = paletteMetaResult.value;
 
     for (const cat of opt.versions) {
-      const [material, version] = cat.split(".");
+      const [material, version] = cat.split(".") as [string, string];
       const materialMeta = paletteMeta.materials[material];
-      const recolors = materialMeta?.palettes?.[version] ?? {};
+      const recolors: Record<string, string[]> = materialMeta?.palettes?.[version] ?? {};
 
       for (const [paletteName, colors] of Object.entries(recolors)) {
         const key =
@@ -239,7 +241,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         selectedValue &&
         importReferenceOptions.some((opt) => opt.value === selectedValue)
           ? selectedValue
-          : importReferenceOptions[0].value;
+          : importReferenceOptions[0]!.value;
     }
 
     const isBodyType = slot.kind === "bodyType";
@@ -394,6 +396,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         if (importedCustomAnimation) {
           stopPreviewAnimation();
           setPreviewAnimation(importedCustomAnimation);
+          setPreviewShowTransparencyGrid(state.showTransparencyGrid);
+          setPreviewApplyTransparencyMask(state.applyTransparencyMask);
           startPreviewAnimation();
           state.selectedAnimation = importedCustomAnimation;
         }
@@ -697,6 +701,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     // This item only has custom animations — switch preview to show it
                     stopPreviewAnimation();
                     setPreviewAnimation(firstAnim);
+                    setPreviewShowTransparencyGrid(state.showTransparencyGrid);
+                    setPreviewApplyTransparencyMask(state.applyTransparencyMask);
                     startPreviewAnimation();
                     state.selectedAnimation = firstAnim;
                   }

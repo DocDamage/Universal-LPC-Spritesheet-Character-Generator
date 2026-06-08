@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Custom asset validation tests — validate the validateCustomAsset function.
  * Uses canvas ImageData objects to simulate various image states.

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Safelist for PurgeCSS on the **critical** CSS bundle only.
  * - `standard`: exact class names used before / during early Mithril paint (incl. skeletons).

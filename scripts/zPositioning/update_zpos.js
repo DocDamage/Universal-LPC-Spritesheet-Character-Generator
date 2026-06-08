@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from "node:fs";
 import path from "node:path";
 const SHEETS_DIR = "sheet_definitions" + path.sep;
@@ -21,9 +22,7 @@ fs.readdirSync(SHEETS_DIR, {
   for (let jdx = 1; jdx < 10; jdx++) {
     const layerDefinition = definition[`layer_${jdx}`];
     if (layerDefinition !== undefined) {
-      let entryIdx = 0;
-      for (const _entry in csv) {
-        const item = csv[entryIdx];
+      for (const item of csv) {
         if (item.includes(file.name) && item.includes(`layer_${jdx}`)) {
           const requiredZposition = parseInt(item.split(",")[2]);
           definition[`layer_${jdx}`].zPos = requiredZposition;

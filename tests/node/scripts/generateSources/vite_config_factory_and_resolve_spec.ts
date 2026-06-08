@@ -1,6 +1,7 @@
+// @ts-nocheck
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { test } from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { resolveConfig } from "vite";
 import { METADATA_MODULE_BASENAMES } from "../../../../scripts/generateSources/state.js";

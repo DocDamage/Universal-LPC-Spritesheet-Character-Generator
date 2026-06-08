@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 import { debugLog } from "../utils/debug.js";

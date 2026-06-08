@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shared computed-style dump config + helpers for dump-computed-styles.js
  * and computed-style-diff-all.js.

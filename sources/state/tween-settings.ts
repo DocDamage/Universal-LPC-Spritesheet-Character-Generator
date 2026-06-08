@@ -6,7 +6,7 @@ import {
   type TweenPreset,
   type TweenSettings,
 } from "../canvas/tween.ts";
-import { addedCustomAnimations } from "../canvas/renderer.ts";
+import { renderState } from "./render-state.ts";
 import { customAnimations } from "../custom-animations.ts";
 
 type AnimationConfigMap = Record<string, { cycle: number[] } | undefined>;
@@ -138,7 +138,7 @@ export function getOverriddenAnimations(): string[] {
 
 export function estimateTweenExportFrames(): TweenExportEstimate {
   const standardAnimations = ANIMATIONS.filter((anim) => !anim.noExport);
-  const customAnimationNames = Array.from(addedCustomAnimations);
+  const customAnimationNames = Array.from(renderState.addedCustomAnimations);
   const animationConfigs = ANIMATION_CONFIGS as AnimationConfigMap;
   let sourceFrames = 0;
   let generatedTweenFrames = 0;

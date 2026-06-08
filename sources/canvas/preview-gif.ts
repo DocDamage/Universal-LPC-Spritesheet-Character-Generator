@@ -2,7 +2,6 @@ import { GIFEncoder, applyPalette, quantize } from "gifenc";
 import { downloadBlob } from "./download.ts";
 import { renderPreviewAnimationFrameCanvases } from "./preview-animation.ts";
 import { getTweenSettingsForAnimation } from "../state/tween-settings.ts";
-import { state } from "../state/state.ts";
 
 export function encodeCanvasesAsGif(
   frames: readonly HTMLCanvasElement[],
@@ -43,12 +42,15 @@ export function encodeCanvasesAsGif(
   return new Blob([copy.buffer], { type: "image/gif" });
 }
 
-export async function downloadPreviewAnimationGif(): Promise<void> {
-  const settings = getTweenSettingsForAnimation(state.selectedAnimation);
+export async function downloadPreviewAnimationGif(
+  selectedAnimation: string,
+  bodyType: string,
+): Promise<void> {
+  const settings = getTweenSettingsForAnimation(selectedAnimation);
   const frames = renderPreviewAnimationFrameCanvases(settings);
   const blob = encodeCanvasesAsGif(frames, settings.fps);
   downloadBlob(
     blob,
-    `lpc_${state.bodyType}_${state.selectedAnimation}_${settings.mode}_${settings.fps}fps.gif`,
+    `lpc_${bodyType}_${selectedAnimation}_${settings.mode}_${settings.fps}fps.gif`,
   );
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tween settings tests — covers global settings, overrides, estimates,
  * README generation, engine presets, and the new management functions.

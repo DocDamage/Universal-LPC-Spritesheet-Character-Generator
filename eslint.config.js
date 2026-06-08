@@ -1,12 +1,10 @@
 /* Run: npm i && npx eslint . (or enable ESLint in your IDE) */
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import babelParser from "@babel/eslint-parser";
 import globals from "globals";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 const sharedParserOptions = {
-  requireConfigFile: false,
   ecmaVersion: "latest",
 };
 
@@ -68,7 +66,6 @@ export default [
   {
     files: ["**/*.js"],
     languageOptions: {
-      parser: babelParser,
       parserOptions: {
         ...sharedParserOptions,
         sourceType: "module",
@@ -101,7 +98,45 @@ export default [
         ...globals.es2021,
       },
     },
-    rules: commonRulesTs,
+    rules: {
+      ...commonRulesTs,
+      // Architecture layering enforcement (components → state → canvas → utils)
+      // See ARCHITECTURE.md for the full dependency graph and rationale.
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          paths: [],
+          patterns: [
+            // canvas/ must not import from state/ (except render-state.ts which is the shared render-state container)
+            {
+              group: ["../state/*", "../../state/*", "../../../state/*"],
+              allowImportNames: ["renderState"],
+              message:
+                "canvas/ may only import render-state.ts from state/. All other state imports create circular dependencies.",
+            },
+            // utils/ must not import from components/, state/, or canvas/
+            {
+              group: [
+                "../components/*",
+                "../../components/*",
+                "../state/*",
+                "../../state/*",
+                "../canvas/*",
+                "../../canvas/*",
+              ],
+              message:
+                "utils/ must not import from components/, state/, or canvas/. It is the bottom layer.",
+            },
+            // state/ must not import from components/
+            {
+              group: ["../components/*", "../../components/*"],
+              message:
+                "state/ must not import from components/. That reverses the intended layering.",
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     files: ["tests/**/*.js"],
@@ -149,7 +184,6 @@ export default [
   {
     files: ["playwright.config.js", "vite.config.js", "vite/**/*.js"],
     languageOptions: {
-      parser: babelParser,
       parserOptions: {
         ...sharedParserOptions,
         sourceType: "module",
@@ -163,7 +197,6 @@ export default [
   {
     files: ["**/*.cjs"],
     languageOptions: {
-      parser: babelParser,
       parserOptions: {
         ...sharedParserOptions,
         sourceType: "commonjs",

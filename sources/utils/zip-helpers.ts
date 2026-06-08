@@ -22,7 +22,7 @@ import { exportStateAsJSON, serializeLayersForJson } from "../state/json.ts";
 import { showToast } from "../state/notifications.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 import type { State } from "../state/state.ts";
-import type { DrawCall } from "../canvas/renderer.ts";
+import type { DrawCall } from "../state/render-state.ts";
 import {
   buildTweenSteps,
   drawTweenedCanvas,
@@ -431,7 +431,7 @@ export function composeFrameRowsToSpritesheet(
     return null;
   }
 
-  const firstFrame = frames[populatedDirections[0]]?.[0]?.canvas;
+  const firstFrame = frames[populatedDirections[0]!]?.[0]?.canvas;
   if (!firstFrame) {
     return null;
   }
@@ -499,7 +499,7 @@ export function extractFramesFromAnimation(
     dirIndex < directions.length && dirIndex < config.num;
     dirIndex++
   ) {
-    const direction = directions[dirIndex];
+    const direction = directions[dirIndex]!;
     frames[direction] = [];
 
     const sourceY = dirIndex * frameHeight;
@@ -522,7 +522,7 @@ export function extractFramesFromAnimation(
       );
 
       if (hasContent && poolIndex < canvasPool.length) {
-        const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++];
+        const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++]!;
 
         blitFrameFromSheet(
           frameCtx,
@@ -532,7 +532,7 @@ export function extractFramesFromAnimation(
           frameWidth,
         );
 
-        frames[direction].push({
+        frames[direction!]!.push({
           canvas: frameCanvas,
           frameNumber: frameIndex + 1,
         });
@@ -559,7 +559,7 @@ export function checkFrameContentFromImageData(
   for (let y = 0; y < frameHeight; y++) {
     for (let x = startX; x < startX + frameWidth && x < imageWidth; x++) {
       const pixelIndex = (y * imageWidth + x) * 4;
-      const alpha = data[pixelIndex + 3];
+      const alpha = data[pixelIndex + 3]!;
       if (alpha > 0) {
         return true;
       }
@@ -605,6 +605,12 @@ export function extractFramesFromCustomAnimation(
 
   for (const direction of directions) {
     const dirIndex = CUSTOM_ANIM_DIRECTION_TO_ROW[direction];
+    if (dirIndex === undefined) {
+      debugLog(
+        `Skipping direction ${direction} - not found in direction map`,
+      );
+      continue;
+    }
     if (dirIndex >= animationFrames.length) {
       debugLog(
         `Skipping direction ${direction} (index ${dirIndex}) - not enough rows in animation frames`,
@@ -613,7 +619,7 @@ export function extractFramesFromCustomAnimation(
     }
 
     frames[direction] = [];
-    const frameRow = animationFrames[dirIndex];
+    const frameRow = animationFrames[dirIndex]!;
     const sourceY = dirIndex * frameSize;
 
     debugLog(`Processing direction ${direction} (row ${dirIndex}):`, frameRow);
@@ -630,7 +636,7 @@ export function extractFramesFromCustomAnimation(
 
       if (poolIndex >= canvasPool.length) break;
 
-      const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++];
+      const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++]!;
 
       blitFrameFromSheet(
         frameCtx,

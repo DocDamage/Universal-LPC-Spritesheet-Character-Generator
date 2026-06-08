@@ -483,7 +483,7 @@ export function getDefaultRecolor(
     return "";
   }
 
-  const firstRecolor = meta.recolors[0];
+  const firstRecolor = meta.recolors[0]!;
   const variants = firstRecolor.variants;
   if (!variants || variants.length === 0) {
     return "";

@@ -21,6 +21,7 @@ import {
 } from "../../state/export-options.ts";
 import { downloadPreviewAnimationGif } from "../../canvas/preview-gif.ts";
 import { downloadPreviewAnimationWebp } from "../../canvas/preview-webp.ts";
+import { state } from "../../state/state.ts";
 import {
   exportSplitAnimations,
   exportSplitItemSheets,
@@ -67,12 +68,18 @@ async function runExport(targetId: ExportTargetId): Promise<void> {
   try {
     switch (targetId) {
       case "gif-preview":
-        await downloadPreviewAnimationGif();
+        await downloadPreviewAnimationGif(
+          state.selectedAnimation,
+          state.bodyType,
+        );
         showToast("Animated GIF exported.", { kind: "success" });
         break;
 
       case "webp-preview":
-        await downloadPreviewAnimationWebp();
+        await downloadPreviewAnimationWebp(
+          state.selectedAnimation,
+          state.bodyType,
+        );
         showToast("Animated WebP exported.", { kind: "success" });
         break;
 

@@ -10,7 +10,7 @@ import {
   importStateFromJSON,
   serializeLayersForJson,
 } from "./json.ts";
-import { drawCalls } from "../canvas/renderer.ts";
+import { renderState } from "./render-state.ts";
 import {
   clampBrushSize,
   type EditorTool,
@@ -414,7 +414,7 @@ export function initDefaultCommands(): void {
       try {
         const json = exportStateAsJSON(
           state,
-          serializeLayersForJson(drawCalls),
+          serializeLayersForJson(renderState.drawCalls),
         );
         await navigator.clipboard.writeText(json);
         showToast("Character saved to clipboard.", { kind: "success" });

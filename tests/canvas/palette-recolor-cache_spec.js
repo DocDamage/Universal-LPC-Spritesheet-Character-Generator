@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tests for the bounded LRU recolor cache inside `getImageToDraw`.
  *

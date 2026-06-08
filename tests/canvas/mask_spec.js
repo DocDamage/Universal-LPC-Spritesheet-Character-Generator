@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it, beforeEach } from "mocha-globals";
 import { applyTransparencyMaskToCanvas } from "../../sources/canvas/mask.ts";

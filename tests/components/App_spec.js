@@ -1,3 +1,4 @@
+// @ts-nocheck
 import m from "mithril";
 import { err } from "neverthrow";
 import { expect } from "chai";

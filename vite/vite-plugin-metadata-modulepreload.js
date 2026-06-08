@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Injects `<link rel="modulepreload">` for the three largest metadata chunks
  * (index, item, layers) so the browser fetches them in parallel with the entry graph.

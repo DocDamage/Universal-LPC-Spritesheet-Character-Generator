@@ -3,7 +3,6 @@ import { downloadBlob } from "./download.ts";
 import { encodeCanvasesAsGif } from "./preview-gif.ts";
 import { renderPreviewAnimationFrameCanvases } from "./preview-animation.ts";
 import { getTweenSettingsForAnimation } from "../state/tween-settings.ts";
-import { state } from "../state/state.ts";
 
 export type AnimatedWebPEncoder = Pick<
   typeof WebPEncoder,
@@ -23,12 +22,15 @@ export async function encodeCanvasesAsAnimatedWebp(
   return new Blob([copy.buffer], { type: "image/webp" });
 }
 
-export async function downloadPreviewAnimationWebp(): Promise<void> {
-  const settings = getTweenSettingsForAnimation(state.selectedAnimation);
+export async function downloadPreviewAnimationWebp(
+  selectedAnimation: string,
+  bodyType: string,
+): Promise<void> {
+  const settings = getTweenSettingsForAnimation(selectedAnimation);
   const frames = renderPreviewAnimationFrameCanvases(settings);
   const blob = await encodeCanvasesAsAnimatedWebp(frames, settings.fps);
   downloadBlob(
     blob,
-    `lpc_${state.bodyType}_${state.selectedAnimation}_${settings.mode}_${settings.fps}fps.webp`,
+    `lpc_${bodyType}_${selectedAnimation}_${settings.mode}_${settings.fps}fps.webp`,
   );
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it } from "mocha-globals";
 import { ok, err } from "neverthrow";

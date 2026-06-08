@@ -1,7 +1,7 @@
 // Download component
 import m from "mithril";
 import { state } from "../../state/state.ts";
-import { drawCalls } from "../../canvas/renderer.ts";
+import { renderState } from "../../state/render-state.ts";
 import {
   getAllCredits,
   creditsToCsv,
@@ -81,7 +81,7 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
       try {
         const json = exportStateAsJSON(
           state,
-          serializeLayersForJson(drawCalls),
+          serializeLayersForJson(renderState.drawCalls),
         );
         debugLog(json);
         await navigator.clipboard.writeText(json);
@@ -133,7 +133,10 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
         return;
       }
       try {
-        await downloadPreviewAnimationGif();
+        await downloadPreviewAnimationGif(
+          state.selectedAnimation,
+          state.bodyType,
+        );
         showToast("Animated GIF exported.", { kind: "success" });
       } catch (err) {
         console.error("Failed to export GIF:", err);
@@ -147,7 +150,10 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
         return;
       }
       try {
-        await downloadPreviewAnimationWebp();
+        await downloadPreviewAnimationWebp(
+          state.selectedAnimation,
+          state.bodyType,
+        );
         showToast("Animated WebP exported.", { kind: "success" });
       } catch (err) {
         console.error("Failed to export WebP:", err);

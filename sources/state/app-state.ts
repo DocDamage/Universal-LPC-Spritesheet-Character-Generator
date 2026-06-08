@@ -71,15 +71,13 @@ export type State = {
   zipByItem: ZipMode;
   zipByAnimationAndItem: ZipMode;
   zipIndividualFrames: ZipMode;
-  /** Duplicate of `isRenderingCharacter` consumed by `renderer.js`. */
-  renderCharacter: { isRendering: boolean };
 };
 
 // Global state
 export const state: State = {
   // state that is saved in url hash
   selections: {},
-  bodyType: BODY_TYPES[0],
+  bodyType: BODY_TYPES[0]!,
 
   // State that is currently not saved but could be in future
   selectedAnimation: "walk",
@@ -119,5 +117,4 @@ export const state: State = {
   zipByItem: { isRunning: false },
   zipByAnimationAndItem: { isRunning: false },
   zipIndividualFrames: { isRunning: false },
-  renderCharacter: { isRendering: false },
 };

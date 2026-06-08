@@ -1,3 +1,4 @@
+// @ts-nocheck
 import m from "mithril";
 import { ScrollableContainer } from "../../../sources/components/preview/ScrollableContainer.ts";
 import { assert } from "chai";

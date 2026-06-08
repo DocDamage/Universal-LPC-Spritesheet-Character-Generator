@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 /* eslint-disable no-console -- CLI helper prints hints to stdout */
 /**
  * Prints class-name hints for vite/purgecss-critical-safelist.js (manual merge).

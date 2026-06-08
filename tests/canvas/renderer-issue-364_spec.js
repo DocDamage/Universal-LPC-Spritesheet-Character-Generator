@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * LiberatedPixelCup#364 / PR "Fixed Item Split and Animation Split Exports":
  * `renderCharacter` must populate the module export `addedCustomAnimations` so

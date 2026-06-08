@@ -1,4 +1,5 @@
-import { test } from "node:test";
+// @ts-nocheck
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import path from "node:path";
 import {
@@ -15,7 +16,7 @@ import {
   itemMetadata,
   licensesFound,
 } from "../../../../scripts/generateSources/state.js";
-import { buildPath, resetTestState } from "./test_helpers.js";
+import { buildPath, resetTestState, withCapturedConsoleError } from "./test_helpers.js";
 
 function buildCredit(file) {
   return {
@@ -45,7 +46,7 @@ test("parseCredits returns selected credit and csv line for first emit", () => {
     imageFileName,
     '"body/wheelchair/adult/background/wheelchair.png" ',
   );
-  assert.match(lineText, /\*\*note\*\*/);
+  assert.match(lineText, /quoted ""note""/);
   assert.deepEqual(licensesFound, ["CC-BY 3.0"]);
 });
 
@@ -134,31 +135,24 @@ test("parseCredits succeeds for single-credit array when fileName includes credi
   assert.equal(selectedCredit.file, "body/wheelchair");
 });
 
-test("parseCredits logs no-credits error for empty credits array before throwing", () => {
+test("parseCredits logs no-credits error for empty credits array before throwing", async () => {
   resetTestState();
 
-  const errors = [];
-  const origError = console.error;
-  console.error = (...args) => errors.push(args.join(" "));
-  try {
+  const { errors } = await withCapturedConsoleError(async () => {
     assert.throws(
       () => parseCredits("body/wheelchair/walk", [], null, []),
       /missing credit inside/,
     );
-  } finally {
-    console.error = origError;
-  }
+    return null;
+  });
 
   assert.ok(errors.some((e) => e.includes("no credits for filename:")));
 });
 
-test("parseCredits logs wrong-credit error for single-credit mismatch before throwing", () => {
+test("parseCredits logs wrong-credit error for single-credit mismatch before throwing", async () => {
   resetTestState();
 
-  const errors = [];
-  const origError = console.error;
-  console.error = (...args) => errors.push(args.join(" "));
-  try {
+  const { errors } = await withCapturedConsoleError(async () => {
     assert.throws(
       () =>
         parseCredits(
@@ -169,9 +163,8 @@ test("parseCredits logs wrong-credit error for single-credit mismatch before thr
         ),
       /missing credit inside/,
     );
-  } finally {
-    console.error = origError;
-  }
+    return null;
+  });
 
   assert.ok(errors.some((e) => e.includes("Wrong credit at filename:")));
 });

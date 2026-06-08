@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Written into the Testem temp Firefox profile as user.js (see testem.cjs `firefox_user_js`).
 // Includes Testem 3.20 defaults from known-browsers.js `firefoxSetup` plus touch prefs for
 // PinchToZoom specs and CI stability prefs from browser_args.

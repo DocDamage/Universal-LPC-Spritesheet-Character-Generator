@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Regression: ZIP export folder/file layout for a fixed character (issue #382).
  *

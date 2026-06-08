@@ -1,37 +1,17 @@
-import { test } from "node:test";
+// @ts-nocheck
+import { test } from "vitest";
 import assert from "node:assert/strict";
+import { withProcessPlatform } from "../../test-helpers.js";
 import { getSpritesheetsPlugin } from "../../../../vite/get-spritesheets-plugin.js";
 import { vitePluginBundledCssAfterBulma } from "../../../../vite/vite-plugin-bundled-css-after-bulma.js";
-
-/**
- * @param {NodeJS.Platform} platform
- * @param {() => void} fn
- */
-function withPlatform(platform, fn) {
-  const original = process.platform;
-  Object.defineProperty(process, "platform", {
-    configurable: true,
-    enumerable: true,
-    value: platform,
-  });
-  try {
-    fn();
-  } finally {
-    Object.defineProperty(process, "platform", {
-      configurable: true,
-      enumerable: true,
-      value: original,
-    });
-  }
-}
 
 test("getSpritesheetsPlugin(serve) uses dynamic public directory plugin", () => {
   const plugin = getSpritesheetsPlugin("serve");
   assert.equal(plugin.name, "dynamic assets");
 });
 
-test("getSpritesheetsPlugin(build) on non-Windows uses vite-plugin-run", () => {
-  withPlatform("darwin", () => {
+test("getSpritesheetsPlugin(build) on non-Windows uses vite-plugin-run", async () => {
+  await withProcessPlatform("darwin", () => {
     const plugin = getSpritesheetsPlugin("build");
     assert.equal(plugin.name, "vite:plugin:run");
     assert.equal(typeof plugin.configResolved, "function");
@@ -39,8 +19,8 @@ test("getSpritesheetsPlugin(build) on non-Windows uses vite-plugin-run", () => {
   });
 });
 
-test("getSpritesheetsPlugin(build) on Windows uses robocopy closeBundle plugin", () => {
-  withPlatform("win32", () => {
+test("getSpritesheetsPlugin(build) on Windows uses robocopy closeBundle plugin", async () => {
+  await withProcessPlatform("win32", () => {
     const plugin = getSpritesheetsPlugin("build");
     assert.equal(plugin.name, "copy-spritesheets-robocopy");
     assert.equal(plugin.apply, "build");

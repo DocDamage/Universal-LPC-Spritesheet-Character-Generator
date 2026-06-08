@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable no-console */
 import { metadataIndexes } from "../dist/index-metadata.js";
 

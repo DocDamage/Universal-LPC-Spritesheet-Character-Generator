@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tests for `preview-canvas.ts`'s exported functions.
  *

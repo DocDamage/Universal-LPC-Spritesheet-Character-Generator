@@ -1,3 +1,4 @@
+// @ts-nocheck
 // CollapsibleSection component tests - Browser compatible
 import { CollapsibleSection } from "../../sources/components/CollapsibleSection.ts";
 import { assert } from "chai";

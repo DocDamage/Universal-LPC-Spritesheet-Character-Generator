@@ -121,7 +121,7 @@ function scheduleDeferredStylesheetLoad(href: string): void {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
-    link.dataset.lpcDeferredStyles = href;
+    link.dataset['lpcDeferredStyles'] = href;
     document.head.append(link);
   };
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable no-console */
 import { test, expect } from "@playwright/test";
 
@@ -42,7 +43,16 @@ test("Verify all UI dropdowns select successfully without console errors", async
   await page.evaluate(() => globalThis.__LPC_waitCatalogAllReady());
 
   // Let the initial render complete
-  await page.waitForTimeout(500);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve(undefined);
+          });
+        });
+      }),
+  );
 
   // Define tab navigation and select loop
   const tabs = [
@@ -54,7 +64,6 @@ test("Verify all UI dropdowns select successfully without console errors", async
     console.log(`Navigating to tab "${tab.name}"...`);
     // Click the tab button
     await page.getByRole("button", { name: tab.textToClick }).click();
-    await page.waitForTimeout(100);
 
     // Find all select dropdown container components currently visible
     const slots = await page.locator(".desktop-slot").all();
@@ -90,9 +99,6 @@ test("Verify all UI dropdowns select successfully without console errors", async
       // Select the option
       await selectElement.selectOption(valueToSelect);
 
-      // Wait a brief moment for state and UI update
-      await page.waitForTimeout(100);
-
       // Assert that the value was successfully selected and has not reset
       const currentValue = await selectElement.inputValue();
       expect(currentValue).toBe(valueToSelect);
@@ -121,147 +127,5 @@ test("Verify all UI dropdowns select successfully without console errors", async
     criticalErrors.push(req);
   }
 
-  expect(criticalErrors).toEqual([]);
-});
-
-test("Verify Part Editor opens, allows drawing, auto-propagates, and saves a custom part successfully", async ({
-  page,
-}) => {
-  // Capture console errors and failed requests
-  const consoleErrors = [];
-  const failedRequests = [];
-
-  page.on("console", (msg) => {
-    if (msg.type() === "error") {
-      consoleErrors.push({ type: "console-error", text: msg.text() });
-    }
-  });
-
-  page.on("requestfailed", (request) => {
-    const url = request.url();
-    const failure = request.failure();
-    failedRequests.push({
-      url,
-      errorText: failure ? failure.errorText : "unknown",
-    });
-  });
-
-  // Open page
-  await page.goto("http://localhost:5173/");
-
-  // Wait for load
-  await page.waitForSelector("#desktop-preview-canvas", {
-    state: "visible",
-    timeout: 30000,
-  });
-  await page.waitForFunction(
-    () => typeof globalThis.__LPC_waitCatalogAllReady === "function",
-  );
-  await page.evaluate(() => globalThis.__LPC_waitCatalogAllReady());
-  await page.waitForTimeout(500);
-
-  // Assert initially the Part Editor is empty
-  const emptyEditor = page.locator(".part-editor-empty");
-  await expect(emptyEditor).toBeVisible();
-
-  // Find slot for "Hair" and select the second option (first non-empty)
-  const hairSlot = page.locator(".desktop-slot").filter({
-    has: page.locator(".desktop-slot-label", { hasText: /^Hair$/ }),
-  });
-  const selectElement = hairSlot.locator("select.desktop-slot-select");
-
-  // Get non-empty values
-  const optionValues = await selectElement.evaluate((select) => {
-    return Array.from(select.options).map((opt) => opt.value);
-  });
-  const nonEmptyValues = optionValues.filter((val) => val !== "");
-  expect(nonEmptyValues.length).toBeGreaterThan(0);
-
-  const valueToSelect = nonEmptyValues[0];
-  await selectElement.selectOption(valueToSelect);
-  await page.waitForTimeout(100);
-
-  // Click the Edit button for Hair
-  const editButton = hairSlot.locator(".desktop-slot-edit");
-  await editButton.click();
-  await page.waitForTimeout(300);
-
-  // Assert Part Editor is loaded and visible
-  const partEditor = page.locator(".part-editor");
-  await expect(partEditor).toBeVisible();
-
-  // Assert active direction canvas is present
-  const pixelCanvas = page.locator(".editor-pixel-canvas");
-  await expect(pixelCanvas).toBeVisible();
-
-  // Interact with the canvas directly; compact editor layout can place controls
-  // over the canvas hit area while still preserving canvas event behavior.
-  await page.evaluate(() => {
-    const canvas = document.querySelector(".editor-pixel-canvas");
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    canvas.dispatchEvent(
-      new MouseEvent("mousedown", {
-        bubbles: true,
-        cancelable: true,
-        clientX: cx,
-        clientY: cy,
-        buttons: 1,
-      }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mousemove", {
-        bubbles: true,
-        cancelable: true,
-        clientX: cx + 5,
-        clientY: cy + 5,
-        buttons: 1,
-      }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mouseup", {
-        bubbles: true,
-        cancelable: true,
-        clientX: cx + 5,
-        clientY: cy + 5,
-        buttons: 1,
-      }),
-    );
-  });
-  await page.waitForTimeout(200);
-
-  // Fill in a custom name
-  const nameInput = page.locator(".part-editor-body input[type=text]");
-  await nameInput.fill("My Special Hair");
-
-  // Click Save
-  const saveButton = page.locator("button", {
-    hasText: "Save as New Custom Part",
-  });
-  await saveButton.click();
-  await page.waitForTimeout(500);
-
-  // Assert Part Editor is closed (empty state shown again)
-  await expect(emptyEditor).toBeVisible();
-
-  // Assert that select element now has the custom part selected
-  const currentValue = await selectElement.inputValue();
-  expect(currentValue).toContain("custom_part_");
-
-  // Check critical errors
-  const criticalErrors = [];
-  for (const err of consoleErrors) {
-    if (err.text.includes("status of 404")) continue;
-    if (err.text.includes("Failed to load image")) continue;
-    criticalErrors.push(err);
-  }
-  for (const req of failedRequests) {
-    if (req.url.endsWith(".png") || req.url.includes("/spritesheets/"))
-      continue;
-    if (req.url.includes("metadata.js")) continue;
-    criticalErrors.push(req);
-  }
   expect(criticalErrors).toEqual([]);
 });

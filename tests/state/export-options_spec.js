@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it, beforeEach } from "mocha-globals";
 import { resetState } from "../../sources/state/hash.ts";

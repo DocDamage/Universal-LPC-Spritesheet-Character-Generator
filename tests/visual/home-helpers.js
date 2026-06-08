@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Reset window and internal scroll regions so full-page captures align across viewports.
  *
@@ -25,8 +26,8 @@ export async function scrollVisualCaptureToTop(page) {
  * Await `catalogReady.onAllReady` when the build exposes
  * `globalThis.__LPC_waitCatalogAllReady` (see `sources/state/catalog.ts`).
  * Otherwise, if `__LPC_arePaletteModalMetadataChunksReady` exists, wait until it is true
- * (so palette / skintone modals are not opened while the UI still says “Loading layer data…”).
- * Legacy dists without those hooks: only then fall back to “#mithril-filters” un-spinner.
+ * (so palette / skintone modals are not opened while the UI still says "Loading layer data…").
+ * Legacy dists without those hooks: only then fall back to "#mithril-filters" un-spinner.
  */
 export async function waitForCatalogAllReady(page) {
   /* Playwright: options are the 3rd arg; the 2nd is passed to the page function. */
@@ -65,11 +66,9 @@ export async function gotoHomepageReady(
 ) {
   const normalized = `${baseUrl.replace(/\/$/, "")}/`;
   await page.goto(normalized, { waitUntil: "load" });
-  try {
-    await page.waitForLoadState("networkidle", { timeout: 45_000 });
-  } catch {
-    // Some environments never reach idle (long-polling, etc.); continue.
-  }
+  // Removed the `networkidle` wait with a swallowed timeout. Explicit DOM
+  // readiness checks (catalog ready + canvas visible + loading spinners gone)
+  // are more reliable and do not mask genuine network stalls.
   await waitForCatalogAllReady(page);
   await page.waitForSelector(
     "#desktop-preview-canvas, #mithril-preview canvas",
@@ -110,7 +109,7 @@ export async function gotoHomepageReady(
 
 /**
  * Predicate for `page.waitForFunction` (executes in the browser).
- * True when the palette modal exists, has at least one variant canvas, and each canvas’s
+ * True when the palette modal exists, has at least one variant canvas, and each canvas's
  * top-left sample has some non-transparent pixels (async draws have finished).
  * @returns {boolean}
  */

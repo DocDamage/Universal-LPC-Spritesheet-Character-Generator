@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   AnimationFilters,
   setAnimationCompatible,

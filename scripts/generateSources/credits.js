@@ -1,6 +1,8 @@
+// @ts-nocheck
 import path from "node:path";
 import debugUtils from "../utils/debug.js";
 import { ANIMATIONS } from "../../sources/state/constants.ts";
+import { toCsvLine } from "./csv-helpers.js";
 import {
   categoryTree,
   csvList,
@@ -91,22 +93,27 @@ export function parseCredits(
     listCreditToUse = creditToUse;
   }
 
-  const imageFileName = '"' + fileName + '.png" ';
+  const imageFileName = fileName + ".png";
   if (!onlyIfTemplate)
     debugLog(
       `Searching for credits to use for ${imageFileName} in ${fileName}`,
     );
 
-  const licenses = '"' + creditToUse.licenses.join(",") + '" ';
-  const authors = '"' + creditToUse.authors.join(",") + '" ';
-  const urls = '"' + creditToUse.urls.join(",") + '" ';
-  const notes = '"' + creditToUse.notes.replaceAll('"', "**") + '" ';
+  const licenses = creditToUse.licenses.join(",");
+  const authors = creditToUse.authors.join(",");
+  const urls = creditToUse.urls.join(",");
+  const notes = creditToUse.notes;
   let lineText = "";
-  if (!addedCreditsFor.includes(imageFileName)) {
-    const quotedShortName = '"' + fileName + '.png"';
-    lineText = `${quotedShortName},${notes},${authors},${licenses},${urls}\n`;
+  if (!addedCreditsFor.includes('"' + imageFileName + '" ')) {
+    lineText = toCsvLine([
+      imageFileName,
+      notes,
+      authors,
+      licenses,
+      urls,
+    ]);
   }
-  return [listCreditToUse, lineText, imageFileName];
+  return [listCreditToUse, lineText, '"' + imageFileName + '" '];
 }
 
 /**
@@ -246,7 +253,7 @@ export function sortCsvList(csvList, categoryTree) {
 export function generateCreditsCsv() {
   sortCsvList(csvList, categoryTree);
 
-  let csvGenerated = "filename,notes,authors,licenses,urls\n";
+  let csvGenerated = toCsvLine(["filename", "notes", "authors", "licenses", "urls"]);
   for (const result of csvList) {
     for (const item of result.csv) {
       csvGenerated += item.lineText;

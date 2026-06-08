@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ExportWizard unit tests — validate the wizard modal component logic.
  * These tests verify the wizard's behavior without mounting DOM.

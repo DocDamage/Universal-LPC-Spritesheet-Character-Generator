@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test, expect } from "@playwright/test";
 
 const BASE_URL =
@@ -8,11 +9,8 @@ const BASE_URL =
  */
 async function gotoAppReady(page) {
   await page.goto(BASE_URL, { waitUntil: "load" });
-  try {
-    await page.waitForLoadState("networkidle", { timeout: 45_000 });
-  } catch {
-    // Some environments never reach idle; continue.
-  }
+  // Explicit DOM readiness checks below are more reliable than networkidle,
+  // which can hang in environments with long-polling or WebSockets.
   await page.waitForFunction(
     () => {
       if (typeof globalThis.__LPC_waitCatalogAllReady === "function") {
@@ -64,7 +62,17 @@ async function gotoAppReady(page) {
     undefined,
     { timeout: 120_000 },
   );
-  await page.waitForTimeout(500);
+  // Let one extra animation frame pass so any post-load paints settle.
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve(undefined);
+          });
+        });
+      }),
+  );
 }
 
 /**
@@ -107,12 +115,10 @@ async function openEditorForSlot(page, label) {
   const slot = getSlotByLabel(page, label);
   await slot.waitFor({ state: "visible", timeout: 30_000 });
   await selectFirstOption(slot);
-  await page.waitForTimeout(200);
 
   const editButton = slot.locator(".desktop-slot-edit");
   await editButton.waitFor({ state: "visible", timeout: 30_000 });
   await editButton.click();
-  await page.waitForTimeout(300);
 
   const partEditor = page.locator(".part-editor");
   await expect(partEditor).toBeVisible();
@@ -200,23 +206,51 @@ test.describe("Part Editor E2E", () => {
 
     // Enter fullscreen via F key
     await page.keyboard.press("f");
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector(".part-editor")
+          ?.classList.contains("part-editor-fullscreen"),
+      undefined,
+      { timeout: 5_000 },
+    );
     await expect(editor).toHaveClass(/part-editor-fullscreen/);
 
     // Exit fullscreen via Esc
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelector(".part-editor")
+          ?.classList.contains("part-editor-fullscreen"),
+      undefined,
+      { timeout: 5_000 },
+    );
     await expect(editor).not.toHaveClass(/part-editor-fullscreen/);
 
     // Enter fullscreen via button click
     const fullscreenButton = page.locator(".part-editor-header-button");
     await fullscreenButton.click();
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector(".part-editor")
+          ?.classList.contains("part-editor-fullscreen"),
+      undefined,
+      { timeout: 5_000 },
+    );
     await expect(editor).toHaveClass(/part-editor-fullscreen/);
 
     // Exit fullscreen via button click
     await fullscreenButton.click();
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelector(".part-editor")
+          ?.classList.contains("part-editor-fullscreen"),
+      undefined,
+      { timeout: 5_000 },
+    );
     await expect(editor).not.toHaveClass(/part-editor-fullscreen/);
   });
 
@@ -232,14 +266,32 @@ test.describe("Part Editor E2E", () => {
     // Zoom in (negative deltaY zooms in per the editor logic)
     await stage.hover();
     await page.mouse.wheel(0, -3);
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      (before) => {
+        const el = document.querySelector(".part-editor-zoom-value");
+        if (!el) return false;
+        const z = parseInt(el.textContent.replace("x", "").trim(), 10);
+        return z > before;
+      },
+      initialZoom,
+      { timeout: 5_000 },
+    );
     const zoomIn = await getZoomValue(page);
     expect(zoomIn).toBeGreaterThan(initialZoom);
 
     // Zoom out (positive deltaY zooms out)
     await stage.hover();
     await page.mouse.wheel(0, 3);
-    await page.waitForTimeout(200);
+    await page.waitForFunction(
+      (prev) => {
+        const el = document.querySelector(".part-editor-zoom-value");
+        if (!el) return false;
+        const z = parseInt(el.textContent.replace("x", "").trim(), 10);
+        return z < prev;
+      },
+      zoomIn,
+      { timeout: 5_000 },
+    );
     const zoomOut = await getZoomValue(page);
     expect(zoomOut).toBeLessThan(zoomIn);
   });
@@ -253,7 +305,6 @@ test.describe("Part Editor E2E", () => {
 
     // Ensure pen tool is active via keyboard shortcut
     await page.keyboard.press("b");
-    await page.waitForTimeout(100);
 
     // Get full canvas pixel data before drawing
     const beforeData = await page.evaluate(() => {
@@ -300,7 +351,6 @@ test.describe("Part Editor E2E", () => {
       });
       canvas.dispatchEvent(up);
     });
-    await page.waitForTimeout(400);
 
     // Get full canvas pixel data after drawing
     const afterData = await page.evaluate(() => {
@@ -328,7 +378,6 @@ test.describe("Part Editor E2E", () => {
 
     // Draw something first
     await drawOnEditorCanvas(page, 4);
-    await page.waitForTimeout(200);
 
     // Fill in a custom name
     const nameInput = page
@@ -380,8 +429,39 @@ test.describe("Part Editor E2E", () => {
       true,
     );
 
-    // Give IndexedDB persistence time to finish before the next test reloads
-    await page.waitForTimeout(3000);
+    // Wait for IndexedDB persistence to finish instead of hard sleeping
+    await page.waitForFunction(
+      () =>
+        new Promise((resolve) => {
+          const req = indexedDB.open("lpc-custom-parts", 1);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains("customParts")) {
+              db.close();
+              resolve(false);
+              return;
+            }
+            const tx = db.transaction("customParts", "readonly");
+            const store = tx.objectStore("customParts");
+            const allReq = store.getAll();
+            allReq.onsuccess = () => {
+              db.close();
+              resolve(
+                allReq.result.some((p) =>
+                  p.itemId.startsWith("custom_part_"),
+                ),
+              );
+            };
+            allReq.onerror = () => {
+              db.close();
+              resolve(false);
+            };
+          };
+          req.onerror = () => resolve(false);
+        }),
+      undefined,
+      { timeout: 10_000 },
+    );
   });
 
   test("Reloading and verifying import persists", async ({ page }) => {
@@ -392,7 +472,6 @@ test.describe("Part Editor E2E", () => {
 
     // Draw something
     await drawOnEditorCanvas(page);
-    await page.waitForTimeout(300);
 
     // Name and save
     const nameInput = page
@@ -428,8 +507,41 @@ test.describe("Part Editor E2E", () => {
       { timeout: 10_000 },
     );
 
-    // Give IndexedDB persistence time to finish
-    await page.waitForTimeout(3000);
+    // Wait for IndexedDB persistence to finish before reloading
+    await page.waitForFunction(
+      () =>
+        new Promise((resolve) => {
+          const req = indexedDB.open("lpc-custom-parts", 1);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains("customParts")) {
+              db.close();
+              resolve(false);
+              return;
+            }
+            const tx = db.transaction("customParts", "readonly");
+            const store = tx.objectStore("customParts");
+            const allReq = store.getAll();
+            allReq.onsuccess = () => {
+              db.close();
+              resolve(
+                allReq.result.some(
+                  (p) =>
+                    p.itemId.startsWith("custom_part_") &&
+                    p.name.includes("E2E Reload Hair"),
+                ),
+              );
+            };
+            allReq.onerror = () => {
+              db.close();
+              resolve(false);
+            };
+          };
+          req.onerror = () => resolve(false);
+        }),
+      undefined,
+      { timeout: 10_000 },
+    );
 
     // Reload the page
     await page.reload({ waitUntil: "load" });
@@ -481,7 +593,19 @@ test.describe("Part Editor E2E", () => {
 
     // Select it and verify preview renders
     await selectAfterReload.selectOption(customOptionAfterReload.value);
-    await page.waitForTimeout(1000);
+
+    // Wait for preview to finish rendering (no loading spinners)
+    await page.waitForFunction(
+      () => {
+        const preview =
+          document.getElementById("mithril-preview") ||
+          document.querySelector(".desktop-preview");
+        if (!preview) return false;
+        return !preview.querySelector(".loading, .desktop-preview-loading");
+      },
+      undefined,
+      { timeout: 10_000 },
+    );
 
     const previewCanvas = page.locator("#desktop-preview-canvas");
     await expect(previewCanvas).toBeVisible();

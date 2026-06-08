@@ -49,16 +49,16 @@ describe("state/tween-settings.ts", () => {
       state.previewTweenInbetweens = 99;
       state.previewTweenFps = 999;
       var settings = getGlobalTweenSettings();
-      expect(settings.inbetweens).to.be.at.most(10);
-      expect(settings.fps).to.be.at.most(60);
+      expect(settings.inbetweens).to.be.at.most(4);
+      expect(settings.fps).to.be.at.most(24);
     });
   });
 
   describe("setGlobalTweenSettings", () => {
     it("updates only the provided fields", () => {
-      setGlobalTweenSettings({ mode: "hold", inbetweens: 5 });
+      setGlobalTweenSettings({ mode: "hold", inbetweens: 3 });
       expect(state.previewTweenMode).to.equal("hold");
-      expect(state.previewTweenInbetweens).to.equal(5);
+      expect(state.previewTweenInbetweens).to.equal(3);
       // Unchanged fields keep their defaults
       expect(state.previewTweenFps).to.equal(8);
     });

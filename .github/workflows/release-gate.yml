@@ -1,0 +1,59 @@
+name: Release Gate
+
+on:
+  push:
+    branches:
+      - master
+      - codex/editor-pro-tools
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-gate:
+    name: Lint, type-check, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Validate generated site sources
+        run: npm run validate-site-sources
+
+      - name: Run unit and browser tests
+        run: |
+          export DISPLAY=':99.0'
+          Xvfb $DISPLAY -screen 0 1920x1080x24 &
+          sleep 3
+          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+          dbus-run-session npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Run visual tests
+        run: npm run test:visual

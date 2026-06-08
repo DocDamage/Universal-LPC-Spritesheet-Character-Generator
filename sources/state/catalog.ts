@@ -733,9 +733,11 @@ export const loadCatalogFromFixtures = (fixtureGlobals: {
   paletteMetadata: PaletteMetadata;
 }): void => defaultCatalog.loadCatalogFromFixtures(fixtureGlobals);
 
-// TODO (Catalog DI migration): once every consumer migrates to receive
-// `catalog: CatalogReader` via DI, drop this — tests will construct a fresh
-// `createCatalog()` per case instead of resetting a shared one.
+/**
+ * Reset the shared compatibility catalog. New isolated tests should prefer
+ * `createCatalog()`, while suites that intentionally exercise module-level
+ * helper exports reset this singleton between cases.
+ */
 export const resetCatalogForTests = (): void => defaultCatalog.resetForTests();
 
 // ────────────────────────────────────────────────────────────────────────────

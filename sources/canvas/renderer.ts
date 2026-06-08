@@ -31,7 +31,7 @@ import {
 } from "../state/catalog.ts";
 import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
-import type { Selections } from "../state/state.ts";
+import { state as appState, type Selections } from "../state/state-model.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 
 declare global {
@@ -236,8 +236,9 @@ export function resetRenderCharacterQueueForTests(): void {
 /**
  * Render character based on selections. Waits for layers metadata (S5), then runs serialized so
  * hash, defaults, and App updates cannot overlap expensive full renders.
- * The `onLayersReady` wait, dynamic `import` of `state`, and the serialized render queue
- * are outside the `renderCharacter` performance measure; marks wrap compositing in `runRenderCharacter` only.
+ * The `onLayersReady` wait and serialized render queue are outside the
+ * `renderCharacter` performance measure; marks wrap compositing in
+ * `runRenderCharacter` only.
  */
 export async function renderCharacter(
   selections: Selections,
@@ -267,8 +268,6 @@ async function runRenderCharacter(
   drawCalls = [];
   addedCustomAnimations = new Set(); // Track which custom animations we've added
 
-  // Import state to access custom uploaded image (kept out of `renderCharacter` profile span)
-  const appState = await import("../state/state.ts").then((mod) => mod.state);
   appState.renderCharacter.isRendering = true;
   appState.isRenderingCharacter = true;
   m.redraw();

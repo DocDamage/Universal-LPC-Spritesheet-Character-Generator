@@ -13,6 +13,7 @@ import {
 } from "./vite/wiring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const GENERATED_METADATA_CHUNK_WARNING_LIMIT_KB = 1024;
 
 /**
  * Item-metadata pipeline (Commit 4): `vite/wiring.js` registers the pre-plugin,
@@ -35,6 +36,9 @@ export default defineConfig(({ command }) => ({
     ],
   },
   build: {
+    // The largest generated metadata module is intentionally isolated as an
+    // async chunk and gzips to a small payload, but Vite warns on raw bytes.
+    chunkSizeWarningLimit: GENERATED_METADATA_CHUNK_WARNING_LIMIT_KB,
     rolldownOptions: {
       input: {
         main: "index.html",

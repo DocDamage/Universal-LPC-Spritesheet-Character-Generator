@@ -3,6 +3,7 @@
 import m from "mithril";
 import "../styles/desktop-style.scss";
 import "./styles/critical-entry.scss";
+import deferredStylesheetHref from "./styles/deferred-entry.scss?url";
 import "./vendor-globals.ts";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import {
@@ -105,24 +106,35 @@ window.setDefaultSelections = async function () {
 void loadAllMetadata();
 const customPartsHydrated = hydrateCustomPartsFromStorage();
 
-// TODO: this dynamic import doesn't actually load the deferred CSS in prod.
-// `load-deferred-styles.ts` has no JS exports (only `import "./deferred-entry.scss"`),
-// so after transpile the module body is empty; Rolldown collapses the dynamic
-// `import()` to `Promise.resolve({})` and the CSS chunk never runs. The CSS file IS
-// emitted to dist/ and registered in `__vite__mapDeps`, but this bundle's preload
-// helper only handles `<link rel="modulepreload">` (JS), not `<link rel="stylesheet">`
-// (CSS) — so the file sits there unloaded.
-//
-// We're currently surviving because every class used at runtime also lives in the
-// critical CSS chunk (kept in sync by the PurgeCSS plugin scanning sources/). If a
-// future class lands only in `deferred-entry.scss` consumers, it'll silently break.
-//
-// Fix sketch: delete `load-deferred-styles.ts` and replace this line with
-//   import deferredCssHref from "./styles/deferred-entry.scss?url";
-//   ...inject <link rel="stylesheet" href={deferredCssHref}> via requestIdleCallback.
-// The `?url` import has a real binding so Rolldown can't optimize it away, and the
-// manual link injection bypasses the missing CSS branch in the preload helper.
-void import("./styles/load-deferred-styles.ts");
+scheduleDeferredStylesheetLoad(deferredStylesheetHref);
+
+type DeferredIdleCallback = (
+  callback: () => void,
+  options?: { timeout?: number },
+) => number;
+
+function scheduleDeferredStylesheetLoad(href: string): void {
+  const load = () => {
+    if (document.querySelector(`link[data-lpc-deferred-styles="${href}"]`)) {
+      return;
+    }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.lpcDeferredStyles = href;
+    document.head.append(link);
+  };
+
+  const idleWindow = window as Window & {
+    requestIdleCallback?: DeferredIdleCallback;
+  };
+
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    idleWindow.requestIdleCallback(load, { timeout: 1000 });
+  } else {
+    window.setTimeout(load, 0);
+  }
+}
 
 /** Commit 10 step 1: single-flight hash / init after index + lite are both registered. */
 let hashHydrationInitDone = false;

@@ -367,12 +367,9 @@ export async function recolorWithPalette(
 /**
  * Draw preview for recolorable asset.
  *
- * `isStaleRender` is an optional caller-supplied predicate. The function
- * checks it between `await` points and bails (returns 0) if it returns true.
- * Callers use it to track per-mount renderIds (Mithril `oncreate`/`onupdate`
- * may fire again with new selectedColors before the previous async render
- * finishes; without the bailout, the older call's draw can land *after* the
- * newer one and leave the canvas stuck on stale colors). See
+ * `signal` is an optional caller-owned `AbortSignal`. Callers abort the prior
+ * signal before starting a new preview render, which prevents older async
+ * image loads/recolors from drawing after fresher selected colors arrive. See
  * `components/tree/ItemWithRecolors.ts` and `PaletteSelectModal.ts`.
  *
  * `canvas.isConnected` is always also checked (callers don't need to handle
@@ -380,28 +377,25 @@ export async function recolorWithPalette(
  *
  * Returns count of images drawn, or 0 when the render is skipped.
  *
- * TODO: replace the `isStaleRender` predicate with an `AbortSignal` parameter
- * and have callers `.abort()` the prior signal before issuing a new call.
- * Lets us also cancel the in-flight image loads via `Image.decode()` /
- * `fetch(signal)` rather than just suppressing the final draw. Out of scope
- * for the tree/ migration; track separately.
+ * Aborted image loads resolve as `{ img: null }` so the public return contract
+ * stays "number of drawn images" rather than throwing for normal cancellation.
  */
 export async function drawRecolorPreview(
   itemId: string,
   meta: ItemMerged,
   canvas: HTMLCanvasElement,
   selectedColors: Record<string, string>,
-  isStaleRender: () => boolean = () => false,
+  signal?: AbortSignal,
 ): Promise<number> {
   if (!canvas.isConnected) {
     return 0;
   }
 
-  const isStale = (): boolean => !canvas.isConnected || isStaleRender();
+  const isAborted = (): boolean => !canvas.isConnected || !!signal?.aborted;
 
   // Skip if canvas is not connected or stale
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx || isStale()) {
+  if (!ctx || isAborted()) {
     return 0;
   }
 
@@ -418,22 +412,9 @@ export async function drawRecolorPreview(
   // Load and draw all layers
   let imagesLoaded = 0;
   const loadedLayers = await Promise.all(
-    layersToLoad.map((layer) => {
-      return new Promise<{
-        img: HTMLImageElement | null;
-        layer: { path: string };
-      }>((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({ img, layer });
-        img.onerror = () => {
-          debugWarn(`Failed to load image for layer ${layer.path}`);
-          resolve({ img: null, layer });
-        };
-        img.src = layer.path;
-      });
-    }),
+    layersToLoad.map((layer) => loadPreviewLayerImage(layer, signal)),
   );
-  if (isStale()) {
+  if (isAborted()) {
     return 0;
   }
 
@@ -441,7 +422,7 @@ export async function drawRecolorPreview(
   // Draw each layer in zPos order
   imagesLoaded = 0;
   for (const { img, layer } of loadedLayers) {
-    if (isStale()) {
+    if (isAborted()) {
       return 0;
     }
 
@@ -452,6 +433,9 @@ export async function drawRecolorPreview(
         selectedColors,
         layer.path,
       );
+      if (isAborted()) {
+        return 0;
+      }
       const size = compactDisplay ? COMPACT_FRAME_SIZE : FRAME_SIZE;
       const srcX = previewCol * FRAME_SIZE + previewXOffset;
       const srcY = previewRow * FRAME_SIZE + previewYOffset;
@@ -470,4 +454,41 @@ export async function drawRecolorPreview(
     }
   }
   return imagesLoaded;
+}
+
+function loadPreviewLayerImage(
+  layer: { path: string },
+  signal?: AbortSignal,
+): Promise<{ img: HTMLImageElement | null; layer: { path: string } }> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) {
+      resolve({ img: null, layer });
+      return;
+    }
+
+    const img = new Image();
+    let settled = false;
+
+    const finish = (loadedImage: HTMLImageElement | null): void => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", onAbort);
+      resolve({ img: loadedImage, layer });
+    };
+
+    const onAbort = (): void => {
+      img.onload = null;
+      img.onerror = null;
+      img.src = "";
+      finish(null);
+    };
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+    img.onload = () => finish(img);
+    img.onerror = () => {
+      debugWarn(`Failed to load image for layer ${layer.path}`);
+      finish(null);
+    };
+    img.src = layer.path;
+  });
 }

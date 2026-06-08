@@ -33,6 +33,10 @@ type RootViewState = {
  */
 type RootViewRef = { state: RootViewState };
 
+type RecolorPreviewCanvasState = {
+  abortController?: AbortController;
+};
+
 export type PaletteSelectModalAttrs = {
   itemId: string;
   opt: PaletteOption;
@@ -87,6 +91,24 @@ function syncPalettePreviewGate(
   rootViewNode.state._palettePreviewLastTotal = total;
   rootViewNode.state.palettePreviewExpected = total;
   rootViewNode.state.palettePreviewCompleted = 0;
+}
+
+function startRecolorPreview(canvasVnode: m.VnodeDOM): {
+  canvas: HTMLCanvasElement;
+  signal: AbortSignal;
+} {
+  const canvas = canvasVnode.dom as HTMLCanvasElement;
+  const cs = canvasVnode.state as RecolorPreviewCanvasState;
+  cs.abortController?.abort();
+  const controller = new AbortController();
+  cs.abortController = controller;
+  return { canvas, signal: controller.signal };
+}
+
+function abortRecolorPreview(canvasVnode: m.VnodeDOM): void {
+  const cs = canvasVnode.state as RecolorPreviewCanvasState;
+  cs.abortController?.abort();
+  cs.abortController = undefined;
 }
 
 function renderLoadingOverlay(onClose: () => void, message: string) {
@@ -236,20 +258,10 @@ function renderModal(
                                   ? COMPACT_FRAME_SIZE
                                   : FRAME_SIZE,
                                 class: compactDisplay ? " compact-display" : "",
-                                onremove: (canvasVnode: m.VnodeDOM) => {
-                                  const cs = canvasVnode.state as {
-                                    renderId?: number;
-                                  };
-                                  cs.renderId = (cs.renderId ?? 0) + 1;
-                                },
+                                onremove: abortRecolorPreview,
                                 oncreate: (canvasVnode: m.VnodeDOM) => {
-                                  const canvas =
-                                    canvasVnode.dom as HTMLCanvasElement;
-                                  const cs = canvasVnode.state as {
-                                    renderId?: number;
-                                  };
-                                  const renderId = (cs.renderId ?? 0) + 1;
-                                  cs.renderId = renderId;
+                                  const { canvas, signal } =
+                                    startRecolorPreview(canvasVnode);
                                   const settledGate =
                                     rootViewNode.state.palettePreviewGateSeq;
                                   void drawRecolorPreview(
@@ -257,7 +269,7 @@ function renderModal(
                                     meta,
                                     canvas,
                                     itemColors,
-                                    () => cs.renderId !== renderId,
+                                    signal,
                                   ).then(() => {
                                     if (
                                       settledGate !==
@@ -265,7 +277,7 @@ function renderModal(
                                     ) {
                                       return;
                                     }
-                                    if (cs.renderId !== renderId) {
+                                    if (signal.aborted) {
                                       return;
                                     }
                                     rootViewNode.state.palettePreviewCompleted =

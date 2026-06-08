@@ -58,6 +58,17 @@ type PathDeps = {
   getMetadataIndexes: () => Result<MetadataIndexes, LoadError>;
 };
 
+const ITEM_ID_NAME_VARIANT_SEPARATOR = "__";
+let nameWithoutVariantCache = new WeakMap<
+  readonly NameVariantRow[],
+  Map<string, string>
+>();
+let hashParamsCache = new WeakMap<
+  Selections,
+  { signature: string; value: Record<string, string> }
+>();
+let replacementPathCache = new WeakMap<PathMeta, Map<string, string>>();
+
 function createDefaultPathDeps(): PathDeps {
   return {
     getHashParamsforSelections,
@@ -74,32 +85,54 @@ let pathDeps = createDefaultPathDeps();
 
 export function setPathDeps(overrides: Partial<PathDeps>): void {
   Object.assign(pathDeps, overrides);
+  clearPathCaches();
 }
 
 export function resetPathDeps(): void {
   pathDeps = createDefaultPathDeps();
+  clearPathCaches();
 }
 
 export function getPathDeps(): PathDeps {
   return pathDeps;
 }
 
+export function clearPathCaches(): void {
+  nameWithoutVariantCache = new WeakMap<
+    readonly NameVariantRow[],
+    Map<string, string>
+  >();
+  hashParamsCache = new WeakMap<
+    Selections,
+    { signature: string; value: Record<string, string> }
+  >();
+  replacementPathCache = new WeakMap<PathMeta, Map<string, string>>();
+}
+
 /**
  * Extract the base asset name from a `name_variant` string. Both names and
- * variants may contain underscores, so this scans for the longest variant
- * suffix that appears in the catalog rows for this type.
- *
- * TODO: change item-id naming to disambiguate (e.g. double-underscore between
- * name and variant) so we can drop this scan.
+ * variants may contain underscores. Newer/generated callers can pass
+ * `name__variant` to avoid ambiguity; legacy `name_variant` values fall back
+ * to the catalog-assisted longest-suffix scan.
  */
 export function getNameWithoutVariant(
   nameAndVariant: string,
   itemsForType: NameVariantRow[] | SlimByTypeNameRow[],
 ): string {
+  const delimited = splitDelimitedNameAndVariant(nameAndVariant);
+  if (delimited) {
+    return delimited.name;
+  }
+
+  const names = (itemsForType || []) as readonly NameVariantRow[];
+  const cached = getCachedNameWithoutVariant(names, nameAndVariant);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   let variant = "";
   const nameAndVariantPath = nameAndVariant.split("_");
   const l = nameAndVariantPath.length;
-  const names = itemsForType || [];
   const variants = names
     .flatMap((n) => n.variants || [])
     .map((v) => v.toLowerCase());
@@ -120,6 +153,7 @@ export function getNameWithoutVariant(
   const name = variant
     ? nameAndVariantPath.slice(0, v).join("_")
     : nameAndVariantPath.slice(0, l - 1).join("_");
+  cacheNameWithoutVariant(names, nameAndVariant, name);
   return name;
 }
 
@@ -153,8 +187,7 @@ export function getSpritePath(
 
   // If no variant specified, try to extract from itemId.
   if (!variant && !recolors) {
-    const parts = itemId.split("_");
-    variant = parts[parts.length - 1];
+    variant = getVariantFromItemId(itemId);
   }
 
   const animation = pathDeps.animations.find((a) => a.value === animName);
@@ -175,9 +208,11 @@ export function replaceInPath(
   meta: PathMeta,
 ): string {
   if (path.includes("${")) {
-    // TODO: optimize — recomputed on every layer/frame today; could be cached
-    // per-selection-change or skipped when `path` doesn't contain `${`.
-    const hashParams = pathDeps.getHashParamsforSelections(selections || {});
+    const hashParams = getHashParamsForSelectionsCached(selections);
+    const cacheKey = `${path}|${JSON.stringify(hashParams)}`;
+    const cached = getCachedReplacementPath(meta, cacheKey);
+    if (cached !== undefined) return cached;
+
     const replacements = Object.fromEntries(
       Object.entries(hashParams).map(([typeName, nameAndVariant]) => {
         const name = _getNameWithoutVariant(typeName, nameAndVariant);
@@ -193,10 +228,91 @@ export function replaceInPath(
       }),
     );
 
-    return pathDeps.es6DynamicTemplate(path, replacements);
+    const resolved = pathDeps.es6DynamicTemplate(path, replacements);
+    cacheReplacementPath(meta, cacheKey, resolved);
+    return resolved;
   }
 
   return path;
+}
+
+function splitDelimitedNameAndVariant(
+  nameAndVariant: string,
+): { name: string; variant: string } | null {
+  const separatorIndex = nameAndVariant.lastIndexOf(
+    ITEM_ID_NAME_VARIANT_SEPARATOR,
+  );
+  if (separatorIndex <= 0) return null;
+  const variantStart = separatorIndex + ITEM_ID_NAME_VARIANT_SEPARATOR.length;
+  if (variantStart >= nameAndVariant.length) return null;
+  return {
+    name: nameAndVariant.slice(0, separatorIndex),
+    variant: nameAndVariant.slice(variantStart),
+  };
+}
+
+function getVariantFromItemId(itemId: string): string {
+  const delimited = splitDelimitedNameAndVariant(itemId);
+  if (delimited) return delimited.variant;
+  const parts = itemId.split("_");
+  return parts[parts.length - 1];
+}
+
+function getCachedNameWithoutVariant(
+  names: readonly NameVariantRow[],
+  nameAndVariant: string,
+): string | undefined {
+  return nameWithoutVariantCache.get(names)?.get(nameAndVariant);
+}
+
+function cacheNameWithoutVariant(
+  names: readonly NameVariantRow[],
+  nameAndVariant: string,
+  name: string,
+): void {
+  let cache = nameWithoutVariantCache.get(names);
+  if (!cache) {
+    cache = new Map();
+    nameWithoutVariantCache.set(names, cache);
+  }
+  cache.set(nameAndVariant, name);
+}
+
+function getHashParamsForSelectionsCached(
+  selections: Selections | null | undefined,
+): Record<string, string> {
+  if (!selections) {
+    return pathDeps.getHashParamsforSelections({});
+  }
+
+  const selectionState = selections;
+  const signature = JSON.stringify(selectionState);
+  const cached = hashParamsCache.get(selectionState);
+  if (cached?.signature === signature) return cached.value;
+
+  const value = pathDeps.getHashParamsforSelections(selectionState);
+  hashParamsCache.set(selectionState, { signature, value });
+  return value;
+}
+
+function getCachedReplacementPath(
+  meta: PathMeta,
+  cacheKey: string,
+): string | undefined {
+  return replacementPathCache.get(meta)?.get(cacheKey);
+}
+
+function cacheReplacementPath(
+  meta: PathMeta,
+  cacheKey: string,
+  resolved: string,
+): void {
+  let cache = replacementPathCache.get(meta);
+  if (!cache) {
+    cache = new Map();
+    replacementPathCache.set(meta, cache);
+  }
+  cache.set(cacheKey, resolved);
 }
 
 function _getNameWithoutVariant(

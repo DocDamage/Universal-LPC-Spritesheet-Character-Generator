@@ -87,7 +87,7 @@ export const DesktopPreview: m.Component<
       })),
     ];
 
-    return m("div.desktop-preview", [
+    return m("div#mithril-preview.desktop-preview", [
       m("div.desktop-preview-header", [
         m(
           "span.desktop-preview-zoom",

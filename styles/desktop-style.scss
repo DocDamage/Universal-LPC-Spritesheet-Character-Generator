@@ -204,6 +204,7 @@
   gap: 6px;
   padding: 6px;
   min-height: 0;
+  min-width: 0;
 }
 
 /* ─── Panels ─── */
@@ -215,6 +216,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  min-width: 0;
   position: relative;
   box-shadow:
     var(--shadow-md),
@@ -245,6 +247,7 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   background: var(--bg-dark);
 }
@@ -700,6 +703,28 @@
   }
 }
 
+@media (max-width: 700px) {
+  .desktop-slot-import-panel {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+  .desktop-slot-import-tuning {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 30px;
+  }
+
+  .desktop-slot-custom-asset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .desktop-slot-custom-action,
+  .desktop-slot-custom-name,
+  .desktop-slot-custom-asset-name {
+    width: 100%;
+  }
+}
+
 .desktop-slot-color {
   width: 18px;
   height: 18px;
@@ -829,6 +854,10 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+.desktop-preview-header > * {
+  min-width: 0;
+}
+
 .desktop-preview-zoom {
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
@@ -893,7 +922,7 @@
   height: auto;
   max-width: 90%;
   max-height: 90%;
-  min-width: 250px;
+  min-width: min(250px, 90%);
   border-radius: 2px;
   box-shadow:
     0 0 40px rgba(0, 0, 0, 0.8),
@@ -948,6 +977,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 24px;
 }
 
@@ -977,6 +1007,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -1046,18 +1077,87 @@
   .desktop-panel-left {
     width: 220px !important;
   }
+
+  .desktop-panel-right.part-editor-panel {
+    width: 300px !important;
+  }
 }
 
 @media (max-width: 700px) {
+  .desktop-app {
+    min-width: 0;
+  }
+
+  .desktop-title-bar,
+  .desktop-palette-bar {
+    min-width: 0;
+  }
+
+  .desktop-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-palette-bar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 30px;
+  }
+
   .desktop-content {
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
   }
+
   .desktop-panel-left {
     width: 100% !important;
+    max-height: 42vh;
   }
+
   .desktop-panel-center {
-    min-height: 200px;
+    width: 100%;
+    min-height: clamp(220px, 48vh, 420px);
+    flex: 0 0 auto;
+  }
+
+  .desktop-panel-right.part-editor-panel {
+    width: 100% !important;
+    min-height: 320px;
+    max-height: none;
+    flex: 0 0 auto;
+  }
+
+  .desktop-preview-header {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .desktop-preview-hint {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .desktop-action-bar {
+    padding: 8px;
+  }
+
+  .desktop-toggles {
+    gap: 8px 16px;
+  }
+
+  .desktop-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .desktop-btn {
+    min-width: 0;
+    width: 100%;
+    padding-inline: 8px;
   }
 }
 
@@ -2480,6 +2580,7 @@
   .part-editor-fullscreen {
     inset: 8px;
     height: calc(100vh - 16px);
+    padding: 8px;
   }
 
   .part-editor-fullscreen .part-editor-body {
@@ -2490,6 +2591,7 @@
 
   .part-editor-fullscreen .part-editor-main-tools {
     flex: 0 0 auto;
+    grid-template-rows: auto;
     width: 100%;
     height: max-content;
     min-height: max-content;
@@ -2500,6 +2602,33 @@
     width: 100%;
     flex: 0 0 auto;
     max-height: none;
+  }
+
+  .part-editor-canvas-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .part-editor-zoom-controls {
+    justify-content: center;
+  }
+
+  .part-editor-zoom-slider {
+    width: min(180px, 45vw);
+  }
+
+  .part-editor-fullscreen .part-editor-canvas-container {
+    min-height: 0;
+  }
+
+  .part-editor-fullscreen .part-editor-canvas-stage {
+    min-height: min(300px, 60vw);
+    max-height: 60vh;
+  }
+
+  .part-editor-layer-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .command-palette-overlay,

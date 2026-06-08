@@ -30,8 +30,10 @@ function expectedMetadataChunkNames() {
 }
 
 test("vite.config.js factory (build): aliases, chunk groups, plugin order", async () => {
-  const { default: viteConfigFactory } =
-    await import("../../../../vite.config.js");
+  const {
+    default: viteConfigFactory,
+    GENERATED_METADATA_CHUNK_WARNING_LIMIT_KB,
+  } = await import("../../../../vite.config.js");
   const cfg = viteConfigFactory({ command: "build" });
 
   assert.equal(cfg.resolve.alias[0].find, "mocha-globals");
@@ -43,6 +45,10 @@ test("vite.config.js factory (build): aliases, chunk groups, plugin order", asyn
     (g) => g.name,
   );
   assert.deepEqual(groupNames, ["vendor", ...expectedMetadataChunkNames()]);
+  assert.equal(
+    cfg.build.chunkSizeWarningLimit,
+    GENERATED_METADATA_CHUNK_WARNING_LIMIT_KB,
+  );
 
   assert.equal(cfg.plugins[0].name, "preview-serve-dist-spritesheets");
   assert.equal(cfg.plugins[1].name, "vite-plugin-item-metadata");

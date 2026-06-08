@@ -78,6 +78,8 @@ export type PartEditorState = PixelEditorToolState & {
   shapeStart: Point | null;
   shapeEnd: Point | null;
   shapeFilled: boolean;
+  uploadedPaletteColors: string[] | null;
+  collapsedLayerGroups: Record<string, boolean>; // Group Name -> Collapsed state
   lastPoint: Point | null;
   selectionRect: SelectionRect | null;
   selectionDraftStart: Point | null;
@@ -364,6 +366,8 @@ export function createPartEditorStateForTests(
     lastTouchCenter: null,
     thumbnailCache: null,
     recomposeDebounceTimer: null,
+    uploadedPaletteColors: null,
+    collapsedLayerGroups: {},
   } as PartEditorState;
 
   Object.assign(stateObj, overrides);
@@ -1391,6 +1395,141 @@ function renderProPanel(stateObj: PartEditorState): m.Children {
   ]);
 }
 
+function renderLayerRowItem(
+  stateObj: PartEditorState,
+  layer: EditorLayer,
+  displayCleanName: string,
+  indent: boolean,
+): m.Children {
+  return m(
+    "div.part-editor-layer-row",
+    {
+      key: layer.id,
+      class: layer.id === stateObj.activeLayerId ? "active" : "",
+      style: indent ? { marginLeft: "12px", borderLeft: "2px dashed var(--border-subtle)", paddingLeft: "8px" } : {},
+      onclick: () => {
+        stateObj.activeLayerId = layer.id;
+      },
+    },
+    [
+      m("div.part-editor-layer-main", [
+        m(
+          "button.part-editor-layer-control",
+          {
+            type: "button",
+            title: layer.visible ? "Hide layer" : "Show layer",
+            onclick: (e: MouseEvent) => {
+              e.stopPropagation();
+              layer.visible = !layer.visible;
+              recomposeCanvases(stateObj);
+              saveHistory(stateObj);
+            },
+          },
+          layer.visible ? "On" : "Off",
+        ),
+        m(
+          "button.part-editor-layer-control",
+          {
+            type: "button",
+            title: layer.locked
+              ? "Unlock layer pixels (/)"
+              : "Lock layer pixels (/)",
+            class: layer.locked ? "active" : "",
+            onclick: (e: MouseEvent) => {
+              e.stopPropagation();
+              toggleLayerPixelLock(stateObj, layer);
+            },
+          },
+          layer.locked ? "Lock" : "Edit",
+        ),
+        m(
+          "button.part-editor-layer-control",
+          {
+            type: "button",
+            title: layer.alphaLocked
+              ? "Unlock transparent pixels (Shift+/)"
+              : "Lock transparent pixels for recoloring (Shift+/)",
+            class: layer.alphaLocked ? "active" : "",
+            disabled: layer.locked,
+            onclick: (e: MouseEvent) => {
+              e.stopPropagation();
+              toggleLayerAlphaLock(stateObj, layer);
+            },
+          },
+          "A",
+        ),
+        m("input.part-editor-layer-name", {
+          type: "text",
+          value: layer.name,
+          title: "Layer name (Format: 'Group: LayerName' to auto-nest in folders)",
+          onclick: (e: MouseEvent) => e.stopPropagation(),
+          oninput: (e: Event) => {
+            layer.name =
+              (e.target as HTMLInputElement).value || "Layer";
+          },
+          onchange: () => saveHistory(stateObj),
+        }),
+        m(
+          "span.part-editor-layer-opacity-value",
+          `${Math.round(layer.opacity * 100)}%`,
+        ),
+      ]),
+      m("div.part-editor-layer-sub", { style: { display: "flex", gap: "8px", alignItems: "center" } }, [
+        m("select.part-editor-layer-blend", {
+          style: {
+            flex: "0 0 100px",
+            background: "var(--bg-darkest)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-sm)",
+            color: "var(--text-primary)",
+            fontSize: "10px",
+            padding: "2px 4px",
+            height: "22px",
+            cursor: "pointer",
+          },
+          value: layer.blendMode || "source-over",
+          title: "Layer blend mode",
+          onclick: (e: MouseEvent) => e.stopPropagation(),
+          onchange: (e: Event) => {
+            layer.blendMode = (e.target as HTMLSelectElement).value as GlobalCompositeOperation;
+            recomposeCanvases(stateObj);
+            saveHistory(stateObj);
+          }
+        }, [
+          m("option", { value: "source-over" }, "Normal"),
+          m("option", { value: "multiply" }, "Multiply"),
+          m("option", { value: "screen" }, "Screen"),
+          m("option", { value: "overlay" }, "Overlay"),
+          m("option", { value: "darken" }, "Darken"),
+          m("option", { value: "lighten" }, "Lighten"),
+          m("option", { value: "color-dodge" }, "Dodge"),
+          m("option", { value: "color-burn" }, "Burn"),
+          m("option", { value: "hard-light" }, "Hard Light"),
+          m("option", { value: "soft-light" }, "Soft Light"),
+          m("option", { value: "difference" }, "Difference"),
+          m("option", { value: "exclusion" }, "Exclusion"),
+        ]),
+        m("input.part-editor-layer-opacity", {
+          style: { flex: "1", margin: "0" },
+          type: "range",
+          min: "0",
+          max: "100",
+          step: "1",
+          value: String(Math.round(layer.opacity * 100)),
+          title: "Layer opacity",
+          onclick: (e: MouseEvent) => e.stopPropagation(),
+          oninput: (e: Event) => {
+            layer.opacity =
+              Number((e.target as HTMLInputElement).value) / 100;
+            debouncedRecomposeCanvases(stateObj);
+          },
+          onchange: () => saveHistory(stateObj),
+        }),
+      ]),
+    ],
+  );
+}
+
 function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
   const activeLayerIndex = getActiveLayerIndex(stateObj);
   const activeLayer = getActiveLayer(stateObj);
@@ -1446,7 +1585,40 @@ function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
       ),
     ]),
     m("div.part-editor-pro-section.part-editor-color-section", [
-      m("h4", "Color"),
+      m("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" } }, [
+        m("h4", { style: { margin: "0" } }, "Color"),
+        m("label", {
+          style: {
+            fontSize: "10px",
+            color: "var(--accent-primary)",
+            cursor: "pointer",
+            background: "rgba(124, 109, 240, 0.15)",
+            padding: "2px 6px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid rgba(124, 109, 240, 0.3)"
+          }
+        }, [
+          "+ Palette",
+          m("input", {
+            type: "file",
+            accept: ".gpl,.hex,.txt",
+            style: { display: "none" },
+            onchange: (e: Event) => {
+              const target = e.target as HTMLInputElement;
+              if (target.files && target.files[0]) {
+                const file = target.files[0];
+                const reader = new FileReader();
+                reader.onload = () => {
+                  stateObj.uploadedPaletteColors = parsePaletteFile(file.name, reader.result as string);
+                  m.redraw();
+                };
+                reader.readAsText(file);
+              }
+            }
+          })
+        ])
+      ]),
+      m("div", { style: { fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px" } }, "Extracted Swatches"),
       m(
         "div.part-editor-extracted-palette",
         paletteColors.map((color) =>
@@ -1465,6 +1637,42 @@ function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
           }),
         ),
       ),
+      stateObj.uploadedPaletteColors ? [
+        m("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", marginBottom: "4px" } }, [
+          m("span", { style: { fontSize: "10px", color: "var(--text-muted)" } }, "Custom Swatches"),
+          m("button", {
+            type: "button",
+            style: {
+              background: "transparent",
+              border: "none",
+              color: "#fb7185",
+              fontSize: "10px",
+              cursor: "pointer",
+              padding: "0"
+            },
+            onclick: () => {
+              stateObj.uploadedPaletteColors = null;
+            }
+          }, "Clear")
+        ]),
+        m("div.part-editor-extracted-palette", { style: { maxHeight: "96px", overflowY: "auto", border: "1px solid var(--border-subtle)", padding: "4px", borderRadius: "var(--radius-sm)", display: "flex", flexWrap: "wrap", gap: "3px" } }, 
+          stateObj.uploadedPaletteColors.map((color) =>
+            m("button.part-editor-palette-chip", {
+              key: `uploaded-${color}`,
+              type: "button",
+              style: { backgroundColor: color, flex: "0 0 16px", height: "16px", padding: "0" },
+              class: stateObj.activeColor === color ? "active" : "",
+              title: `Use ${color}`,
+              onclick: () => {
+                stateObj.activeColor = color;
+              },
+              ondblclick: () => {
+                stateObj.replaceFromColor = color;
+              },
+            })
+          )
+        )
+      ] : null,
       m("div.part-editor-replace-grid", [
         m("label.part-editor-color-field", [
           m("span", "From"),
@@ -1711,137 +1919,116 @@ function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
       ]),
       m(
         "div.part-editor-layer-list",
-        stateObj.editLayers
-          .slice()
-          .reverse()
-          .map((layer) =>
-            m(
-              "div.part-editor-layer-row",
-              {
-                key: layer.id,
-                class: layer.id === stateObj.activeLayerId ? "active" : "",
-                onclick: () => {
-                  stateObj.activeLayerId = layer.id;
-                },
-              },
-              [
-                m("div.part-editor-layer-main", [
-                  m(
-                    "button.part-editor-layer-control",
-                    {
-                      type: "button",
-                      title: layer.visible ? "Hide layer" : "Show layer",
-                      onclick: (e: MouseEvent) => {
-                        e.stopPropagation();
-                        layer.visible = !layer.visible;
-                        recomposeCanvases(stateObj);
-                        saveHistory(stateObj);
-                      },
-                    },
-                    layer.visible ? "On" : "Off",
-                  ),
-                  m(
-                    "button.part-editor-layer-control",
-                    {
-                      type: "button",
-                      title: layer.locked
-                        ? "Unlock layer pixels (/)"
-                        : "Lock layer pixels (/)",
-                      class: layer.locked ? "active" : "",
-                      onclick: (e: MouseEvent) => {
-                        e.stopPropagation();
-                        toggleLayerPixelLock(stateObj, layer);
-                      },
-                    },
-                    layer.locked ? "Lock" : "Edit",
-                  ),
-                  m(
-                    "button.part-editor-layer-control",
-                    {
-                      type: "button",
-                      title: layer.alphaLocked
-                        ? "Unlock transparent pixels (Shift+/)"
-                        : "Lock transparent pixels for recoloring (Shift+/)",
-                      class: layer.alphaLocked ? "active" : "",
-                      disabled: layer.locked,
-                      onclick: (e: MouseEvent) => {
-                        e.stopPropagation();
-                        toggleLayerAlphaLock(stateObj, layer);
-                      },
-                    },
-                    "A",
-                  ),
-                  m("input.part-editor-layer-name", {
-                    type: "text",
-                    value: layer.name,
-                    title: "Layer name",
-                    onclick: (e: MouseEvent) => e.stopPropagation(),
-                    oninput: (e: Event) => {
-                      layer.name =
-                        (e.target as HTMLInputElement).value || "Layer";
-                    },
-                    onchange: () => saveHistory(stateObj),
-                  }),
-                  m(
-                    "span.part-editor-layer-opacity-value",
-                    `${Math.round(layer.opacity * 100)}%`,
-                  ),
-                ]),
-                m("div.part-editor-layer-sub", { style: { display: "flex", gap: "8px", alignItems: "center" } }, [
-                  m("select.part-editor-layer-blend", {
-                    style: {
-                      flex: "0 0 100px",
-                      background: "var(--bg-darkest)",
-                      border: "1px solid var(--border-subtle)",
-                      borderRadius: "var(--radius-sm)",
-                      color: "var(--text-primary)",
-                      fontSize: "10px",
-                      padding: "2px 4px",
-                      height: "22px",
-                      cursor: "pointer",
-                    },
-                    value: layer.blendMode || "source-over",
-                    title: "Layer blend mode",
-                    onclick: (e: MouseEvent) => e.stopPropagation(),
-                    onchange: (e: Event) => {
-                      layer.blendMode = (e.target as HTMLSelectElement).value as GlobalCompositeOperation;
+        (() => {
+          const renderedLayerItems: m.Children = [];
+          const reversedLayers = stateObj.editLayers.slice().reverse();
+          
+          type GroupItem = { groupName: string; layers: EditorLayer[] };
+          const parsedGroups: GroupItem[] = [];
+          
+          let currentGroupName: string | null = null;
+          let currentGroupLayers: EditorLayer[] = [];
+          
+          for (const layer of reversedLayers) {
+            const parts = layer.name.split(":");
+            const isGrouped = parts.length > 1 && parts[0].trim() !== "";
+            const groupName = isGrouped ? parts[0].trim() : null;
+            
+            if (groupName !== currentGroupName) {
+              if (currentGroupName !== null && currentGroupLayers.length > 0) {
+                parsedGroups.push({ groupName: currentGroupName, layers: currentGroupLayers });
+                currentGroupLayers = [];
+              }
+              currentGroupName = groupName;
+            }
+            
+            if (groupName !== null) {
+              currentGroupLayers.push(layer);
+            } else {
+              if (currentGroupName !== null && currentGroupLayers.length > 0) {
+                parsedGroups.push({ groupName: currentGroupName, layers: currentGroupLayers });
+                currentGroupLayers = [];
+                currentGroupName = null;
+              }
+              parsedGroups.push({ groupName: "", layers: [layer] });
+            }
+          }
+          if (currentGroupName !== null && currentGroupLayers.length > 0) {
+            parsedGroups.push({ groupName: currentGroupName, layers: currentGroupLayers });
+          }
+
+          parsedGroups.forEach(({ groupName, layers }) => {
+            if (groupName) {
+              const isCollapsed = stateObj.collapsedLayerGroups[groupName] === true;
+              renderedLayerItems.push(
+                m("div.part-editor-layer-group-header", {
+                  key: `group-${groupName}`,
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "6px 8px",
+                    background: "rgba(124, 109, 240, 0.08)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: "4px",
+                    marginTop: "4px",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    gap: "6px"
+                  },
+                  onclick: () => {
+                    stateObj.collapsedLayerGroups[groupName] = !isCollapsed;
+                  }
+                }, [
+                  m("span", { style: { fontFamily: "monospace", fontSize: "10px", color: "var(--text-muted)", width: "12px", display: "inline-block" } }, isCollapsed ? "▶" : "▼"),
+                  m("span", { style: { flex: "1", fontSize: "11px", fontWeight: "bold", color: "var(--text-primary)" } }, `📂 ${groupName}`),
+                  m("button.part-editor-layer-control", {
+                    type: "button",
+                    style: { width: "32px", height: "18px", fontSize: "8px", padding: "0" },
+                    onclick: (e: MouseEvent) => {
+                      e.stopPropagation();
+                      const anyVisible = layers.some(l => l.visible);
+                      for (const l of layers) {
+                        l.visible = !anyVisible;
+                      }
                       recomposeCanvases(stateObj);
                       saveHistory(stateObj);
                     }
-                  }, [
-                    m("option", { value: "source-over" }, "Normal"),
-                    m("option", { value: "multiply" }, "Multiply"),
-                    m("option", { value: "screen" }, "Screen"),
-                    m("option", { value: "overlay" }, "Overlay"),
-                    m("option", { value: "darken" }, "Darken"),
-                    m("option", { value: "lighten" }, "Lighten"),
-                    m("option", { value: "color-dodge" }, "Dodge"),
-                    m("option", { value: "color-burn" }, "Burn"),
-                    m("option", { value: "hard-light" }, "Hard Light"),
-                    m("option", { value: "soft-light" }, "Soft Light"),
-                    m("option", { value: "difference" }, "Difference"),
-                    m("option", { value: "exclusion" }, "Exclusion"),
-                  ]),
-                  m("input.part-editor-layer-opacity", {
-                    style: { flex: "1", margin: "0" },
-                    type: "range",
-                    min: "0",
-                    max: "100",
-                    step: "1",
-                    value: String(Math.round(layer.opacity * 100)),
-                    title: "Layer opacity",
-                    onclick: (e: MouseEvent) => e.stopPropagation(),
-                    oninput: (e: Event) => {
-                      layer.opacity =
-                        Number((e.target as HTMLInputElement).value) / 100;
-                      debouncedRecomposeCanvases(stateObj);
-                    },
-                    onchange: () => saveHistory(stateObj),
-                  }),
-                ]),
-              ],
-            ),
-          ),
+                  }, layers.some(l => l.visible) ? "Hide" : "Show"),
+                  m("button.part-editor-layer-control", {
+                    type: "button",
+                    style: { width: "32px", height: "18px", fontSize: "8px", padding: "0" },
+                    onclick: (e: MouseEvent) => {
+                      e.stopPropagation();
+                      const anyLocked = layers.some(l => l.locked);
+                      for (const l of layers) {
+                        l.locked = !anyLocked;
+                        if (l.locked && l.id === stateObj.activeLayerId) {
+                          clearSelectionState(stateObj, true);
+                        }
+                      }
+                      saveHistory(stateObj);
+                    }
+                  }, layers.some(l => l.locked) ? "Unlock" : "Lock"),
+                ])
+              );
+              
+              if (!isCollapsed) {
+                layers.forEach(layer => {
+                  const nameParts = layer.name.split(":");
+                  const displayCleanName = nameParts.slice(1).join(":").trim();
+                  renderedLayerItems.push(renderLayerRowItem(stateObj, layer, displayCleanName, true));
+                });
+              }
+            } else {
+              layers.forEach(layer => {
+                renderedLayerItems.push(renderLayerRowItem(stateObj, layer, layer.name, false));
+              });
+            }
+          });
+
+          return renderedLayerItems;
+        })()
       ),
     ]),
     m("div.part-editor-pro-section", [
@@ -2895,6 +3082,50 @@ function getVisiblePaletteColors(stateObj: PartEditorState): string[] {
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, MAX_EXTRACTED_PALETTE_COLORS)
     .map(([color]) => color);
+}
+
+function parsePaletteFile(fileName: string, text: string): string[] {
+  const colors: string[] = [];
+  const lines = text.split(/\r?\n/);
+  
+  if (fileName.toLowerCase().endsWith(".gpl") || text.includes("GIMP Palette")) {
+    let readingColors = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      if (trimmed === "#" || trimmed.startsWith("GIMP Palette") || trimmed.startsWith("Name:") || trimmed.startsWith("Columns:")) {
+        if (trimmed === "#") readingColors = true;
+        continue;
+      }
+      // If we are reading colors, GPL format has: R G B description
+      const parts = trimmed.split(/\s+/);
+      if (parts.length >= 3) {
+        const r = parseInt(parts[0], 10);
+        const g = parseInt(parts[1], 10);
+        const b = parseInt(parts[2], 10);
+        if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+          const hex = rgbToHex(r, g, b);
+          if (!colors.includes(hex)) {
+            colors.push(hex);
+          }
+        }
+      }
+    }
+  } else {
+    // HEX or simple plaintext color list
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const hexMatch = trimmed.match(/^#?([a-fA-F0-9]{6})/);
+      if (hexMatch) {
+        const hex = `#${hexMatch[1].toLowerCase()}`;
+        if (!colors.includes(hex)) {
+          colors.push(hex);
+        }
+      }
+    }
+  }
+  return colors;
 }
 
 function replaceColorOnActiveLayer(stateObj: PartEditorState): void {

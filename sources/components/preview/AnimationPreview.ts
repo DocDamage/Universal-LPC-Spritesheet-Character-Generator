@@ -3,8 +3,12 @@ import m from "mithril";
 import { state } from "../../state/state.ts";
 import { ANIMATIONS } from "../../state/constants.ts";
 import { CollapsibleSection } from "../CollapsibleSection.ts";
+import { downloadPreviewAnimationGif } from "../../canvas/preview-gif.ts";
+import { downloadPreviewAnimationWebp } from "../../canvas/preview-webp.ts";
+import { showToast } from "../../state/notifications.ts";
 import {
   repaintStaticPreviewFrameForTests,
+  setPreviewAnimation,
   setPreviewAnimation,
   setPreviewTweenSettings,
   startPreviewAnimation,
@@ -588,6 +592,30 @@ export const AnimationPreview: m.Component<
               ]),
             ]),
           ]),
+        ]),
+        m("div.is-flex.is-justify-content-center.mb-3", { style: { gap: "8px" } }, [
+          m("button.button.is-small.is-primary", {
+            onclick: async () => {
+              try {
+                await downloadPreviewAnimationGif();
+                showToast("Animated GIF exported successfully!", { kind: "success" });
+              } catch (err) {
+                console.error(err);
+                showToast("Failed to export preview GIF.", { kind: "error" });
+              }
+            }
+          }, "Export Loop as GIF"),
+          m("button.button.is-small.is-primary", {
+            onclick: async () => {
+              try {
+                await downloadPreviewAnimationWebp();
+                showToast("Animated WebP exported successfully!", { kind: "success" });
+              } catch (err) {
+                console.error(err);
+                showToast("Failed to export preview WebP.", { kind: "error" });
+              }
+            }
+          }, "Export Loop as WebP"),
         ]),
         m("div.mt-3", [
           m("div.preview-canvas-area", [

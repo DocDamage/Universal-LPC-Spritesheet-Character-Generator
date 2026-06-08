@@ -66,25 +66,6 @@ export const TWEEN_PRESETS: Record<TweenPreset, TweenSettings> = {
     easing: "linear",
   },
 };
-    fps: 12,
-    motionStrength: 1,
-    alphaThreshold: 1,
-  },
-  "pixel-art": {
-    mode: "pixel-motion",
-    inbetweens: 2,
-    fps: 12,
-    motionStrength: 1,
-    alphaThreshold: 16,
-  },
-  presentation: {
-    mode: "crossfade",
-    inbetweens: 4,
-    fps: 18,
-    motionStrength: 1,
-    alphaThreshold: 1,
-  },
-};
 
 export function normalizeTweenInbetweens(value: number): number {
   if (!Number.isFinite(value)) {

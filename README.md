@@ -35,7 +35,7 @@ Highlights:
 - **Custom asset library management:** tag assets, filter by tag, duplicate, rename, delete, and export/import backup ZIPs.
 - **Customizable shortcuts:** rebind any shortcut from the help modal; conflicts are highlighted and preferences persist in localStorage.
 - Use `Ctrl+K` for the command palette and `Ctrl+/` for shortcut help.
-- Export PNG spritesheets, animated GIF previews, character JSON, credits, ZIP packs, tweened individual-frame PNGs, and tweened per-animation spritesheets with shared toast notifications, export estimates, and confirmation dialogs.
+- Export PNG spritesheets, animated GIF/WebP previews, character JSON, credits, ZIP packs, tweened individual-frame PNGs, and tweened per-animation spritesheets with shared toast notifications, export estimates, engine preset manifests, and confirmation dialogs.
 
 ### History
 
@@ -119,8 +119,10 @@ original frames, and split-by-animation ZIP exports keep the original
 `tweened/standard/` and `tweened/custom/`. Export metadata records global tween
 settings, per-animation overrides, estimates, and FPS. Tween-enabled ZIP exports
 also include `credits/TWEEN_EXPORT_README.txt` with path and game-engine import
-notes. The Download panel can export the current animation preview as an
-animated GIF and warns before very large tween exports.
+notes plus `engine-presets/*.json` manifests for generic importers, Godot,
+Phaser, and RPG Maker style workflows. The Download panel can export the
+current animation preview as an animated GIF or animated WebP and warns before
+very large tween exports.
 
 ### Sprite Editing and Custom Imports
 

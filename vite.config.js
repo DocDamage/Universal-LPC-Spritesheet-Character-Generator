@@ -6,6 +6,7 @@ import { vitePluginPreviewServeDistSpritesheets } from "./vite/vite-plugin-previ
 import { vitePluginBundledCssAfterBulma } from "./vite/vite-plugin-bundled-css-after-bulma.js";
 import { vitePluginPurgeCriticalCss } from "./vite/vite-plugin-purge-critical-css.js";
 import { vitePluginMetadataModulePreload } from "./vite/vite-plugin-metadata-modulepreload.js";
+import { vitePluginWebpEncoderWasm } from "./vite/vite-plugin-webp-encoder-wasm.js";
 import {
   itemMetadataCodeSplittingGroups,
   itemMetadataPlugins,
@@ -76,6 +77,7 @@ export default defineConfig(({ command }) => ({
     vitePluginMetadataModulePreload(),
     vitePluginBundledCssAfterBulma(),
     getSpritesheetsPlugin(command),
+    vitePluginWebpEncoderWasm(__dirname),
     vitePluginPurgeCriticalCss(),
   ],
 }));

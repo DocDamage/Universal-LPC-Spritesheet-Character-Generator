@@ -258,6 +258,17 @@ describe("state/zip.ts", () => {
       expect(fakeZip.files.get("credits/TWEEN_EXPORT_README.txt")).to.include(
         "split-by-animation",
       );
+      const godotPreset = JSON.parse(
+        fakeZip.files.get("engine-presets/godot.json"),
+      );
+      expect(godotPreset).to.include({
+        engine: "godot",
+        exportKind: "split-by-animation",
+        fps: 12,
+      });
+      expect(godotPreset.pathTemplate).to.equal(
+        "tweened/standard/{animation}.png",
+      );
     });
 
     it("includes character.json, credits credits.txt/credits.csv, and credits/metadata.json", async () => {
@@ -1403,6 +1414,17 @@ describe("state/zip.ts", () => {
       );
       expect(fakeZip.files.get("credits/TWEEN_EXPORT_README.txt")).to.include(
         "individual-frames",
+      );
+      const phaserPreset = JSON.parse(
+        fakeZip.files.get("engine-presets/phaser.json"),
+      );
+      expect(phaserPreset).to.include({
+        engine: "phaser",
+        exportKind: "individual-frames",
+        fps: 12,
+      });
+      expect(phaserPreset.pathTemplate).to.equal(
+        "standard/{animation}/{direction}/{frame}.png",
       );
     });
 

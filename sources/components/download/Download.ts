@@ -10,6 +10,7 @@ import {
 import { CollapsibleSection } from "../CollapsibleSection.ts";
 import { downloadFile, downloadAsPNG } from "../../canvas/download.ts";
 import { downloadPreviewAnimationGif } from "../../canvas/preview-gif.ts";
+import { downloadPreviewAnimationWebp } from "../../canvas/preview-webp.ts";
 import {
   importStateFromJSON,
   exportStateAsJSON,
@@ -128,6 +129,20 @@ export const Download: m.Component<DownloadAttrs> = {
       }
     };
 
+    const savePreviewWebp = async () => {
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
+      try {
+        await downloadPreviewAnimationWebp();
+        showToast("Animated WebP exported.", { kind: "success" });
+      } catch (err) {
+        console.error("Failed to export WebP:", err);
+        showToast("Failed to export animated WebP.", { kind: "error" });
+      }
+    };
+
     return m(
       CollapsibleSection,
       {
@@ -145,6 +160,11 @@ export const Download: m.Component<DownloadAttrs> = {
             "button.button.is-small.is-primary",
             { onclick: savePreviewGif },
             "Animation Preview (GIF)",
+          ),
+          m(
+            "button.button.is-small.is-primary",
+            { onclick: savePreviewWebp },
+            "Animation Preview (WebP)",
           ),
           m(
             "button.button.is-small",

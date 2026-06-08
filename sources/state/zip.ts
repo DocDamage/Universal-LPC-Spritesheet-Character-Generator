@@ -49,6 +49,7 @@ import type { State } from "./state.ts";
 import { showToast } from "./notifications.ts";
 import {
   buildTweenExportReadme,
+  buildTweenEnginePresets,
   estimateTweenExportFrames,
   getGlobalTweenSettings,
   getTweenSettingsForAnimation,
@@ -335,6 +336,16 @@ export const exportSplitAnimations = async (
         "TWEEN_EXPORT_README.txt",
         buildTweenExportReadme("split-by-animation"),
       );
+      const presetFolder = zip.folder("engine-presets");
+      for (const preset of buildTweenEnginePresets(
+        "split-by-animation",
+        FRAME_SIZE,
+      )) {
+        presetFolder.file(
+          `${preset.engine}.json`,
+          JSON.stringify(preset, null, 2),
+        );
+      }
     }
 
     const zipBlob = await zipGenerateBlobWithProfiler(profiler, zip);
@@ -1054,6 +1065,16 @@ export const exportIndividualFrames = async (
         "TWEEN_EXPORT_README.txt",
         buildTweenExportReadme("individual-frames"),
       );
+      const presetFolder = zip.folder("engine-presets");
+      for (const preset of buildTweenEnginePresets(
+        "individual-frames",
+        FRAME_SIZE,
+      )) {
+        presetFolder.file(
+          `${preset.engine}.json`,
+          JSON.stringify(preset, null, 2),
+        );
+      }
     }
 
     debugLog("Generating ZIP file...");

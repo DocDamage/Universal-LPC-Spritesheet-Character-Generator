@@ -45,6 +45,12 @@ describe("Download", () => {
     expect(container.textContent).to.include("Animation Preview (GIF)");
   });
 
+  it("includes an animated WebP preview export button", () => {
+    m.render(container, m(Download, { catalog: readyCatalog }));
+
+    expect(container.textContent).to.include("Animation Preview (WebP)");
+  });
+
   it("shows the tween export hint when preview tweening is enabled", () => {
     state.previewTweenMode = "crossfade";
     state.previewTweenInbetweens = 2;

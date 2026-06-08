@@ -21,6 +21,24 @@ export type TweenExportEstimate = {
   expandedSpritesheets: number;
 };
 
+export type TweenEnginePreset = {
+  engine: "generic" | "godot" | "phaser" | "rpg-maker";
+  exportKind: "split-by-animation" | "individual-frames";
+  fps: number;
+  frameDurationMs: number;
+  frameSize: number;
+  directions: readonly string[];
+  pathTemplate: string;
+  notes: string[];
+  animations: Array<{
+    id: string;
+    mode: TweenSettings["mode"];
+    inbetweens: number;
+    fps: number;
+    frameDurationMs: number;
+  }>;
+};
+
 export function getGlobalTweenSettings(): TweenSettings {
   return normalizeTweenSettings({
     mode: state.previewTweenMode,
@@ -155,5 +173,90 @@ export function buildTweenExportReadme(
     `Estimated total frame PNGs for individual-frame export: ${estimate.totalFrames}`,
     "",
     "Game-engine import tip: use the FPS value above as the animation playback rate for generated tweened sequences.",
+    "Engine preset JSON files are available under engine-presets/ for generic importers, Godot, Phaser, and RPG Maker style workflows.",
   ].join("\n");
+}
+
+export function buildTweenEnginePresets(
+  exportKind: "split-by-animation" | "individual-frames",
+  frameSize: number,
+): TweenEnginePreset[] {
+  const animations = ANIMATIONS.filter((anim) => !anim.noExport).map((anim) => {
+    const settings = getTweenSettingsForAnimation(anim.value);
+    return {
+      id: anim.value,
+      mode: settings.mode,
+      inbetweens: settings.inbetweens,
+      fps: settings.fps,
+      frameDurationMs: Math.round(1000 / settings.fps),
+    };
+  });
+  const globalSettings = getGlobalTweenSettings();
+  const frameDurationMs = Math.round(1000 / globalSettings.fps);
+  const pathTemplate =
+    exportKind === "split-by-animation"
+      ? "tweened/standard/{animation}.png"
+      : "standard/{animation}/{direction}/{frame}.png";
+
+  return [
+    {
+      engine: "generic",
+      exportKind,
+      fps: globalSettings.fps,
+      frameDurationMs,
+      frameSize,
+      directions: DIRECTIONS,
+      pathTemplate,
+      notes: [
+        "Use this preset as a neutral manifest for custom import scripts.",
+        "Per-animation FPS overrides are listed in the animations array.",
+      ],
+      animations,
+    },
+    {
+      engine: "godot",
+      exportKind,
+      fps: globalSettings.fps,
+      frameDurationMs,
+      frameSize,
+      directions: DIRECTIONS,
+      pathTemplate,
+      notes: [
+        "Import tweened sheets as SpriteFrames or AnimatedSprite2D animations.",
+        "Set animation speed to fps, or use per-animation fps when it differs.",
+        "For individual frames, import files in numeric frame order and keep *_tween_* frames between their source frames.",
+      ],
+      animations,
+    },
+    {
+      engine: "phaser",
+      exportKind,
+      fps: globalSettings.fps,
+      frameDurationMs,
+      frameSize,
+      directions: DIRECTIONS,
+      pathTemplate,
+      notes: [
+        "Load tweened sheets with this.load.spritesheet using frameWidth/frameHeight.",
+        "Create animations with frameRate set to fps.",
+        "For individual frames, generate frame names from the path template and preserve sorted frame order.",
+      ],
+      animations,
+    },
+    {
+      engine: "rpg-maker",
+      exportKind,
+      fps: globalSettings.fps,
+      frameDurationMs,
+      frameSize,
+      directions: DIRECTIONS,
+      pathTemplate,
+      notes: [
+        "RPG Maker import usually needs a plugin or conversion step for LPC-sized directional sheets.",
+        "Use tweened individual frames when a plugin accepts explicit frame sequences.",
+        "Keep original standard/ and custom/ sheets for compatibility fallbacks.",
+      ],
+      animations,
+    },
+  ];
 }

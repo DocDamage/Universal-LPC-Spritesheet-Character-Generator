@@ -4,6 +4,7 @@ import { resetState } from "../../sources/state/hash.ts";
 import { state } from "../../sources/state/state.ts";
 import {
   applyTweenPreset,
+  buildTweenEnginePresets,
   buildTweenExportReadme,
   estimateTweenExportFrames,
   getTweenSettingsForAnimation,
@@ -69,5 +70,23 @@ describe("state/tween-settings.ts", () => {
     expect(readme).to.include("LPC Tween Export");
     expect(readme).to.include("individual-frames");
     expect(readme).to.include("walk");
+  });
+
+  it("builds engine presets for tween export importers", () => {
+    const presets = buildTweenEnginePresets("split-by-animation", 64);
+
+    expect(presets.map((preset) => preset.engine)).to.deep.equal([
+      "generic",
+      "godot",
+      "phaser",
+      "rpg-maker",
+    ]);
+    expect(presets[0].pathTemplate).to.equal(
+      "tweened/standard/{animation}.png",
+    );
+    expect(presets[0].frameSize).to.equal(64);
+    expect(presets[0].animations.map((animation) => animation.id)).to.include(
+      "walk",
+    );
   });
 });

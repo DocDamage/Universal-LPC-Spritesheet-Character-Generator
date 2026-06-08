@@ -22,6 +22,7 @@ import {
 } from "../../state/zip.ts";
 import { debugLog } from "../../utils/debug.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
+import { showToast } from "../../state/notifications.ts";
 
 const zipExportTitle = "Wait for layer data to finish loading";
 
@@ -34,7 +35,10 @@ export const Download: m.Component<DownloadAttrs> = {
     const zipDisabled = !vnode.attrs.catalog.isLayersReady();
 
     const exportToClipboard = async (): Promise<void> => {
-      if (!window.canvasRenderer) return;
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
       try {
         const json = exportStateAsJSON(
           state,
@@ -42,15 +46,23 @@ export const Download: m.Component<DownloadAttrs> = {
         );
         debugLog(json);
         await navigator.clipboard.writeText(json);
-        alert("Exported to clipboard!");
+        showToast("Exported to clipboard!", { kind: "success" });
       } catch (err) {
         console.error("Failed to copy to clipboard:", err);
-        alert("Failed to copy to clipboard. Please check browser permissions.");
+        showToast(
+          "Failed to copy to clipboard. Please check browser permissions.",
+          {
+            kind: "error",
+          },
+        );
       }
     };
 
     const importFromClipboard = async (): Promise<void> => {
-      if (!window.canvasRenderer) return;
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
       try {
         const json = await navigator.clipboard.readText();
         debugLog(json);
@@ -58,17 +70,21 @@ export const Download: m.Component<DownloadAttrs> = {
         Object.assign(state, imported);
 
         m.redraw();
-        alert("Imported successfully!");
+        showToast("Imported successfully!", { kind: "success" });
       } catch (err) {
         console.error("Failed to import from clipboard:", err);
-        alert(
+        showToast(
           "Failed to import. Please check clipboard content and browser permissions.",
+          { kind: "error" },
         );
       }
     };
 
     const saveAsPNG = () => {
-      if (!window.canvasRenderer) return;
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
       downloadAsPNG("character-spritesheet.png");
     };
 

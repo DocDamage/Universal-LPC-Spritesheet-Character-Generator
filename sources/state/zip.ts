@@ -44,6 +44,7 @@ import {
   endZipExportUiSuspend,
 } from "../utils/zip-export-ui-suspend.ts";
 import type { State } from "./state.ts";
+import { showToast } from "./notifications.ts";
 
 declare global {
   interface Window {
@@ -65,6 +66,25 @@ type ExportSplitAnimationsDeps = {
   addAnimationSliceToZip: typeof addAnimationSliceToZip;
   addCanvasToZip: typeof addCanvasToZip;
 };
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function showZipSuccess(message = "Export complete!"): void {
+  showToast(message, { kind: "success", timeoutMs: 7000 });
+}
+
+function showZipWarning(message: string): void {
+  showToast(message.trim(), { kind: "warning", timeoutMs: 9000 });
+}
+
+function showZipFailure(err: unknown): void {
+  showToast(`Export failed: ${errorMessage(err)}`, {
+    kind: "error",
+    timeoutMs: 9000,
+  });
+}
 
 // Export ZIP - Split by animation
 export const exportSplitAnimations = async (
@@ -199,17 +219,17 @@ export const exportSplitAnimations = async (
     downloadZipBlob(zipBlob, `lpc_${bodyType}_animations_${timestamp}.zip`);
 
     if (failedStandard.length > 0 || failedCustom.length > 0) {
-      alert(
+      showZipWarning(
         `Export completed with some issues:\nFailed to export animations: ${failedStandard.join(
           ", ",
         )}`,
       );
     } else {
-      alert("Export complete!");
+      showZipSuccess();
     }
   } catch (err) {
     console.error("Export failed:", err);
-    alert(`Export failed: ${(err as Error).message}`);
+    showZipFailure(err);
   } finally {
     endZipExportUiSuspend();
     if (state) {
@@ -308,17 +328,17 @@ export const exportSplitItemSheets = async (
     );
 
     if (failedItems.length > 0) {
-      alert(
+      showZipWarning(
         `Export completed with some issues:\nFailed items: ${failedItems.join(
           ", ",
         )}`,
       );
     } else {
-      alert("Export complete!");
+      showZipSuccess();
     }
   } catch (err) {
     console.error("Export failed:", err);
-    alert(`Export failed: ${(err as Error).message}`);
+    showZipFailure(err);
   } finally {
     endZipExportUiSuspend();
     if (state) {
@@ -596,13 +616,13 @@ export const exportSplitItemAnimations = async (
           msg += `${anim}: ${items.join(", ")}\n`;
         }
       }
-      alert(msg);
+      showZipWarning(msg);
     } else {
-      alert("Export complete!");
+      showZipSuccess();
     }
   } catch (err) {
     console.error("Export failed:", err);
-    alert(`Export failed: ${(err as Error).message}`);
+    showZipFailure(err);
   } finally {
     endZipExportUiSuspend();
     if (state) {
@@ -905,13 +925,13 @@ export const exportIndividualFrames = async (
       if (failedCustom.length > 0) {
         msg += `Failed custom animations: ${failedCustom.join(", ")}\n`;
       }
-      alert(msg);
+      showZipWarning(msg);
     } else {
-      alert("Individual frames export complete!");
+      showZipSuccess("Individual frames export complete!");
     }
   } catch (err) {
     console.error("Individual frames export failed:", err);
-    alert(`Export failed: ${(err as Error).message}`);
+    showZipFailure(err);
   } finally {
     endZipExportUiSuspend();
     if (state) {

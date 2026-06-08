@@ -9,7 +9,17 @@ import {
   resetCommandsForTests,
   setupGlobalShortcutListener,
 } from "../../sources/state/commands.ts";
-import { state } from "../../sources/state/state.ts";
+import {
+  resetStateDeps,
+  setStateDeps,
+  state,
+} from "../../sources/state/state.ts";
+import {
+  getConfirmDialog,
+  getToasts,
+  resetNotificationsForTests,
+  resolveConfirmation,
+} from "../../sources/state/notifications.ts";
 
 function keydown(target, key, options = {}) {
   return target.dispatchEvent(
@@ -25,6 +35,8 @@ function keydown(target, key, options = {}) {
 describe("state/commands.ts", () => {
   beforeEach(() => {
     resetCommandsForTests();
+    resetNotificationsForTests();
+    resetStateDeps();
     state.editingPart = null;
     state.previewCanvasZoomLevel = 1;
     initDefaultCommands();
@@ -32,6 +44,8 @@ describe("state/commands.ts", () => {
 
   afterEach(() => {
     resetCommandsForTests();
+    resetNotificationsForTests();
+    resetStateDeps();
     state.editingPart = null;
     state.previewCanvasZoomLevel = 1;
   });
@@ -108,6 +122,38 @@ describe("state/commands.ts", () => {
     executeCommand("view.zoom.in");
     expect(editorContext.zoom).to.equal(5);
     expect(state.previewCanvasZoomLevel).to.equal(1);
+  });
+
+  it("confirms reset before applying the command", async () => {
+    let selectedDefaults = false;
+    setStateDeps({
+      selectDefaults: async () => {
+        selectedDefaults = true;
+      },
+      redraw: () => {},
+    });
+    state.selections = {
+      hair: { itemId: "hair", name: "Hair" },
+    };
+    state.customImageZPos = 7;
+
+    expect(executeCommand("app.reset")).to.equal(true);
+    expect(selectedDefaults).to.equal(false);
+    expect(getConfirmDialog()).to.include({
+      title: "Reset selections",
+      confirmLabel: "Reset",
+      danger: true,
+    });
+
+    resolveConfirmation(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    expect(selectedDefaults).to.equal(true);
+    expect(state.selections).to.deep.equal({});
+    expect(state.customImageZPos).to.equal(0);
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Selections reset.",
+    );
   });
 
   it("handles global shortcuts and ignores typing fields", () => {

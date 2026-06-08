@@ -4,6 +4,7 @@ import type { CatalogReader } from "../../state/catalog.ts";
 import { state } from "../../state/state.ts";
 import { isItemAnimationCompatible } from "../../state/filters.ts";
 import { ANIMATIONS } from "../../state/constants.ts";
+import { showToast } from "../../state/notifications.ts";
 
 type AnimationOption = { value: string; label: string };
 type AnimationFiltersDeps = {
@@ -63,9 +64,11 @@ export const AnimationFilters: m.Component<
 
       if (toRemove.length > 0) {
         toRemove.forEach((key) => delete state.selections[key]);
-        alert(`Removed ${toRemove.length} incompatible item(s)`);
+        showToast(`Removed ${toRemove.length} incompatible item(s)`, {
+          kind: "success",
+        });
       } else {
-        alert("No incompatible items found");
+        showToast("No incompatible items found", { kind: "info" });
       }
     };
 

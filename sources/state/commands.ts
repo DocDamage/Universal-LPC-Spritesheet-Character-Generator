@@ -15,6 +15,7 @@ import {
   clampBrushSize,
   type EditorTool,
 } from "../components/desktop/pixel-editor-tools.ts";
+import { requestConfirmation, showToast } from "./notifications.ts";
 
 const MIN_PREVIEW_ZOOM = 0.5;
 const MAX_PREVIEW_ZOOM = 5;
@@ -80,7 +81,7 @@ export function registerCommand(command: Command): void {
 export function executeCommand(id: string): boolean {
   const cmd = commands.find((c) => c.id === id);
   if (cmd?.action && isCommandEnabled(cmd)) {
-    cmd.action();
+    runCommandAction(cmd);
     m.redraw();
     return true;
   }
@@ -104,6 +105,23 @@ export function getCommandTitle(id: string, fallback: string): string {
 
 function isCommandEnabled(cmd: Command): boolean {
   return cmd.enabled ? cmd.enabled() : true;
+}
+
+function runCommandAction(cmd: Command): void {
+  try {
+    const result = cmd.action?.();
+    void Promise.resolve(result).catch((err: unknown) => {
+      console.error(`Command failed: ${cmd.id}`, err);
+      showToast("Command failed. Check the console for details.", {
+        kind: "error",
+      });
+    });
+  } catch (err) {
+    console.error(`Command failed: ${cmd.id}`, err);
+    showToast("Command failed. Check the console for details.", {
+      kind: "error",
+    });
+  }
 }
 
 function hasActiveEditor(): boolean {
@@ -229,10 +247,17 @@ export function initDefaultCommands(): void {
     category: "Actions",
     shortcut: "Ctrl+Alt+R",
     keyCombo: { key: "r", ctrlKey: true, altKey: true },
-    action: () => {
-      if (confirm("Reset all selections to defaults?")) {
-        void resetAll();
-      }
+    action: async () => {
+      const confirmed = await requestConfirmation({
+        title: "Reset selections",
+        message: "Reset all selections to defaults?",
+        confirmLabel: "Reset",
+        danger: true,
+      });
+      if (!confirmed) return;
+
+      await resetAll();
+      showToast("Selections reset.", { kind: "success" });
     },
   });
 
@@ -242,10 +267,16 @@ export function initDefaultCommands(): void {
     category: "Actions",
     shortcut: "Ctrl+Alt+Shift+R",
     keyCombo: { key: "r", ctrlKey: true, altKey: true, shiftKey: true },
-    action: () => {
-      if (confirm("🎲 Randomize all character slots?")) {
-        randomizeAll(defaultCatalog);
-      }
+    action: async () => {
+      const confirmed = await requestConfirmation({
+        title: "Randomize character",
+        message: "Randomly select items for all slots?",
+        confirmLabel: "Randomize",
+      });
+      if (!confirmed) return;
+
+      randomizeAll(defaultCatalog);
+      showToast("Character randomized.", { kind: "success" });
     },
   });
 
@@ -255,16 +286,21 @@ export function initDefaultCommands(): void {
     category: "File",
     tooltip: "Load character from clipboard JSON",
     action: async () => {
-      if (!window.canvasRenderer) return;
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
       try {
         const json = await navigator.clipboard.readText();
         const imported = importStateFromJSON(json);
         Object.assign(state, imported);
         m.redraw();
-        alert("Character loaded from clipboard.");
+        showToast("Character loaded from clipboard.", { kind: "success" });
       } catch (err) {
         console.error("Failed to load:", err);
-        alert("Failed to load. Check clipboard content.");
+        showToast("Failed to load. Check clipboard content.", {
+          kind: "error",
+        });
       }
     },
   });
@@ -277,17 +313,22 @@ export function initDefaultCommands(): void {
     shortcut: "Ctrl+S",
     keyCombo: { key: "s", ctrlKey: true },
     action: async () => {
-      if (!window.canvasRenderer) return;
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
       try {
         const json = exportStateAsJSON(
           state,
           serializeLayersForJson(drawCalls),
         );
         await navigator.clipboard.writeText(json);
-        alert("Character saved to clipboard.");
+        showToast("Character saved to clipboard.", { kind: "success" });
       } catch (err) {
         console.error("Failed to save:", err);
-        alert("Failed to save. Check browser permissions.");
+        showToast("Failed to save. Check browser permissions.", {
+          kind: "error",
+        });
       }
     },
   });
@@ -300,7 +341,10 @@ export function initDefaultCommands(): void {
     shortcut: "Ctrl+Shift+E",
     keyCombo: { key: "e", ctrlKey: true, shiftKey: true },
     action: () => {
-      if (!window.canvasRenderer) return;
+      if (!window.canvasRenderer) {
+        showToast("Canvas renderer is not ready yet.", { kind: "warning" });
+        return;
+      }
       downloadAsPNG("character-spritesheet.png");
     },
   });
@@ -648,7 +692,7 @@ function handleGlobalKeyDown(e: KeyboardEvent): void {
     if (matchesKeyCombo(e, cmd.keyCombo)) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      cmd.action();
+      runCommandAction(cmd);
       m.redraw();
       return;
     }

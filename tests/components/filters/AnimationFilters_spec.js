@@ -5,13 +5,15 @@ import {
   setAnimations,
 } from "../../../sources/components/filters/AnimationFilters.ts";
 import { state } from "../../../sources/state/state.ts";
+import {
+  getToasts,
+  resetNotificationsForTests,
+} from "../../../sources/state/notifications.ts";
 import { expect } from "chai";
-import sinon from "sinon";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
 
 describe("AnimationFilters Component", () => {
   let container;
-  let alertStub;
 
   beforeEach(function () {
     // Create a fresh container for each test
@@ -35,11 +37,7 @@ describe("AnimationFilters Component", () => {
       { value: "anim3", label: "Animation 3" },
     ];
     setAnimations(animationsStub);
-
-    alertStub = sinon.stub(window, "alert").callsFake((message) => {
-      // eslint-disable-next-line no-console
-      console.log("ALERT:", message);
-    });
+    resetNotificationsForTests();
   });
 
   afterEach(function () {
@@ -48,7 +46,7 @@ describe("AnimationFilters Component", () => {
       container.parentNode.removeChild(container);
     }
 
-    alertStub.restore();
+    resetNotificationsForTests();
   });
 
   it("should display the correct count of enabled animations", () => {
@@ -102,7 +100,9 @@ describe("AnimationFilters Component", () => {
       group1: { itemId: "item1" },
     });
 
-    expect(alertStub.calledOnce).to.be.true;
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Removed 1 incompatible item(s)",
+    );
   });
 
   it("should display a warning if there are incompatible items", () => {

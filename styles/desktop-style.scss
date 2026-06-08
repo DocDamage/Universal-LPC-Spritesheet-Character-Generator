@@ -2040,7 +2040,8 @@
 
 /* Command palette and shortcut help */
 .command-palette-overlay,
-.shortcut-help-overlay {
+.shortcut-help-overlay,
+.confirm-dialog-overlay {
   position: fixed;
   inset: 0;
   z-index: 2200;
@@ -2052,8 +2053,15 @@
   backdrop-filter: blur(10px);
 }
 
+.confirm-dialog-overlay {
+  z-index: 2250;
+  align-items: center;
+  padding: 16px;
+}
+
 .command-palette,
-.shortcut-help {
+.shortcut-help,
+.confirm-dialog {
   width: min(640px, calc(100vw - 32px));
   max-height: min(74vh, 720px);
   display: flex;
@@ -2065,6 +2073,12 @@
   box-shadow:
     var(--shadow-lg),
     0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.confirm-dialog {
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  outline: 0;
 }
 
 .command-palette-search-wrapper {
@@ -2209,7 +2223,8 @@
   width: min(760px, calc(100vw - 32px));
 }
 
-.shortcut-help-header {
+.shortcut-help-header,
+.confirm-dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2234,7 +2249,9 @@
   font-family: "JetBrains Mono", monospace;
 }
 
-.shortcut-help-close {
+.shortcut-help-close,
+.confirm-dialog-close,
+.notification-toast-close {
   width: 28px;
   height: 26px;
   display: inline-flex;
@@ -2255,6 +2272,139 @@
     border-color: rgba(244, 63, 94, 0.45);
     color: #fb7185;
   }
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  padding: 16px 14px 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px 14px;
+}
+
+.confirm-dialog-button {
+  min-height: 32px;
+  padding: 0 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-mid);
+    color: var(--text-primary);
+  }
+}
+
+.confirm-dialog-confirm {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+
+  &:hover {
+    background: rgba(56, 189, 248, 0.24);
+    border-color: rgba(56, 189, 248, 0.65);
+    color: #bae6fd;
+  }
+
+  &.danger {
+    background: rgba(244, 63, 94, 0.18);
+    border-color: rgba(244, 63, 94, 0.5);
+    color: #fb7185;
+
+    &:hover {
+      background: rgba(244, 63, 94, 0.28);
+      border-color: rgba(244, 63, 94, 0.7);
+      color: #fecdd3;
+    }
+  }
+}
+
+.notification-center {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2400;
+  width: min(360px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.notification-toast {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 46px;
+  padding: 9px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+  pointer-events: auto;
+}
+
+.notification-toast-info {
+  border-left-color: #38bdf8;
+}
+
+.notification-toast-success {
+  border-left-color: #34d399;
+}
+
+.notification-toast-warning {
+  border-left-color: #fbbf24;
+}
+
+.notification-toast-error {
+  border-left-color: #fb7185;
+}
+
+.notification-toast-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.notification-toast-kind {
+  color: var(--text-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.notification-toast-message {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.notification-toast-close {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
 }
 
 .shortcut-help-body {
@@ -2353,14 +2503,22 @@
   }
 
   .command-palette-overlay,
-  .shortcut-help-overlay {
+  .shortcut-help-overlay,
+  .confirm-dialog-overlay {
     padding: 12px;
   }
 
   .command-palette,
-  .shortcut-help {
+  .shortcut-help,
+  .confirm-dialog {
     width: 100%;
     max-height: calc(100vh - 24px);
+  }
+
+  .notification-center {
+    top: 8px;
+    right: 8px;
+    width: calc(100vw - 16px);
   }
 
   .shortcut-help-body {

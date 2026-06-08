@@ -1,6 +1,6 @@
 import m from "mithril";
 import { state } from "../../state/state.ts";
-import { getCommands } from "../../state/commands.ts";
+import { executeCommand, getCommands } from "../../state/commands.ts";
 
 type CommandPaletteState = {
   searchQuery: string;
@@ -65,7 +65,7 @@ export const CommandPaletteModal: m.Component<
         const selected = filtered[vnode.state.selectedIndex];
         if (selected?.action) {
           state.showCommandPalette = false;
-          selected.action();
+          executeCommand(selected.id);
           m.redraw();
         }
       } else if (e.key === "Escape") {
@@ -125,7 +125,7 @@ export const CommandPaletteModal: m.Component<
                       },
                       onclick: () => {
                         state.showCommandPalette = false;
-                        cmd.action?.();
+                        executeCommand(cmd.id);
                         m.redraw();
                       },
                     },

@@ -18,6 +18,7 @@ import {
 import { debugLog, debugWarn } from "../utils/debug.ts";
 import { getAllCredits, creditsToTxt, creditsToCsv } from "./credits.ts";
 import { exportStateAsJSON, serializeLayersForJson } from "../state/json.ts";
+import { showToast } from "../state/notifications.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 import type { State } from "../state/state.ts";
 import type { DrawCall } from "../canvas/renderer.ts";
@@ -570,7 +571,7 @@ type WindowWithZipDeps = Window & {
 export function guardZipExportEnvironment(): boolean {
   const w = window as WindowWithZipDeps;
   if (!w.canvasRenderer || !w.JSZip) {
-    alert("JSZip library not loaded");
+    showToast("JSZip library not loaded", { kind: "warning" });
     return false;
   }
   return true;

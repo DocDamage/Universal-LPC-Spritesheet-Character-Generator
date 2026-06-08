@@ -8,6 +8,8 @@ import { FiltersPanel } from "./FiltersPanel.ts";
 import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
+import { ConfirmDialogModal } from "./notifications/ConfirmDialogModal.ts";
+import { NotificationCenter } from "./notifications/NotificationCenter.ts";
 
 /**
  * App is the composition root for catalog DI. main.ts mounts it with the
@@ -68,6 +70,8 @@ export const App: m.Component<AppAttrs, AppState> = {
       m(FiltersPanel, { catalog: vnode.attrs.catalog }),
       m(Credits),
       m(AdvancedTools),
+      m(ConfirmDialogModal),
+      m(NotificationCenter),
     ]);
   },
 };

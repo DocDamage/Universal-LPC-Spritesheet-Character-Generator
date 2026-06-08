@@ -5,13 +5,15 @@ import {
   setLicenseConfig,
 } from "../../../sources/components/filters/LicenseFilters.ts";
 import { state } from "../../../sources/state/state.ts";
+import {
+  getToasts,
+  resetNotificationsForTests,
+} from "../../../sources/state/notifications.ts";
 import { expect } from "chai";
-import sinon from "sinon";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
 
 describe("LicenseFilters Component", () => {
   let container;
-  let alertStub;
 
   beforeEach(() => {
     // Create a fresh container for each test
@@ -32,11 +34,7 @@ describe("LicenseFilters Component", () => {
       { key: "l2", label: "license2", versions: "l2" },
     ];
     setLicenseConfig(licensesStub);
-
-    alertStub = sinon
-      .stub(window, "alert")
-      // eslint-disable-next-line no-console
-      .callsFake((message) => console.log("ALERT:", message));
+    resetNotificationsForTests();
   });
 
   afterEach(function () {
@@ -45,7 +43,7 @@ describe("LicenseFilters Component", () => {
       container.parentNode.removeChild(container);
     }
 
-    alertStub.restore();
+    resetNotificationsForTests();
   });
 
   it("should render the correct number of enabled licenses", () => {
@@ -119,5 +117,8 @@ describe("LicenseFilters Component", () => {
     expect(state.selections).to.deep.equal({
       item1: { itemId: "item1" },
     });
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Removed 1 incompatible item(s)",
+    );
   });
 });

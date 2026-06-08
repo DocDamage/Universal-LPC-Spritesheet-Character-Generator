@@ -1,6 +1,6 @@
 // Main desktop app layout component
 import m from "mithril";
-import { state, resetAll } from "../../state/state.ts";
+import { state } from "../../state/state.ts";
 import { syncSelectionsToHash } from "../../state/hash.ts";
 import { renderCharacter } from "../../canvas/renderer.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
@@ -11,12 +11,15 @@ import { SLOT_CONFIG } from "./slot-config.ts";
 import { PartEditor } from "./PartEditor.ts";
 import {
   executeCommand,
+  getCommandTitle,
   initDefaultCommands,
   setupGlobalShortcutListener,
   teardownGlobalShortcutListener,
 } from "../../state/commands.ts";
 import { CommandPaletteModal } from "./CommandPaletteModal.ts";
 import { ShortcutHelpModal } from "./ShortcutHelpModal.ts";
+import { ConfirmDialogModal } from "../notifications/ConfirmDialogModal.ts";
+import { NotificationCenter } from "../notifications/NotificationCenter.ts";
 
 type DesktopAppAttrs = { catalog: CatalogReader };
 
@@ -129,11 +132,9 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         m(
           "button.desktop-title-btn.desktop-title-btn-close",
           {
-            title: "Reset all selections",
+            title: getCommandTitle("app.reset", "Reset all selections"),
             onclick: () => {
-              if (confirm("Reset all selections to defaults?")) {
-                void resetAll();
-              }
+              executeCommand("app.reset");
             },
           },
           "✕",
@@ -202,6 +203,8 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       // Global Modals / Overlays
       m(CommandPaletteModal),
       m(ShortcutHelpModal),
+      m(ConfirmDialogModal),
+      m(NotificationCenter),
     ]);
   },
 };

@@ -43,6 +43,10 @@ import {
   restoreAppCatalogAfterTest,
   seedBrowserCatalogMergedOnDist,
 } from "../browser-catalog-fixture.js";
+import {
+  getToasts,
+  resetNotificationsForTests,
+} from "../../sources/state/notifications.ts";
 
 function applyImportedStateFromFixture() {
   Object.assign(state, importStateFromJSON(JSON.stringify(issue382Selections)));
@@ -51,10 +55,10 @@ function applyImportedStateFromFixture() {
 describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
   let sandbox;
   let fakeZip;
-  let alertStub;
 
   beforeEach(async () => {
     resetState();
+    resetNotificationsForTests();
     drawCalls.length = 0;
 
     await seedBrowserCatalogMergedOnDist(issue382ItemMetadata);
@@ -79,7 +83,6 @@ describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
       }
       return origCreate(tag);
     });
-    alertStub = sandbox.stub(window, "alert");
     if (typeof m !== "undefined" && m.redraw) {
       sandbox.stub(m, "redraw");
     }
@@ -94,6 +97,7 @@ describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
 
   afterEach(async () => {
     sandbox.restore();
+    resetNotificationsForTests();
     delete window.canvasRenderer;
     delete window.JSZip;
     await restoreAppCatalogAfterTest();
@@ -110,7 +114,9 @@ describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
     expect(sortedZipKeys(fakeZip)).to.deep.equal(
       [...issue382ZipPathsSplitAnimations].sort(),
     );
-    expect(alertStub.calledWith("Export complete!")).to.be.true;
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Export complete!",
+    );
   });
 
   it("exportSplitItemSheets creates the expected zip paths", async () => {
@@ -118,7 +124,9 @@ describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
     expect(sortedZipKeys(fakeZip)).to.deep.equal(
       [...issue382ZipPathsSplitItemSheets].sort(),
     );
-    expect(alertStub.calledWith("Export complete!")).to.be.true;
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Export complete!",
+    );
   });
 
   it("exportSplitItemAnimations creates the expected zip paths (custom folders include standard layers)", async () => {
@@ -126,7 +134,9 @@ describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
     expect(sortedZipKeys(fakeZip)).to.deep.equal(
       [...issue382ZipPathsSplitItemAnimations].sort(),
     );
-    expect(alertStub.calledWith("Export complete!")).to.be.true;
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Export complete!",
+    );
 
     const slashFolder = [...fakeZip.files.keys()].filter((k) =>
       k.startsWith("custom/slash_oversize/"),
@@ -139,7 +149,8 @@ describe("state/zip.ts issue #382 regression (longsword + full outfit)", () => {
     expect(sortedZipKeys(fakeZip)).to.deep.equal(
       [...issue382ZipPathsIndividualFrames].sort(),
     );
-    expect(alertStub.calledWith("Individual frames export complete!")).to.be
-      .true;
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Individual frames export complete!",
+    );
   });
 });

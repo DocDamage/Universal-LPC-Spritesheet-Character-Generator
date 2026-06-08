@@ -31,6 +31,7 @@ import {
   canUseWeaponImportReference,
   getCustomWeaponImportName,
 } from "./custom-weapon-import.ts";
+import { requestConfirmation, showToast } from "../../state/notifications.ts";
 
 type SlotSelectorAttrs = {
   slot: SlotDef;
@@ -310,7 +311,13 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     const deleteCustomAsset = async (
       part: (typeof customAssetParts)[number],
     ): Promise<void> => {
-      if (!confirm(`Delete "${part.name}" from saved imports?`)) return;
+      const confirmed = await requestConfirmation({
+        title: "Delete imported asset",
+        message: `Delete "${part.name}" from saved imports?`,
+        confirmLabel: "Delete",
+        danger: true,
+      });
+      if (!confirmed) return;
 
       const wasSelected = Object.values(state.selections).some(
         (selection) => selection.itemId === part.itemId,
@@ -324,6 +331,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       if (vnode.state.renamingCustomPartId === part.itemId) {
         cancelRenameCustomAsset();
       }
+      showToast(`Deleted "${part.name}".`, { kind: "success" });
       if (wasSelected) {
         await renderCurrentCharacter();
       } else {

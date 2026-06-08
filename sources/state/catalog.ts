@@ -30,6 +30,7 @@
  */
 
 import { ok, err, type Result } from "neverthrow";
+import { get2DContext } from "../canvas/canvas-utils.ts";
 import {
   buildItemsByTypeNameLite,
   expandInternedItemLite,
@@ -71,6 +72,7 @@ export type CustomPart = {
   image?: HTMLCanvasElement | HTMLImageElement;
   drawLayerNum?: number;
   drawZPos?: number;
+  tags?: string[];
 };
 
 const customPartGlobal = globalThis as typeof globalThis & {
@@ -111,6 +113,41 @@ export function renameCustomPart(
     persistCustomParts(customParts);
   }
   return true;
+}
+
+export function duplicateCustomPart(
+  id: string,
+  options: RegisterCustomPartOptions = {},
+): CustomPart | null {
+  const part = customParts[id];
+  if (!part) return null;
+
+  const newItemId = `custom_${part.type_name}_${Date.now()}`;
+  const newSheets: Record<string, HTMLCanvasElement> = {};
+  for (const [animation, sheet] of Object.entries(part.sheets)) {
+    const newCanvas = document.createElement("canvas");
+    newCanvas.width = sheet.width;
+    newCanvas.height = sheet.height;
+    const ctx = get2DContext(newCanvas, true);
+    ctx.drawImage(sheet, 0, 0);
+    newSheets[animation] = newCanvas;
+  }
+
+  const firstSheet = newSheets.walk ?? Object.values(newSheets)[0];
+  const duplicated: CustomPart = {
+    itemId: newItemId,
+    name: `${part.name} (Copy)`,
+    type_name: part.type_name,
+    baseItemId: part.baseItemId,
+    drawLayerNum: part.drawLayerNum,
+    drawZPos: part.drawZPos,
+    tags: part.tags ? [...part.tags] : undefined,
+    sheets: newSheets,
+    image: firstSheet,
+  };
+
+  registerCustomPart(duplicated, options);
+  return duplicated;
 }
 
 export function deleteCustomPart(

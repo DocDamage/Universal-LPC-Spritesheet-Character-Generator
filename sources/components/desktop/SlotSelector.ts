@@ -25,13 +25,21 @@ import {
   getItemMerged,
   registerCustomPart,
   renameCustomPart,
+  duplicateCustomPart,
 } from "../../state/catalog.ts";
 import {
   buildImportedWeaponPart,
+  buildImportPreview,
   canUseWeaponImportReference,
   getCustomWeaponImportName,
+  type Rect,
 } from "./custom-weapon-import.ts";
 import { requestConfirmation, showToast } from "../../state/notifications.ts";
+import {
+  exportCustomPartsZip,
+  importCustomPartsZip,
+} from "../../state/custom-parts-storage.ts";
+import { get2DContext } from "../../canvas/canvas-utils.ts";
 
 type SlotSelectorAttrs = {
   slot: SlotDef;
@@ -50,6 +58,16 @@ type SlotSelectorState = {
   importScalePercent: number;
   renamingCustomPartId: string | null;
   renameCustomPartName: string;
+  // Preview state
+  importPreviewFile: File | null;
+  importPreviewReferenceCanvas: HTMLCanvasElement | null;
+  importPreviewSourceCanvas: HTMLCanvasElement | null;
+  importPreviewSourceBounds: Rect | null;
+  importPreviewReferenceBounds: Rect | null;
+  // Tags & filter
+  customAssetFilter: string;
+  customAssetTagInput: string;
+  editingTagsPartId: string | null;
 };
 
 const IMPORT_OFFSET_MIN = -256;
@@ -108,6 +126,53 @@ function getSelectedRecolor(itemId: string): string | null {
   return null;
 }
 
+function drawPreviewWithCrosshair(
+  targetCanvas: HTMLCanvasElement,
+  sourceCanvas: HTMLCanvasElement,
+  bounds: Rect | null,
+): void {
+  const ctx = get2DContext(targetCanvas, true);
+  ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+
+  // Draw checkerboard background
+  const checkSize = 8;
+  for (let y = 0; y < targetCanvas.height; y += checkSize) {
+    for (let x = 0; x < targetCanvas.width; x += checkSize) {
+      ctx.fillStyle = (x / checkSize + y / checkSize) % 2 === 0 ? "#1a1a2e" : "#252540";
+      ctx.fillRect(x, y, checkSize, checkSize);
+    }
+  }
+
+  // Scale and center the source image in the preview
+  const previewW = targetCanvas.width;
+  const previewH = targetCanvas.height;
+  const scaleFactor = Math.min(
+    previewW / sourceCanvas.width,
+    previewH / sourceCanvas.height,
+    1,
+  );
+  const drawW = sourceCanvas.width * scaleFactor;
+  const drawH = sourceCanvas.height * scaleFactor;
+  const drawX = (previewW - drawW) / 2;
+  const drawY = (previewH - drawH) / 2;
+
+  ctx.drawImage(sourceCanvas, drawX, drawY, drawW, drawH);
+
+  // Draw crosshair at center-of-content
+  if (bounds) {
+    const cx = drawX + (bounds.x + bounds.width / 2) * scaleFactor;
+    const cy = drawY + (bounds.y + bounds.height / 2) * scaleFactor;
+    ctx.strokeStyle = "#f43f5e";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, cy);
+    ctx.lineTo(cx + 8, cy);
+    ctx.moveTo(cx, cy - 8);
+    ctx.lineTo(cx, cy + 8);
+    ctx.stroke();
+  }
+}
+
 export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
   oninit(vnode) {
     vnode.state.showColorPicker = false;
@@ -121,6 +186,14 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     vnode.state.importScalePercent = 100;
     vnode.state.renamingCustomPartId = null;
     vnode.state.renameCustomPartName = "";
+    vnode.state.importPreviewFile = null;
+    vnode.state.importPreviewReferenceCanvas = null;
+    vnode.state.importPreviewSourceCanvas = null;
+    vnode.state.importPreviewSourceBounds = null;
+    vnode.state.importPreviewReferenceBounds = null;
+    vnode.state.customAssetFilter = "";
+    vnode.state.customAssetTagInput = "";
+    vnode.state.editingTagsPartId = null;
   },
 
   view(vnode) {
@@ -137,11 +210,22 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
             canUseWeaponImportReference(catalog, opt.itemId),
         )
       : [];
-    const customAssetParts = canImportWeapon
+    let customAssetParts = canImportWeapon
       ? Object.values(customParts)
           .filter((part) => slotTypeNames.includes(part.type_name))
           .sort((a, b) => a.name.localeCompare(b.name))
       : [];
+
+    // Filter by tag or name
+    const filter = vnode.state.customAssetFilter.trim().toLowerCase();
+    if (filter) {
+      customAssetParts = customAssetParts.filter(
+        (part) =>
+          part.name.toLowerCase().includes(filter) ||
+          part.tags?.some((t) => t.toLowerCase().includes(filter)),
+      );
+    }
+
     if (
       canImportWeapon &&
       importReferenceOptions.length > 0 &&
@@ -175,9 +259,49 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       ? getSelectedRecolor(selectedItemId)
       : null;
 
-    const handleWeaponImport = async (e: Event): Promise<void> => {
-      const input = e.target as HTMLInputElement;
-      const file = input.files?.[0];
+    const loadPreview = async (file: File): Promise<void> => {
+      const reference =
+        importReferenceOptions.find(
+          (opt) => opt.value === vnode.state.importReferenceValue,
+        ) ?? importReferenceOptions[0];
+      if (!reference) return;
+
+      try {
+        const preview = await buildImportPreview(
+          file,
+          reference.itemId,
+          reference.variant ?? null,
+          state.bodyType,
+          state.selections,
+          catalog,
+        );
+        if (preview) {
+          vnode.state.importPreviewFile = file;
+          vnode.state.importPreviewReferenceCanvas = preview.referenceCanvas;
+          vnode.state.importPreviewSourceCanvas = preview.sourceCanvas;
+          vnode.state.importPreviewSourceBounds = preview.sourceBounds;
+          vnode.state.importPreviewReferenceBounds = preview.referenceBounds;
+          vnode.state.importStatus = "Adjust alignment, then click Import";
+        } else {
+          vnode.state.importStatus = "Unable to build preview";
+        }
+      } catch (err) {
+        vnode.state.importStatus =
+          err instanceof Error ? err.message : "Preview failed";
+      }
+      m.redraw();
+    };
+
+    const clearPreview = (): void => {
+      vnode.state.importPreviewFile = null;
+      vnode.state.importPreviewReferenceCanvas = null;
+      vnode.state.importPreviewSourceCanvas = null;
+      vnode.state.importPreviewSourceBounds = null;
+      vnode.state.importPreviewReferenceBounds = null;
+    };
+
+    const handleWeaponImport = async (): Promise<void> => {
+      const file = vnode.state.importPreviewFile;
       if (!file) return;
 
       const reference =
@@ -205,6 +329,14 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
           offsetY: vnode.state.importOffsetY,
           scalePercent: vnode.state.importScalePercent,
         });
+        // Apply tags if any
+        const tags = vnode.state.customAssetTagInput
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+        if (tags.length > 0) {
+          customPart.tags = tags;
+        }
         registerCustomPart(customPart);
         clearSlotSelections(slot, catalog);
         state.selections[customPart.type_name] = {
@@ -229,7 +361,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         vnode.state.importStatus = `Imported ${customPart.name}`;
         vnode.state.showImporter = false;
         vnode.state.importName = "";
-        input.value = "";
+        vnode.state.customAssetTagInput = "";
+        clearPreview();
       } catch (err) {
         vnode.state.importStatus =
           err instanceof Error ? err.message : "Import failed";
@@ -257,6 +390,30 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       vnode.state.importOffsetX = 0;
       vnode.state.importOffsetY = 0;
       vnode.state.importScalePercent = 100;
+    };
+
+    const centerOnReference = (): void => {
+      const refBounds = vnode.state.importPreviewReferenceBounds;
+      const srcBounds = vnode.state.importPreviewSourceBounds;
+      if (!refBounds || !srcBounds) return;
+      const refCx = refBounds.x + refBounds.width / 2;
+      const refCy = refBounds.y + refBounds.height / 2;
+      const srcCx = srcBounds.x + srcBounds.width / 2;
+      const srcCy = srcBounds.y + srcBounds.height / 2;
+      vnode.state.importOffsetX = Math.round(refCx - srcCx);
+      vnode.state.importOffsetY = Math.round(refCy - srcCy);
+    };
+
+    const nudge = (
+      key: "importOffsetX" | "importOffsetY",
+      delta: number,
+    ): void => {
+      const current = vnode.state[key];
+      const next = Math.max(
+        IMPORT_OFFSET_MIN,
+        Math.min(IMPORT_OFFSET_MAX, current + delta),
+      );
+      vnode.state[key] = next;
     };
 
     const renderCurrentCharacter = async (): Promise<void> => {
@@ -331,6 +488,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       if (vnode.state.renamingCustomPartId === part.itemId) {
         cancelRenameCustomAsset();
       }
+      if (vnode.state.editingTagsPartId === part.itemId) {
+        vnode.state.editingTagsPartId = null;
+      }
       showToast(`Deleted "${part.name}".`, { kind: "success" });
       if (wasSelected) {
         await renderCurrentCharacter();
@@ -338,6 +498,115 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         m.redraw();
       }
     };
+
+    const duplicateCustomAsset = (
+      part: (typeof customAssetParts)[number],
+    ): void => {
+      const duplicated = duplicateCustomPart(part.itemId);
+      if (duplicated) {
+        showToast(`Duplicated "${part.name}".`, { kind: "success" });
+        m.redraw();
+      }
+    };
+
+    const exportAllCustomAssets = async (): Promise<void> => {
+      const parts = Object.values(customParts).filter((part) =>
+        slotTypeNames.includes(part.type_name),
+      );
+      if (parts.length === 0) {
+        showToast("No custom assets to export.", { kind: "warning" });
+        return;
+      }
+      try {
+        const blob = await exportCustomPartsZip(parts);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `lpc_custom_assets_${Date.now()}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`Exported ${parts.length} custom assets.`, { kind: "success" });
+      } catch (err) {
+        showToast(
+          err instanceof Error ? err.message : "Export failed",
+          { kind: "error" },
+        );
+      }
+    };
+
+    const importBackupCustomAssets = async (e: Event): Promise<void> => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const imported = await importCustomPartsZip(file);
+        for (const part of imported) {
+          registerCustomPart(part);
+        }
+        showToast(`Imported ${imported.length} custom assets.`, { kind: "success" });
+        input.value = "";
+        m.redraw();
+      } catch (err) {
+        showToast(
+          err instanceof Error ? err.message : "Import backup failed",
+          { kind: "error" },
+        );
+        input.value = "";
+      }
+    };
+
+    const saveTags = (part: (typeof customAssetParts)[number]): void => {
+      const tags = vnode.state.customAssetTagInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+      part.tags = tags.length > 0 ? tags : undefined;
+      vnode.state.editingTagsPartId = null;
+      vnode.state.customAssetTagInput = "";
+      m.redraw();
+    };
+
+    const startEditTags = (
+      part: (typeof customAssetParts)[number],
+    ): void => {
+      vnode.state.editingTagsPartId = part.itemId;
+      vnode.state.customAssetTagInput = (part.tags ?? []).join(", ");
+    };
+
+    const cancelEditTags = (): void => {
+      vnode.state.editingTagsPartId = null;
+      vnode.state.customAssetTagInput = "";
+    };
+
+    // Draw preview canvases when data is available
+    const previewRefCanvas = document.getElementById(
+      `import-preview-ref-${slot.label}`,
+    ) as HTMLCanvasElement | null;
+    const previewSrcCanvas = document.getElementById(
+      `import-preview-src-${slot.label}`,
+    ) as HTMLCanvasElement | null;
+    if (
+      previewRefCanvas &&
+      vnode.state.importPreviewReferenceCanvas &&
+      vnode.state.importPreviewReferenceBounds
+    ) {
+      drawPreviewWithCrosshair(
+        previewRefCanvas,
+        vnode.state.importPreviewReferenceCanvas,
+        vnode.state.importPreviewReferenceBounds,
+      );
+    }
+    if (
+      previewSrcCanvas &&
+      vnode.state.importPreviewSourceCanvas &&
+      vnode.state.importPreviewSourceBounds
+    ) {
+      drawPreviewWithCrosshair(
+        previewSrcCanvas,
+        vnode.state.importPreviewSourceCanvas,
+        vnode.state.importPreviewSourceBounds,
+      );
+    }
 
     return m(
       "div.desktop-slot",
@@ -441,6 +710,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                   onclick: () => {
                     vnode.state.showColorPicker = false;
                     vnode.state.showImporter = !vnode.state.showImporter;
+                    if (!vnode.state.showImporter) {
+                      clearPreview();
+                    }
                   },
                 },
                 "↥",
@@ -483,6 +755,10 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     vnode.state.importReferenceValue = (
                       e.target as HTMLSelectElement
                     ).value;
+                    // Rebuild preview if file already selected
+                    if (vnode.state.importPreviewFile) {
+                      void loadPreview(vnode.state.importPreviewFile);
+                    }
                   },
                 },
                 importReferenceOptions.map((opt) =>
@@ -497,50 +773,119 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                 disabled:
                   vnode.state.importing || importReferenceOptions.length === 0,
                 onchange: (e: Event) => {
-                  void handleWeaponImport(e);
+                  const input = e.target as HTMLInputElement;
+                  const file = input.files?.[0];
+                  if (file) {
+                    void loadPreview(file);
+                  }
                 },
               }),
+              // Side-by-side preview
+              vnode.state.importPreviewSourceCanvas
+                ? m("div.desktop-slot-import-preview", [
+                    m("div.desktop-slot-import-preview-col", [
+                      m("span.desktop-slot-import-preview-label", "Reference"),
+                      m("canvas.desktop-slot-import-preview-canvas", {
+                        id: `import-preview-ref-${slot.label}`,
+                        width: 128,
+                        height: 128,
+                      }),
+                    ]),
+                    m("div.desktop-slot-import-preview-col", [
+                      m("span.desktop-slot-import-preview-label", "Import"),
+                      m("canvas.desktop-slot-import-preview-canvas", {
+                        id: `import-preview-src-${slot.label}`,
+                        width: 128,
+                        height: 128,
+                      }),
+                    ]),
+                  ])
+                : null,
               m("div.desktop-slot-import-tuning", [
                 m("label.desktop-slot-import-tune", [
                   m("span", "X"),
-                  m("input", {
-                    type: "number",
-                    min: String(IMPORT_OFFSET_MIN),
-                    max: String(IMPORT_OFFSET_MAX),
-                    step: "1",
-                    value: String(vnode.state.importOffsetX),
-                    title:
-                      "Horizontal alignment nudge in pixels; mirrored side rows use the opposite X offset",
-                    disabled: vnode.state.importing,
-                    oninput: (e: Event) => {
-                      setImportNumber(
-                        "importOffsetX",
-                        (e.target as HTMLInputElement).value,
-                        IMPORT_OFFSET_MIN,
-                        IMPORT_OFFSET_MAX,
-                      );
-                    },
-                  }),
+                  m("div.desktop-slot-import-nudge", [
+                    m(
+                      "button.desktop-slot-import-nudge-btn",
+                      {
+                        type: "button",
+                        title: "Nudge left 1px",
+                        disabled: vnode.state.importing,
+                        onclick: () => nudge("importOffsetX", -1),
+                      },
+                      "◀",
+                    ),
+                    m("input", {
+                      type: "number",
+                      min: String(IMPORT_OFFSET_MIN),
+                      max: String(IMPORT_OFFSET_MAX),
+                      step: "1",
+                      value: String(vnode.state.importOffsetX),
+                      title:
+                        "Horizontal alignment nudge in pixels; mirrored side rows use the opposite X offset",
+                      disabled: vnode.state.importing,
+                      oninput: (e: Event) => {
+                        setImportNumber(
+                          "importOffsetX",
+                          (e.target as HTMLInputElement).value,
+                          IMPORT_OFFSET_MIN,
+                          IMPORT_OFFSET_MAX,
+                        );
+                      },
+                    }),
+                    m(
+                      "button.desktop-slot-import-nudge-btn",
+                      {
+                        type: "button",
+                        title: "Nudge right 1px",
+                        disabled: vnode.state.importing,
+                        onclick: () => nudge("importOffsetX", 1),
+                      },
+                      "▶",
+                    ),
+                  ]),
                 ]),
                 m("label.desktop-slot-import-tune", [
                   m("span", "Y"),
-                  m("input", {
-                    type: "number",
-                    min: String(IMPORT_OFFSET_MIN),
-                    max: String(IMPORT_OFFSET_MAX),
-                    step: "1",
-                    value: String(vnode.state.importOffsetY),
-                    title: "Vertical alignment nudge in pixels",
-                    disabled: vnode.state.importing,
-                    oninput: (e: Event) => {
-                      setImportNumber(
-                        "importOffsetY",
-                        (e.target as HTMLInputElement).value,
-                        IMPORT_OFFSET_MIN,
-                        IMPORT_OFFSET_MAX,
-                      );
-                    },
-                  }),
+                  m("div.desktop-slot-import-nudge", [
+                    m(
+                      "button.desktop-slot-import-nudge-btn",
+                      {
+                        type: "button",
+                        title: "Nudge up 1px",
+                        disabled: vnode.state.importing,
+                        onclick: () => nudge("importOffsetY", -1),
+                      },
+                      "▲",
+                    ),
+                    m("input", {
+                      type: "number",
+                      min: String(IMPORT_OFFSET_MIN),
+                      max: String(IMPORT_OFFSET_MAX),
+                      step: "1",
+                      value: String(vnode.state.importOffsetY),
+                      title: "Vertical alignment nudge in pixels",
+                      disabled: vnode.state.importing,
+                      oninput: (e: Event) => {
+                        setImportNumber(
+                          "importOffsetY",
+                          (e.target as HTMLInputElement).value,
+                          IMPORT_OFFSET_MIN,
+                          IMPORT_OFFSET_MAX,
+                        );
+                      },
+                    }),
+                    m(
+                      "button.desktop-slot-import-nudge-btn",
+                      {
+                        type: "button",
+                        title: "Nudge down 1px",
+                        disabled: vnode.state.importing,
+                        onclick: () => nudge("importOffsetY", 1),
+                      },
+                      "▼",
+                    ),
+                  ]),
                 ]),
                 m("label.desktop-slot-import-tune", [
                   m("span", "%"),
@@ -573,13 +918,84 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                   },
                   "↺",
                 ),
+                m(
+                  "button.desktop-slot-import-reset",
+                  {
+                    type: "button",
+                    title: "Center imported image on reference bounds",
+                    disabled:
+                      vnode.state.importing ||
+                      !vnode.state.importPreviewReferenceBounds,
+                    onclick: centerOnReference,
+                  },
+                  "⊕",
+                ),
               ]),
+              m("input.desktop-slot-import-tags", {
+                type: "text",
+                placeholder: "Tags (comma separated)",
+                value: vnode.state.customAssetTagInput,
+                title: "Optional tags for the imported asset",
+                disabled: vnode.state.importing,
+                oninput: (e: Event) => {
+                  vnode.state.customAssetTagInput = (
+                    e.target as HTMLInputElement
+                  ).value;
+                },
+              }),
+              m(
+                "button.desktop-slot-import-action",
+                {
+                  type: "button",
+                  disabled:
+                    vnode.state.importing || !vnode.state.importPreviewFile,
+                  onclick: () => {
+                    void handleWeaponImport();
+                  },
+                },
+                vnode.state.importing ? "Importing..." : "Import",
+              ),
               vnode.state.importStatus
                 ? m("span.desktop-slot-import-status", vnode.state.importStatus)
                 : null,
+              // Library management
+              m("div.desktop-slot-custom-library-header", [
+                m("span.desktop-slot-custom-library-title", "Saved imports"),
+                m("input.desktop-slot-custom-filter", {
+                  type: "text",
+                  placeholder: "Filter by name or tag...",
+                  value: vnode.state.customAssetFilter,
+                  oninput: (e: Event) => {
+                    vnode.state.customAssetFilter = (
+                      e.target as HTMLInputElement
+                    ).value;
+                  },
+                }),
+                m(
+                  "button.desktop-slot-custom-action",
+                  {
+                    type: "button",
+                    title: "Export all custom assets as ZIP backup",
+                    onclick: () => {
+                      void exportAllCustomAssets();
+                    },
+                  },
+                  "Export All",
+                ),
+                m("label.desktop-slot-custom-action is-file", [
+                  m("input", {
+                    type: "file",
+                    accept: ".zip",
+                    style: { display: "none" },
+                    onchange: (e: Event) => {
+                      void importBackupCustomAssets(e);
+                    },
+                  }),
+                  "Import Backup",
+                ]),
+              ]),
               customAssetParts.length > 0
                 ? m("div.desktop-slot-custom-library", [
-                    m("div.desktop-slot-custom-library-title", "Saved imports"),
                     customAssetParts.map((part) =>
                       m(
                         "div.desktop-slot-custom-asset",
@@ -642,6 +1058,12 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                                 },
                                 part.name,
                               ),
+                              part.tags && part.tags.length > 0
+                                ? m(
+                                    "span.desktop-slot-custom-tags",
+                                    part.tags.join(", "),
+                                  )
+                                : null,
                               m(
                                 "button.desktop-slot-custom-action",
                                 {
@@ -654,6 +1076,17 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                                 "Rename",
                               ),
                               m(
+                                "button.desktop-slot-custom-action",
+                                {
+                                  type: "button",
+                                  title: `Duplicate ${part.name}`,
+                                  onclick: () => {
+                                    duplicateCustomAsset(part);
+                                  },
+                                },
+                                "Duplicate",
+                              ),
+                              m(
                                 "button.desktop-slot-custom-action is-danger",
                                 {
                                   type: "button",
@@ -664,11 +1097,76 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                                 },
                                 "Delete",
                               ),
+                              m(
+                                "button.desktop-slot-custom-action",
+                                {
+                                  type: "button",
+                                  title: `Edit tags for ${part.name}`,
+                                  onclick: () => {
+                                    startEditTags(part);
+                                  },
+                                },
+                                "Tags",
+                              ),
                             ],
                       ),
                     ),
+                    // Inline tag editor
+                    customAssetParts.some(
+                      (p) => p.itemId === vnode.state.editingTagsPartId,
+                    )
+                      ? m("div.desktop-slot-custom-tag-editor", [
+                          m("input.desktop-slot-custom-tag-input", {
+                            type: "text",
+                            placeholder: "Tags (comma separated)",
+                            value: vnode.state.customAssetTagInput,
+                            oninput: (e: Event) => {
+                              vnode.state.customAssetTagInput = (
+                                e.target as HTMLInputElement
+                              ).value;
+                            },
+                            onkeydown: (e: KeyboardEvent) => {
+                              if (e.key === "Enter") {
+                                const part = customAssetParts.find(
+                                  (p) =>
+                                    p.itemId === vnode.state.editingTagsPartId,
+                                );
+                                if (part) saveTags(part);
+                              }
+                              if (e.key === "Escape") {
+                                cancelEditTags();
+                              }
+                            },
+                          }),
+                          m(
+                            "button.desktop-slot-custom-action",
+                            {
+                              type: "button",
+                              onclick: () => {
+                                const part = customAssetParts.find(
+                                  (p) =>
+                                    p.itemId === vnode.state.editingTagsPartId,
+                                );
+                                if (part) saveTags(part);
+                              },
+                            },
+                            "Save",
+                          ),
+                          m(
+                            "button.desktop-slot-custom-action",
+                            {
+                              type: "button",
+                              onclick: cancelEditTags,
+                            },
+                            "Cancel",
+                          ),
+                        ])
+                      : null,
                   ])
-                : null,
+                : m(
+                    "span.desktop-slot-custom-empty",
+                    "No saved imports yet.",
+                  ),
             ])
           : null,
         // Inline color picker panel

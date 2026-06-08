@@ -17,6 +17,15 @@ import {
 } from "../components/desktop/pixel-editor-tools.ts";
 import { requestConfirmation, showToast } from "./notifications.ts";
 
+import {
+  initShortcutPreferences,
+  getShortcut,
+  setShortcut as setShortcutPreference,
+  getConflicts as getShortcutConflicts,
+  resetShortcuts as resetShortcutPreferences,
+  clearShortcut,
+} from "./shortcut-preferences.ts";
+
 const MIN_PREVIEW_ZOOM = 0.5;
 const MAX_PREVIEW_ZOOM = 5;
 const PREVIEW_ZOOM_STEP = 0.25;
@@ -24,7 +33,7 @@ const MIN_EDITOR_ZOOM = 2;
 const MAX_EDITOR_ZOOM = 16;
 const DEFAULT_EDITOR_ZOOM = 4;
 
-type CommandKeyCombo = {
+export type CommandKeyCombo = {
   key: string | readonly string[];
   ctrlKey?: boolean;
   altKey?: boolean;
@@ -55,6 +64,7 @@ export type EditorCommandContext = {
 export const commands: Command[] = [];
 let activeEditorContext: EditorCommandContext | null = null;
 let shortcutListener: ((e: KeyboardEvent) => void) | null = null;
+let defaultKeyCombos: Record<string, CommandKeyCombo> = {};
 
 export function registerEditorContext(stateObj: EditorCommandContext): void {
   activeEditorContext = stateObj;
@@ -185,8 +195,84 @@ function setEditorTab(tab: EditorCommandContext["activeEditorTab"]): void {
   }
 }
 
+function applyShortcutOverrides(): void {
+  for (const cmd of commands) {
+    if (!cmd.id) continue;
+    const override = getShortcut(cmd.id);
+    if (override) {
+      cmd.keyCombo = override;
+      cmd.shortcut = formatShortcut(override);
+    }
+  }
+}
+
+function formatShortcut(keyCombo: CommandKeyCombo): string {
+  const parts: string[] = [];
+  if (keyCombo.ctrlKey) parts.push("Ctrl");
+  if (keyCombo.altKey) parts.push("Alt");
+  if (keyCombo.shiftKey) parts.push("Shift");
+  const key = typeof keyCombo.key === "string" ? keyCombo.key : (keyCombo.key as string[]).join("/");
+  parts.push(key);
+  return parts.join("+");
+}
+
+export function setCommandShortcut(commandId: string, keyCombo: CommandKeyCombo | null): boolean {
+  if (!keyCombo) {
+    clearShortcut(commandId);
+    const cmd = getCommand(commandId);
+    if (cmd) {
+      const def = defaultKeyCombos[commandId];
+      if (def) {
+        cmd.keyCombo = def;
+        cmd.shortcut = formatShortcut(def);
+      } else {
+        cmd.keyCombo = undefined;
+        cmd.shortcut = undefined;
+      }
+    }
+    return true;
+  }
+  const success = setShortcutPreference(commandId, keyCombo);
+  if (success) {
+    const cmd = getCommand(commandId);
+    if (cmd) {
+      cmd.keyCombo = keyCombo;
+      cmd.shortcut = formatShortcut(keyCombo);
+    }
+  }
+  return success;
+}
+
+export function getAllShortcutConflicts(): string[][] {
+  return getShortcutConflicts();
+}
+
+export function resetAllShortcuts(): void {
+  resetShortcutPreferences();
+  for (const cmd of commands) {
+    if (!cmd.id) continue;
+    const def = defaultKeyCombos[cmd.id];
+    if (def) {
+      cmd.keyCombo = def;
+      cmd.shortcut = formatShortcut(def);
+    } else {
+      cmd.keyCombo = undefined;
+      cmd.shortcut = undefined;
+    }
+  }
+}
+
 export function initDefaultCommands(): void {
-  registerCommand({
+  defaultKeyCombos = {};
+  
+  function register(cmd: Command): void {
+    if (cmd.keyCombo) {
+      defaultKeyCombos[cmd.id] = cmd.keyCombo;
+    }
+    registerCommand(cmd);
+  }
+
+  register({
     id: "app.commandPalette.toggle",
     label: "Open Command Palette",
     category: "General",
@@ -200,7 +286,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.shortcuts.toggle",
     label: "Show Keyboard Shortcuts",
     category: "General",
@@ -214,7 +300,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "view.zoom.in",
     label: "Zoom In",
     category: "View",
@@ -223,7 +309,7 @@ export function initDefaultCommands(): void {
     action: zoomIn,
   });
 
-  registerCommand({
+  register({
     id: "view.zoom.out",
     label: "Zoom Out",
     category: "View",
@@ -232,7 +318,7 @@ export function initDefaultCommands(): void {
     action: zoomOut,
   });
 
-  registerCommand({
+  register({
     id: "view.zoom.reset",
     label: "Reset Zoom",
     category: "View",
@@ -241,7 +327,7 @@ export function initDefaultCommands(): void {
     action: resetZoom,
   });
 
-  registerCommand({
+  register({
     id: "app.reset",
     label: "Reset All Selections",
     category: "Actions",
@@ -261,7 +347,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.randomize",
     label: "Randomize All Slots",
     category: "Actions",
@@ -280,7 +366,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.load.clipboard",
     label: "Load Character from Clipboard",
     category: "File",
@@ -305,7 +391,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.save.clipboard",
     label: "Save Character to Clipboard",
     category: "File",
@@ -333,7 +419,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.export.png",
     label: "Export PNG Spritesheet",
     category: "File",
@@ -349,7 +435,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.export.credits",
     label: "Export Credits CSV",
     category: "File",
@@ -363,7 +449,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.grid.toggle",
     label: "Toggle Transparency Grid",
     category: "View",
@@ -373,7 +459,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.shadows.toggle",
     label: "Toggle Cast Shadow",
     category: "View",
@@ -383,7 +469,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.tab.body",
     label: "Switch to Body Tab",
     category: "General",
@@ -394,7 +480,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "app.tab.gear",
     label: "Switch to Gear Tab",
     category: "General",
@@ -405,7 +491,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "editor.fullscreen.toggle",
     label: "Toggle Fullscreen Editor",
     category: "Editor",
@@ -419,7 +505,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "editor.tab.edit",
     label: "Show Editor Tools Tab",
     category: "Editor",
@@ -429,7 +515,7 @@ export function initDefaultCommands(): void {
     action: () => setEditorTab("edit"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tab.animation",
     label: "Show Animation Tab",
     category: "Editor",
@@ -439,7 +525,7 @@ export function initDefaultCommands(): void {
     action: () => setEditorTab("animation"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.pen",
     label: "Select Pencil Tool",
     category: "Editor Tools",
@@ -449,7 +535,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("pen"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.eraser",
     label: "Select Eraser Tool",
     category: "Editor Tools",
@@ -459,7 +545,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("eraser"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.picker",
     label: "Select Color Picker",
     category: "Editor Tools",
@@ -469,7 +555,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("picker"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.select",
     label: "Select Marquee Selection",
     category: "Editor Tools",
@@ -479,7 +565,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("select"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.line",
     label: "Select Line Tool",
     category: "Editor Tools",
@@ -489,7 +575,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("line"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.rect",
     label: "Select Rectangle Tool",
     category: "Editor Tools",
@@ -499,7 +585,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("rect"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.ellipse",
     label: "Select Ellipse Tool",
     category: "Editor Tools",
@@ -509,7 +595,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("ellipse"),
   });
 
-  registerCommand({
+  register({
     id: "editor.tool.fill",
     label: "Select Fill Tool",
     category: "Editor Tools",
@@ -519,7 +605,7 @@ export function initDefaultCommands(): void {
     action: () => selectEditorTool("fill"),
   });
 
-  registerCommand({
+  register({
     id: "editor.brush.smaller",
     label: "Decrease Brush Size",
     category: "Editor",
@@ -535,7 +621,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "editor.brush.larger",
     label: "Increase Brush Size",
     category: "Editor",
@@ -551,7 +637,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "editor.mirrorX.toggle",
     label: "Toggle Horizontal Mirror",
     category: "Editor",
@@ -565,7 +651,7 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "editor.mirrorY.toggle",
     label: "Toggle Vertical Mirror",
     category: "Editor",
@@ -579,75 +665,88 @@ export function initDefaultCommands(): void {
     },
   });
 
-  registerCommand({
+  register({
     id: "editor.undo",
     label: "Undo Edit",
     category: "Editor",
     shortcut: "Ctrl+Z",
+    keyCombo: { key: "z", ctrlKey: true },
   });
 
-  registerCommand({
+  register({
     id: "editor.redo",
     label: "Redo Edit",
     category: "Editor",
     shortcut: "Ctrl+Y / Ctrl+Shift+Z",
+    keyCombo: { key: "y", ctrlKey: true, shiftKey: true },
   });
 
-  registerCommand({
+  register({
     id: "editor.layer.new",
     label: "Add Layer",
     category: "Editor Layers",
     shortcut: "Ctrl+Shift+N",
+    keyCombo: { key: "n", ctrlKey: true, shiftKey: true },
   });
 
-  registerCommand({
+  register({
     id: "editor.layer.duplicate",
     label: "Duplicate Layer",
     category: "Editor Layers",
     shortcut: "Ctrl+J",
+    keyCombo: { key: "j", ctrlKey: true },
   });
 
-  registerCommand({
+  register({
     id: "editor.layer.mergeDown",
     label: "Merge Layer Down",
     category: "Editor Layers",
     shortcut: "Ctrl+E",
+    keyCombo: { key: "e", ctrlKey: true },
   });
 
-  registerCommand({
+  register({
     id: "editor.layer.flatten",
     label: "Flatten Visible Layers",
     category: "Editor Layers",
     shortcut: "Ctrl+Shift+E",
+    keyCombo: { key: "e", ctrlKey: true, shiftKey: true },
   });
 
-  registerCommand({
+  register({
     id: "editor.layer.pixelLock",
     label: "Toggle Layer Pixel Lock",
     category: "Editor Layers",
     shortcut: "/",
+    keyCombo: { key: "/" },
   });
 
-  registerCommand({
+  register({
     id: "editor.layer.alphaLock",
     label: "Toggle Layer Alpha Lock",
     category: "Editor Layers",
     shortcut: "?",
+    keyCombo: { key: "?" },
   });
 
-  registerCommand({
+  register({
     id: "editor.frame.previous",
     label: "Previous Animation Frame",
     category: "Animation",
     shortcut: ",",
+    keyCombo: { key: "," },
   });
 
-  registerCommand({
+  register({
     id: "editor.frame.next",
     label: "Next Animation Frame",
     category: "Animation",
     shortcut: ".",
+    keyCombo: { key: "." },
   });
+
+  initShortcutPreferences(defaultKeyCombos);
+  applyShortcutOverrides();
 }
 
 export function setupGlobalShortcutListener(): void {
@@ -668,6 +767,7 @@ export function resetCommandsForTests(): void {
   activeEditorContext = null;
   state.showCommandPalette = false;
   state.showShortcutHelp = false;
+  defaultKeyCombos = {};
 }
 
 function handleGlobalKeyDown(e: KeyboardEvent): void {

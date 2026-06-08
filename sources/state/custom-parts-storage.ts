@@ -1,6 +1,7 @@
 import { get2DContext } from "../canvas/canvas-utils.ts";
 import { debugWarn } from "../utils/debug.ts";
 import type { CustomPart } from "./catalog.ts";
+import type { ZipFolder } from "../utils/zip-helpers.ts";
 
 export const CUSTOM_PARTS_LEGACY_STORAGE_KEY = "lpc.customParts.v1";
 
@@ -16,6 +17,7 @@ type StoredCustomPart = {
   baseItemId: string;
   drawLayerNum?: number;
   drawZPos?: number;
+  tags?: string[];
   sheets: Record<string, string>;
 };
 
@@ -115,6 +117,7 @@ function serializeCustomPart(part: CustomPart): StoredCustomPart | null {
     baseItemId: part.baseItemId,
     drawLayerNum: part.drawLayerNum,
     drawZPos: part.drawZPos,
+    tags: part.tags,
     sheets,
   };
 }
@@ -160,6 +163,7 @@ async function deserializeCustomPart(
     baseItemId: stored.baseItemId,
     drawLayerNum: stored.drawLayerNum,
     drawZPos: stored.drawZPos,
+    tags: stored.tags,
     sheets,
     image: firstSheet,
   };
@@ -334,4 +338,123 @@ function getCustomPartsStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+// ─── ZIP export / import helpers ───
+
+type WindowWithJSZip = Window & {
+  JSZip?: new () => ZipFolder;
+};
+
+export async function exportCustomPartsZip(
+  parts: CustomPart[],
+): Promise<Blob> {
+  const w = window as WindowWithJSZip;
+  if (!w.JSZip) {
+    throw new Error("JSZip library not loaded");
+  }
+  const JSZip = w.JSZip;
+  const zip = new JSZip();
+
+  const manifest = parts.map((part) => ({
+    itemId: part.itemId,
+    name: part.name,
+    type_name: part.type_name,
+    baseItemId: part.baseItemId,
+    tags: part.tags ?? [],
+    drawLayerNum: part.drawLayerNum,
+    drawZPos: part.drawZPos,
+    sheets: Object.keys(part.sheets),
+  }));
+
+  zip.file("manifest.json", JSON.stringify({ version: 1, parts: manifest }, null, 2));
+
+  for (const part of parts) {
+    const folder = zip.folder(part.itemId);
+    for (const [animation, sheet] of Object.entries(part.sheets)) {
+      const blob = await new Promise<Blob | null>((resolve) => {
+        sheet.toBlob((b) => resolve(b), "image/png");
+      });
+      if (blob) {
+        folder.file(`${animation}.png`, blob);
+      }
+    }
+  }
+
+  return zip.generateAsync({ type: "blob" });
+}
+
+export async function importCustomPartsZip(
+  zipFile: File,
+): Promise<CustomPart[]> {
+  const w = window as WindowWithJSZip;
+  if (!w.JSZip) {
+    throw new Error("JSZip library not loaded");
+  }
+  const JSZip = w.JSZip;
+  const zip = await new (JSZip as any)().loadAsync(zipFile);
+
+  const manifestFile = zip.file("manifest.json");
+  if (!manifestFile) {
+    throw new Error("Backup ZIP missing manifest.json");
+  }
+
+  const manifestRaw = await manifestFile.async("string");
+  const manifest = JSON.parse(manifestRaw) as {
+    version: number;
+    parts: Array<{
+      itemId: string;
+      name: string;
+      type_name: string;
+      baseItemId: string;
+      tags?: string[];
+      drawLayerNum?: number;
+      drawZPos?: number;
+      sheets: string[];
+    }>;
+  };
+
+  if (manifest.version !== 1 || !Array.isArray(manifest.parts)) {
+    throw new Error("Invalid manifest format");
+  }
+
+  const imported: CustomPart[] = [];
+
+  for (const meta of manifest.parts) {
+    const sheets: Record<string, HTMLCanvasElement> = {};
+    for (const animation of meta.sheets) {
+      const imgFile = zip.file(`${meta.itemId}/${animation}.png`);
+      if (!imgFile) continue;
+      const imgBlob = await imgFile.async("blob");
+      const dataUrl = await blobToDataUrl(imgBlob);
+      const canvas = await canvasFromDataUrl(dataUrl);
+      sheets[animation] = canvas;
+    }
+
+    const firstSheet = sheets.walk ?? Object.values(sheets)[0];
+    if (!firstSheet) continue;
+
+    imported.push({
+      itemId: meta.itemId,
+      name: meta.name,
+      type_name: meta.type_name,
+      baseItemId: meta.baseItemId,
+      drawLayerNum: meta.drawLayerNum,
+      drawZPos: meta.drawZPos,
+      tags: meta.tags,
+      sheets,
+      image: firstSheet,
+    });
+  }
+
+  return imported;
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Failed to read blob"));
+    reader.readAsDataURL(blob);
+  });
 }

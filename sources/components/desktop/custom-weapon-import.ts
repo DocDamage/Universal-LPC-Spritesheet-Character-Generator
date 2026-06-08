@@ -14,7 +14,7 @@ import type {
 } from "../../state/catalog.ts";
 import type { Selections } from "../../state/state.ts";
 
-type Rect = {
+export type Rect = {
   x: number;
   y: number;
   width: number;
@@ -480,7 +480,7 @@ function getImportAdjustment(options: ImportWeaponOptions): ImportAdjustment {
   };
 }
 
-function getSourceMode(sourceCanvas: HTMLCanvasElement): SourceMode {
+export function getSourceMode(sourceCanvas: HTMLCanvasElement): SourceMode {
   return sourceCanvas.width >= STANDARD_SHEET_WIDTH &&
     sourceCanvas.height >= STANDARD_SHEET_HEIGHT
     ? "fullSheet"
@@ -504,7 +504,7 @@ function sheetHasContent(canvas: HTMLCanvasElement): boolean {
   return !!getContentBounds(ctx, 0, 0, canvas.width, canvas.height);
 }
 
-function getContentBounds(
+export function getContentBounds(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -537,7 +537,7 @@ function getContentBounds(
   };
 }
 
-function canvasFromImage(img: HTMLImageElement): HTMLCanvasElement {
+export function canvasFromImage(img: HTMLImageElement): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = img.naturalWidth || img.width;
   canvas.height = img.naturalHeight || img.height;
@@ -545,7 +545,7 @@ function canvasFromImage(img: HTMLImageElement): HTMLCanvasElement {
   return canvas;
 }
 
-function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+export function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -559,4 +559,75 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
     };
     img.src = url;
   });
+}
+
+export async function buildImportPreview(
+  file: File,
+  referenceItemId: string,
+  referenceVariant: string | null,
+  bodyType: string,
+  selections: Selections,
+  catalog: CatalogReader,
+): Promise<{
+  referenceCanvas: HTMLCanvasElement;
+  sourceCanvas: HTMLCanvasElement;
+  sourceBounds: Rect;
+  referenceBounds: Rect | null;
+} | null> {
+  const meta = catalog.getItemMerged(referenceItemId).unwrapOr(null);
+  if (!meta) return null;
+
+  const sourceImage = await loadImageFromFile(file);
+  const sourceCanvas = canvasFromImage(sourceImage);
+  const sourceBounds = getContentBounds(
+    get2DContext(sourceCanvas, true),
+    0,
+    0,
+    sourceCanvas.width,
+    sourceCanvas.height,
+  );
+  if (!sourceBounds) return null;
+
+  const variant = referenceVariant ?? meta.variants?.[0] ?? null;
+  const standardAnimations = getStandardImportAnimations(meta);
+  const customAnimationsList = getCustomImportAnimations(meta);
+
+  let referenceCanvas: HTMLCanvasElement | null = null;
+  for (const animation of standardAnimations) {
+    referenceCanvas = await buildReferenceAnimationSheet(
+      catalog,
+      meta,
+      referenceItemId,
+      variant,
+      bodyType,
+      animation,
+      selections,
+    );
+    if (referenceCanvas) break;
+  }
+  if (!referenceCanvas) {
+    for (const animation of customAnimationsList) {
+      referenceCanvas = await buildReferenceCustomAnimationSheet(
+        catalog,
+        meta,
+        referenceItemId,
+        variant,
+        bodyType,
+        animation,
+      );
+      if (referenceCanvas) break;
+    }
+  }
+  if (!referenceCanvas) return null;
+
+  const refCtx = get2DContext(referenceCanvas, true);
+  const referenceBounds = getContentBounds(
+    refCtx,
+    0,
+    0,
+    referenceCanvas.width,
+    referenceCanvas.height,
+  );
+
+  return { referenceCanvas, sourceCanvas, sourceBounds, referenceBounds };
 }

@@ -8,7 +8,7 @@ import {
   type PaletteMapping,
 } from "./webgl-palette-recolor.ts";
 import { debugLog, debugWarn } from "../utils/debug.ts";
-import { get2DContext } from "./canvas-utils.ts";
+import { createCanvas } from "./canvas-utils.ts";
 import { getItemLite } from "../state/catalog.ts";
 import type { ItemMerged } from "../state/catalog.ts";
 import { state } from "../state/state.ts";
@@ -108,10 +108,7 @@ function recolorImageCPU(
   paletteMappings: PaletteMapping[],
 ): HTMLCanvasElement {
   // Create offscreen canvas
-  const canvas = document.createElement("canvas");
-  canvas.width = sourceImage.width;
-  canvas.height = sourceImage.height;
-  const ctx = get2DContext(canvas);
+  const { canvas, ctx } = createCanvas(sourceImage.width, sourceImage.height);
 
   // Draw source image
   ctx.drawImage(sourceImage, 0, 0);

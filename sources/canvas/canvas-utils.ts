@@ -24,6 +24,22 @@ export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 }
 
 /**
+ * Create a canvas with the given dimensions and return it together with its
+ * 2D rendering context (image smoothing disabled for crisp pixel art).
+ */
+export function createCanvas(
+  width: number,
+  height: number,
+  willReadFrequently: boolean = false,
+): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = get2DContext(canvas, willReadFrequently);
+  return { canvas, ctx };
+}
+
+/**
  * Get 2D context with image smoothing disabled for crisp pixel rendering.
  * Throws if the canvas cannot produce a 2D context (e.g. it has already
  * been claimed by a different context type like WebGL — a canvas can

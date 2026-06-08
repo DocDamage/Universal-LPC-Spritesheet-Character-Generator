@@ -1,4 +1,4 @@
-import { get2DContext } from "../../canvas/canvas-utils.ts";
+import { createCanvas, get2DContext } from "../../canvas/canvas-utils.ts";
 import { loadImage } from "../../canvas/load-image.ts";
 import {
   customAnimations,
@@ -281,10 +281,7 @@ async function buildReferenceAnimationSheet(
 
   const width = Math.max(...sprites.map((sprite) => sprite.img.width));
   const height = Math.max(...sprites.map((sprite) => sprite.img.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = get2DContext(canvas, true);
+  const { canvas, ctx } = createCanvas(width, height, true);
   sprites
     .sort((a, b) => a.zPos - b.zPos)
     .forEach((sprite) => ctx.drawImage(sprite.img, 0, 0));
@@ -323,10 +320,7 @@ async function buildReferenceCustomAnimationSheet(
   if (sprites.length === 0) return null;
 
   const { width, height } = customAnimationSize(customAnimation);
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = get2DContext(canvas, true);
+  const { canvas, ctx } = createCanvas(width, height, true);
   sprites
     .sort((a, b) => a.zPos - b.zPos)
     .forEach((sprite) => ctx.drawImage(sprite.img, 0, 0));
@@ -357,10 +351,11 @@ export function alignSourceToReferenceSheet(
     sourceAnimationY?: number;
   } = {},
 ): HTMLCanvasElement {
-  const out = document.createElement("canvas");
-  out.width = referenceSheet.width;
-  out.height = referenceSheet.height;
-  const outCtx = get2DContext(out, true);
+  const { canvas: out, ctx: outCtx } = createCanvas(
+    referenceSheet.width,
+    referenceSheet.height,
+    true,
+  );
   const refCtx = get2DContext(referenceSheet, true);
   const sourceCtx = get2DContext(sourceCanvas, true);
   const frameSize = options.frameSize ?? FRAME_SIZE;
@@ -538,9 +533,11 @@ export function getContentBounds(
 }
 
 export function canvasFromImage(img: HTMLImageElement): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
+  const { canvas } = createCanvas(
+    img.naturalWidth || img.width,
+    img.naturalHeight || img.height,
+    true,
+  );
   get2DContext(canvas, true).drawImage(img, 0, 0);
   return canvas;
 }

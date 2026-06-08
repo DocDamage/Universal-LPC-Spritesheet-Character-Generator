@@ -12,10 +12,10 @@ import {
   unregisterEditorContext,
 } from "../../state/commands.ts";
 import { loadImage } from "../../canvas/load-image.ts";
-import { get2DContext } from "../../canvas/canvas-utils.ts";
+import { createCanvas, get2DContext } from "../../canvas/canvas-utils.ts";
 import { SLOT_CONFIG, clearSlotSelections } from "./slot-config.ts";
 import { customAnimations } from "../../custom-animations.ts";
-import { variantToFilename } from "../../utils/helpers.ts";
+import { clamp, variantToFilename } from "../../utils/helpers.ts";
 import { debugWarn } from "../../utils/debug.ts";
 import { getMultiRecolors } from "../../state/palettes.ts";
 import {
@@ -31,6 +31,7 @@ import {
   saveDraft,
 } from "../../state/editor-autosave.ts";
 import type { ItemMerged } from "../../state/catalog.ts";
+import { supportsAnimation } from "../../state/meta.ts";
 import {
   applyBrush,
   applyFill,
@@ -239,7 +240,7 @@ export const DEFAULT_EDITOR_ZOOM = 4;
 const MAX_EXTRACTED_PALETTE_COLORS = 36;
 
 export function clampEditorZoom(value: number): number {
-  return Math.min(MAX_EDITOR_ZOOM, Math.max(MIN_EDITOR_ZOOM, value));
+  return clamp(value, MIN_EDITOR_ZOOM, MAX_EDITOR_ZOOM);
 }
 
 export function getEditorWheelZoomUpdate({
@@ -251,8 +252,8 @@ export function getEditorWheelZoomUpdate({
   const oldZoom = clampEditorZoom(zoom);
   const nextZoom = clampEditorZoom(oldZoom + (deltaY < 0 ? 1 : -1));
   const sizeDelta = FRAME_SIZE * (nextZoom - oldZoom);
-  const boundedRatioX = Math.min(1, Math.max(0, pointerRatioX));
-  const boundedRatioY = Math.min(1, Math.max(0, pointerRatioY));
+  const boundedRatioX = clamp(pointerRatioX, 0, 1);
+  const boundedRatioY = clamp(pointerRatioY, 0, 1);
   const scrollLeftDelta = sizeDelta * boundedRatioX;
   const scrollTopDelta = sizeDelta * boundedRatioY;
 
@@ -283,10 +284,7 @@ function cropFrame(
   row: number,
   col: number,
 ): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = FRAME_SIZE;
-  canvas.height = FRAME_SIZE;
-  const ctx = get2DContext(canvas);
+  const { canvas, ctx } = createCanvas(FRAME_SIZE, FRAME_SIZE);
   ctx.drawImage(
     spritesheetImg,
     col * FRAME_SIZE,
@@ -681,10 +679,10 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
       ) as HTMLCanvasElement | null;
       const rect = canvasEl?.getBoundingClientRect();
       const pointerRatioX = rect
-        ? Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+        ? clamp((e.clientX - rect.left) / rect.width, 0, 1)
         : 0.5;
       const pointerRatioY = rect
-        ? Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
+        ? clamp((e.clientY - rect.top) / rect.height, 0, 1)
         : 0.5;
       const zoomUpdate = getEditorWheelZoomUpdate({
         zoom: vnode.state.zoom,
@@ -2795,8 +2793,8 @@ function clampSelectionPosition(
   y: number,
 ): Point {
   return {
-    x: Math.min(FRAME_SIZE - rect.width, Math.max(0, x)),
-    y: Math.min(FRAME_SIZE - rect.height, Math.max(0, y)),
+    x: clamp(x, 0, FRAME_SIZE - rect.width),
+    y: clamp(y, 0, FRAME_SIZE - rect.height),
   };
 }
 
@@ -2835,9 +2833,7 @@ function startSelectionInteraction(
       sourceRect.width,
       sourceRect.height,
     );
-    const baseCanvas = document.createElement("canvas");
-    baseCanvas.width = FRAME_SIZE;
-    baseCanvas.height = FRAME_SIZE;
+    const { canvas: baseCanvas } = createCanvas(FRAME_SIZE, FRAME_SIZE);
     get2DContext(baseCanvas).drawImage(canvas, 0, 0);
 
     stateObj.selectionDraftStart = null;
@@ -3530,8 +3526,8 @@ function clampTransformedRect(
   transformedData: ImageData,
 ): SelectionRect {
   return {
-    x: Math.min(FRAME_SIZE - transformedData.width, Math.max(0, sourceRect.x)),
-    y: Math.min(FRAME_SIZE - transformedData.height, Math.max(0, sourceRect.y)),
+    x: clamp(sourceRect.x, 0, FRAME_SIZE - transformedData.width),
+    y: clamp(sourceRect.y, 0, FRAME_SIZE - transformedData.height),
     width: transformedData.width,
     height: transformedData.height,
   };
@@ -3540,7 +3536,7 @@ function clampTransformedRect(
 function getAvailableFrameAnimations(meta: ItemMerged): string[] {
   return Object.keys(ANIMATION_OFFSETS).filter(
     (animation) =>
-      supportsStandardAnimation(meta, animation) &&
+      supportsAnimation(meta, animation) &&
       getAnimationFrameCount(animation) > 0,
   );
 }
@@ -3786,7 +3782,7 @@ async function loadAnimationFrameCanvases(
   const img = await loadImage(pathResult.value);
   const rowCount = Math.max(1, Math.floor(img.height / FRAME_SIZE));
   const frameCount = Math.max(1, Math.floor(img.width / FRAME_SIZE));
-  const clampedFrame = Math.min(frameCount - 1, Math.max(0, frameIndex));
+  const clampedFrame = clamp(frameIndex, 0, frameCount - 1);
   for (const direction of DIRECTIONS) {
     const row = rowCount >= 4 ? DIRECTION_ROWS[direction] : 0;
     const ctx = get2DContext(canvases[direction]);
@@ -3985,7 +3981,7 @@ function composeLayersIntoCanvases(
 
     for (const layer of layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
-      ctx.globalAlpha = Math.min(1, Math.max(0, layer.opacity));
+      ctx.globalAlpha = clamp(layer.opacity, 0, 1);
       ctx.globalCompositeOperation = layer.blendMode || "source-over";
       ctx.drawImage(layer.canvases[direction], 0, 0);
     }
@@ -4110,7 +4106,7 @@ function mergeActiveLayerDown(stateObj: PartEditorState): void {
   if (activeLayer.visible && activeLayer.opacity > 0) {
     for (const direction of DIRECTIONS) {
       const targetCtx = get2DContext(targetLayer.canvases[direction]);
-      targetCtx.globalAlpha = Math.min(1, Math.max(0, activeLayer.opacity));
+      targetCtx.globalAlpha = clamp(activeLayer.opacity, 0, 1);
       targetCtx.drawImage(activeLayer.canvases[direction], 0, 0);
       targetCtx.globalAlpha = 1;
     }
@@ -4137,24 +4133,6 @@ function flattenVisibleLayers(stateObj: PartEditorState): void {
   saveHistory(stateObj);
 }
 
-function supportsStandardAnimation(
-  meta: ItemMerged,
-  animName: string,
-): boolean {
-  if (!meta.animations || meta.animations.length === 0) return false;
-  if (animName === "combat_idle") return meta.animations.includes("combat");
-  if (animName === "backslash") {
-    return (
-      meta.animations.includes("1h_slash") ||
-      meta.animations.includes("1h_backslash")
-    );
-  }
-  if (animName === "halfslash") {
-    return meta.animations.includes("1h_halfslash");
-  }
-  return meta.animations.includes(animName);
-}
-
 async function buildEditedAnimationSheets(
   baseId: string,
   meta: ItemMerged,
@@ -4168,7 +4146,7 @@ async function buildEditedAnimationSheets(
   const variant = selection?.variant ?? null;
 
   for (const animName of Object.keys(ANIMATION_OFFSETS)) {
-    if (!supportsStandardAnimation(meta, animName)) continue;
+    if (!supportsAnimation(meta, animName)) continue;
     const pathResult = getSpritePath(
       baseId,
       variant,
@@ -4182,10 +4160,10 @@ async function buildEditedAnimationSheets(
     if (pathResult.isErr()) continue;
 
     const baseImg = await loadImage(pathResult.value);
-    const outCanvas = document.createElement("canvas");
-    outCanvas.width = baseImg.width;
-    outCanvas.height = baseImg.height;
-    const outCtx = get2DContext(outCanvas);
+    const { canvas: outCanvas, ctx: outCtx } = createCanvas(
+      baseImg.width,
+      baseImg.height,
+    );
     outCtx.drawImage(baseImg, 0, 0);
     applyDirectionEdits(outCtx, baseImg, originalCanvases, editedCanvases);
     applyFrameOverrides(outCtx, baseImg, animName, frameOverrides);
@@ -4464,7 +4442,7 @@ async function createLayerFromSnapshot(
     id: snapshot.id,
     name: snapshot.name || "Layer",
     visible: snapshot.visible,
-    opacity: Math.min(1, Math.max(0, snapshot.opacity)),
+    opacity: clamp(snapshot.opacity, 0, 1),
     locked: snapshot.locked ?? false,
     alphaLocked: snapshot.alphaLocked ?? false,
     blendMode:

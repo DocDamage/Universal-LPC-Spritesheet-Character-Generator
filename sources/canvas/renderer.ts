@@ -7,7 +7,7 @@ import type { LoadedImage } from "./load-image.ts";
 import { getSpritePath, type PathError } from "../state/path.ts";
 import { getImageToDraw } from "./palette-recolor.ts";
 import { getMultiRecolors } from "../state/palettes.ts";
-import { get2DContext, getZPos } from "./canvas-utils.ts";
+import { createCanvas, getZPos } from "./canvas-utils.ts";
 import { variantToFilename } from "../utils/helpers.ts";
 import { drawFramesToCustomAnimation } from "./draw-frames.ts";
 import {
@@ -20,7 +20,7 @@ import {
   setCurrentCustomAnimations,
   setCustomAnimYPositions,
 } from "./preview-animation.ts";
-import { getSortedLayersByAnim } from "../state/meta.ts";
+import { getSortedLayersByAnim, supportsAnimation } from "../state/meta.ts";
 import type { AnimationLayer } from "../state/meta.ts";
 import {
   catalogReady,
@@ -202,10 +202,9 @@ let offscreenCanvasInitialized = false;
  * Initialize the canvas (creates offscreen canvas)
  */
 export function initCanvas(): void {
-  canvas = document.createElement("canvas");
-  ctx = get2DContext(canvas);
-  canvas.width = SHEET_WIDTH;
-  canvas.height = SHEET_HEIGHT;
+  const created = createCanvas(SHEET_WIDTH, SHEET_HEIGHT);
+  canvas = created.canvas;
+  ctx = created.ctx;
   offscreenCanvasInitialized = true;
 }
 
@@ -391,25 +390,7 @@ async function runRenderCharacter(
             continue;
           }
 
-          // Map folder name to metadata name for checking support
-          // e.g., "combat_idle" -> check for "combat" or "1h_slash" in metadata
-          if (animName === "combat_idle") {
-            // combat_idle is supported if item has "combat" in metadata
-            if (!meta.animations.includes("combat")) continue;
-          } else if (animName === "backslash") {
-            // backslash is supported if item has "1h_slash" OR "1h_backslash" in metadata
-            if (
-              !meta.animations.includes("1h_slash") &&
-              !meta.animations.includes("1h_backslash")
-            )
-              continue;
-          } else if (animName === "halfslash") {
-            // halfslash is supported if item has "1h_halfslash" in metadata
-            if (!meta.animations.includes("1h_halfslash")) continue;
-          } else {
-            // For all other animations, direct match required
-            if (!meta.animations.includes(animName)) continue;
-          }
+          if (!supportsAnimation(meta, animName)) continue;
 
           const pathResult = getSpritePath(
             assetItemId,
@@ -676,10 +657,10 @@ export function extractAnimationFromCanvas(
   const srcHeight = num * FRAME_SIZE;
 
   // Create new canvas for this animation
-  const animCanvas = document.createElement("canvas");
-  animCanvas.width = SHEET_WIDTH;
-  animCanvas.height = srcHeight;
-  const animCtx = get2DContext(animCanvas);
+  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
+    SHEET_WIDTH,
+    srcHeight,
+  );
 
   // Copy animation from main canvas
   animCtx.drawImage(
@@ -770,10 +751,12 @@ export async function renderSingleItem(
       return SHEET_HEIGHT + index * animHeight;
     };
 
-    itemCanvas = document.createElement("canvas");
-    itemCanvas.width = animWidth;
-    itemCanvas.height = SHEET_HEIGHT + animHeight * numCustomAnims;
-    itemCtx = get2DContext(itemCanvas);
+    const createdItem = createCanvas(
+      animWidth,
+      SHEET_HEIGHT + animHeight * numCustomAnims,
+    );
+    itemCanvas = createdItem.canvas;
+    itemCtx = createdItem.ctx;
 
     // Render all layers of this custom animation item
     const customSprites: { spritePath: string; zPos: number; yPos: number }[] =
@@ -836,10 +819,9 @@ export async function renderSingleItem(
     );
   } else {
     // Standard animation item - use standard sheet size
-    itemCanvas = document.createElement("canvas");
-    itemCanvas.width = SHEET_WIDTH;
-    itemCanvas.height = SHEET_HEIGHT;
-    itemCtx = get2DContext(itemCanvas);
+    const createdItem = createCanvas(SHEET_WIDTH, SHEET_HEIGHT);
+    itemCanvas = createdItem.canvas;
+    itemCtx = createdItem.ctx;
   }
 
   // Build list of sprites to draw for this item
@@ -864,20 +846,7 @@ export async function renderSingleItem(
 
     // Add each animation for this layer
     for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-      // Check animation support (same logic as renderCharacter)
-      if (animName === "combat_idle") {
-        if (!meta.animations.includes("combat")) continue;
-      } else if (animName === "backslash") {
-        if (
-          !meta.animations.includes("1h_slash") &&
-          !meta.animations.includes("1h_backslash")
-        )
-          continue;
-      } else if (animName === "halfslash") {
-        if (!meta.animations.includes("1h_halfslash")) continue;
-      } else {
-        if (!meta.animations.includes(animName)) continue;
-      }
+      if (!supportsAnimation(meta, animName)) continue;
 
       const pathResult = getSpritePath(
         itemId,
@@ -999,10 +968,10 @@ export async function renderSingleItemAnimation(
   const animHeight = num * FRAME_SIZE;
 
   // Create a new canvas for this animation
-  const animCanvas = document.createElement("canvas");
-  animCanvas.width = SHEET_WIDTH;
-  animCanvas.height = animHeight;
-  const animCtx = get2DContext(animCanvas);
+  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
+    SHEET_WIDTH,
+    animHeight,
+  );
 
   // Build list of sprites to draw for this item & animation
   type AnimSprite = {

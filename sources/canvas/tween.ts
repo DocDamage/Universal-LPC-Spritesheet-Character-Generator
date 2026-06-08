@@ -1,3 +1,5 @@
+import { get2DContext } from "./canvas-utils.ts";
+
 export const TWEEN_MODES = [
   "off",
   "hold",
@@ -239,8 +241,8 @@ export function drawTweenedCanvas(
     throw new Error("Cannot tween canvases with different dimensions");
   }
 
-  const fromCtx = getReadableContext(fromCanvas);
-  const toCtx = getReadableContext(toCanvas);
+  const fromCtx = get2DContext(fromCanvas, true);
+  const toCtx = get2DContext(toCanvas, true);
   const tweened = tweenImageData(
     fromCtx.getImageData(0, 0, fromCanvas.width, fromCanvas.height),
     toCtx.getImageData(0, 0, toCanvas.width, toCanvas.height),
@@ -252,7 +254,7 @@ export function drawTweenedCanvas(
   const tweenCanvas = document.createElement("canvas");
   tweenCanvas.width = fromCanvas.width;
   tweenCanvas.height = fromCanvas.height;
-  const tweenCtx = getReadableContext(tweenCanvas);
+  const tweenCtx = get2DContext(tweenCanvas, true);
   tweenCtx.putImageData(tweened, 0, 0);
   targetCtx.drawImage(tweenCanvas, 0, 0);
 }
@@ -390,15 +392,4 @@ function clampUnit(value: number): number {
     return 0;
   }
   return Math.min(1, Math.max(0, value));
-}
-
-function getReadableContext(
-  canvas: HTMLCanvasElement,
-): CanvasRenderingContext2D {
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) {
-    throw new Error("Failed to get 2D context");
-  }
-  context.imageSmoothingEnabled = false;
-  return context;
 }

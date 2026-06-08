@@ -35,6 +35,10 @@ export function ucwords(str: string): string {
     .join(" ");
 }
 
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function matchesSearch(text: string, query: string): boolean {
   if (!query || query.length < 2) return true;
   return text.toLowerCase().includes(query.toLowerCase());

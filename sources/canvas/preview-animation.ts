@@ -1,7 +1,7 @@
 import { previewCanvas, previewCtx } from "./preview-canvas.ts";
 import { state } from "../state/state.ts";
 import { FRAME_SIZE, ANIMATION_CONFIGS } from "../state/constants.ts";
-import { get2DContext, drawTransparencyBackground } from "./canvas-utils.ts";
+import { createCanvas, drawTransparencyBackground } from "./canvas-utils.ts";
 import { applyTransparencyMaskToCanvas } from "./mask.ts";
 import { canvas } from "./renderer.ts";
 import { customAnimations } from "../custom-animations.ts";
@@ -213,10 +213,10 @@ function getSourceCanvas(): HTMLCanvasElement {
   if (state.applyTransparencyMask) {
     // using a tmpCanvas here to avoid modifying the original offscreen canvas
     // which causes a bug if the user toggles the checkbox multiple times
-    const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = canvas.width;
-    tmpCanvas.height = canvas.height;
-    const tmpCtx = get2DContext(tmpCanvas);
+    const { canvas: tmpCanvas, ctx: tmpCtx } = createCanvas(
+      canvas.width,
+      canvas.height,
+    );
     tmpCtx.drawImage(canvas, 0, 0);
     applyTransparencyMaskToCanvas(tmpCanvas, tmpCtx);
     return tmpCanvas;
@@ -230,10 +230,11 @@ function renderCycleFrameToCanvas(
   geometry: PreviewGeometry,
   cycleIndex: number,
 ): HTMLCanvasElement {
-  const frameCanvas = document.createElement("canvas");
-  frameCanvas.width = geometry.previewWidth;
-  frameCanvas.height = geometry.frameSize;
-  const frameCtx = get2DContext(frameCanvas, true);
+  const { canvas: frameCanvas, ctx: frameCtx } = createCanvas(
+    geometry.previewWidth,
+    geometry.frameSize,
+    true,
+  );
   drawAnimationCycleFrame(frameCtx, sourceCanvas, geometry, cycleIndex);
   return frameCanvas;
 }
@@ -300,10 +301,11 @@ export function renderPreviewAnimationFrameCanvases(
       continue;
     }
 
-    const tweenCanvas = document.createElement("canvas");
-    tweenCanvas.width = geometry.previewWidth;
-    tweenCanvas.height = geometry.frameSize;
-    const tweenCtx = get2DContext(tweenCanvas, true);
+    const { canvas: tweenCanvas, ctx: tweenCtx } = createCanvas(
+      geometry.previewWidth,
+      geometry.frameSize,
+      true,
+    );
     drawTweenedCanvas(
       tweenCtx,
       renderCycleFrameToCanvas(sourceCanvas, geometry, step.sourceIndex),

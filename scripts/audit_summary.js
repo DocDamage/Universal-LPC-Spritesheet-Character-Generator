@@ -4,6 +4,7 @@ import path from "node:path";
 import { itemMetadata } from "../dist/item-metadata.js";
 import { itemLayers } from "../dist/layers-metadata.js";
 import { metadataIndexes } from "../dist/index-metadata.js";
+import { ANIMATIONS, variantToFilename, remapAnimationName } from "./shared.js";
 
 const SLOT_CONFIG = [
   { label: "Gender", kind: "bodyType", panel: "left", canRandomize: true },
@@ -274,27 +275,6 @@ const SLOT_CONFIG = [
   },
 ];
 
-const ANIMATIONS = [
-  { value: "walk", label: "Walk Cycle", folderName: "walk" },
-  { value: "slash", label: "Slash / Melee", folderName: "slash" },
-  { value: "shoot", label: "Shoot / Bow", folderName: "shoot" },
-  { value: "thrust", label: "Thrust / Spear", folderName: "thrust" },
-  { value: "cast", label: "Cast / Spell", folderName: "cast" },
-  { value: "spellcast", label: "Spellcast", folderName: "spellcast" },
-  { value: "hurt", label: "Hurt / Dead", folderName: "hurt" },
-  { value: "bow", label: "Bow", folderName: "bow" },
-  { value: "jump", label: "Jump", folderName: "jump" },
-  { value: "sit", label: "Sit", folderName: "sit" },
-  { value: "climb", label: "Climb", folderName: "climb" },
-  { value: "crawl", label: "Crawl", folderName: "crawl" },
-  { value: "fly", label: "Fly", folderName: "fly" },
-  { value: "swim", label: "Swim", folderName: "swim" },
-  { value: "ride", label: "Ride", folderName: "ride" },
-  { value: "combat_idle", label: "Combat Idle", folderName: "combat_idle" },
-  { value: "backslash", label: "Backslash", folderName: "backslash" },
-  { value: "halfslash", label: "Halfslash", folderName: "halfslash" },
-];
-
 const { variantArrays, recolorVariantArrays } = metadataIndexes;
 
 function expandInternedItemLite(lite) {
@@ -313,10 +293,6 @@ function expandInternedItemLite(lite) {
     recolors = [{ variants: [...rList] }];
   }
   return { ...rest, variants, recolors };
-}
-
-function variantToFilename(variant) {
-  return variant ? variant.replace(/_/g, "-") : "";
 }
 
 function getSpritePath(
@@ -411,11 +387,7 @@ for (const slot of SLOT_CONFIG) {
 
             // Check standard animations
             for (const animName of lite.animations || []) {
-              let queryAnim = animName;
-              if (animName === "combat") queryAnim = "combat_idle";
-              else if (animName === "1h_slash") queryAnim = "slash";
-              else if (animName === "1h_backslash") queryAnim = "backslash";
-              else if (animName === "1h_halfslash") queryAnim = "halfslash";
+              const queryAnim = remapAnimationName(animName);
 
               const recolors = lite.recolors && lite.recolors.length > 0;
               const pthResult = getSpritePath(

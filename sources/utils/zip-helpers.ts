@@ -12,6 +12,7 @@ import {
 } from "../custom-animations.ts";
 import {
   canvasToBlob,
+  createCanvas,
   get2DContext,
   hasContentInRegion,
 } from "../canvas/canvas-utils.ts";
@@ -73,10 +74,11 @@ function createFrameCanvasPool(
 ): FrameCanvas[] {
   const canvasPool: FrameCanvas[] = [];
   for (let i = 0; i < poolSize; i++) {
-    const frameCanvas = document.createElement("canvas");
-    frameCanvas.width = frameWidth;
-    frameCanvas.height = frameHeight;
-    const frameCtx = get2DContext(frameCanvas, true);
+    const { canvas: frameCanvas, ctx: frameCtx } = createCanvas(
+      frameWidth,
+      frameHeight,
+      true,
+    );
     if (frameCtx) {
       canvasPool.push({ canvas: frameCanvas, ctx: frameCtx });
     }
@@ -320,11 +322,9 @@ export function newStandardAnimationForCustomAnimation(
   src: HTMLCanvasElement | HTMLImageElement,
   custAnim: CustomAnimationDefinition,
 ): HTMLCanvasElement {
-  const custCanvas = document.createElement("canvas");
   const { width: custWidth, height: custHeight } =
     customAnimationSize(custAnim);
-  custCanvas.width = custWidth;
-  custCanvas.height = custHeight;
+  const { canvas: custCanvas } = createCanvas(custWidth, custHeight);
   const custCtx = get2DContext(custCanvas, true);
   if (!custCtx) {
     throw new Error("Failed to get canvas context");
@@ -396,10 +396,11 @@ export function expandExtractedFramesWithTweens(
         return step.from;
       }
 
-      const tweenCanvas = document.createElement("canvas");
-      tweenCanvas.width = step.from.canvas.width;
-      tweenCanvas.height = step.from.canvas.height;
-      const tweenCtx = get2DContext(tweenCanvas, true);
+      const { canvas: tweenCanvas, ctx: tweenCtx } = createCanvas(
+        step.from.canvas.width,
+        step.from.canvas.height,
+        true,
+      );
       drawTweenedCanvas(
         tweenCtx,
         step.from.canvas,
@@ -440,10 +441,11 @@ export function composeFrameRowsToSpritesheet(
   const maxFrameCount = Math.max(
     ...populatedDirections.map((direction) => frames[direction]?.length ?? 0),
   );
-  const spritesheet = document.createElement("canvas");
-  spritesheet.width = maxFrameCount * frameWidth;
-  spritesheet.height = directions.length * frameHeight;
-  const spritesheetCtx = get2DContext(spritesheet, true);
+  const { canvas: spritesheet, ctx: spritesheetCtx } = createCanvas(
+    maxFrameCount * frameWidth,
+    directions.length * frameHeight,
+    true,
+  );
 
   directions.forEach((direction, directionIndex) => {
     const frameList = frames[direction] ?? [];

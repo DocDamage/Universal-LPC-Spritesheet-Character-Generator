@@ -15,6 +15,7 @@ import {
   clampBrushSize,
   type EditorTool,
 } from "../components/desktop/pixel-editor-tools.ts";
+import { clamp } from "../utils/helpers.ts";
 import { requestConfirmation, showToast } from "./notifications.ts";
 
 import {
@@ -143,11 +144,11 @@ function hasFullscreenEditor(): boolean {
 }
 
 function clampPreviewZoom(value: number): number {
-  return Math.min(MAX_PREVIEW_ZOOM, Math.max(MIN_PREVIEW_ZOOM, value));
+  return clamp(value, MIN_PREVIEW_ZOOM, MAX_PREVIEW_ZOOM);
 }
 
 function clampEditorZoom(value: number): number {
-  return Math.min(MAX_EDITOR_ZOOM, Math.max(MIN_EDITOR_ZOOM, value));
+  return clamp(value, MIN_EDITOR_ZOOM, MAX_EDITOR_ZOOM);
 }
 
 function zoomIn(): void {

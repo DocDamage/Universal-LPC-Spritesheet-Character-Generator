@@ -1,7 +1,7 @@
 // WebGL-accelerated palette recoloring for LPC sprites
 // Uses GPU shaders for fast color replacement
 
-import { get2DContext } from "./canvas-utils.ts";
+import { createCanvas } from "./canvas-utils.ts";
 import { debugLog } from "../utils/debug.ts";
 
 export type PaletteMapping = { source: string[]; target: string[] };
@@ -330,10 +330,10 @@ export function recolorImageWebGL(
     gl.deleteTexture(paletteTexture);
 
     // Copy result to a new 2D canvas (so we can return it and free WebGL canvas)
-    const resultCanvas = document.createElement("canvas");
-    resultCanvas.width = canvas.width;
-    resultCanvas.height = canvas.height;
-    const ctx = get2DContext(resultCanvas);
+    const { canvas: resultCanvas, ctx } = createCanvas(
+      canvas.width,
+      canvas.height,
+    );
     ctx.drawImage(canvas, 0, 0);
 
     return resultCanvas;

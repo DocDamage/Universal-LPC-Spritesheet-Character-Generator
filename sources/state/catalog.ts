@@ -30,7 +30,7 @@
  */
 
 import { ok, err, type Result } from "neverthrow";
-import { get2DContext } from "../canvas/canvas-utils.ts";
+import { createCanvas } from "../canvas/canvas-utils.ts";
 import {
   buildItemsByTypeNameLite,
   expandInternedItemLite,
@@ -125,10 +125,11 @@ export function duplicateCustomPart(
   const newItemId = `custom_${part.type_name}_${Date.now()}`;
   const newSheets: Record<string, HTMLCanvasElement> = {};
   for (const [animation, sheet] of Object.entries(part.sheets)) {
-    const newCanvas = document.createElement("canvas");
-    newCanvas.width = sheet.width;
-    newCanvas.height = sheet.height;
-    const ctx = get2DContext(newCanvas, true);
+    const { canvas: newCanvas, ctx } = createCanvas(
+      sheet.width,
+      sheet.height,
+      true,
+    );
     ctx.drawImage(sheet, 0, 0);
     newSheets[animation] = newCanvas;
   }

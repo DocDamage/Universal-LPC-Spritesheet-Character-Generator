@@ -1,5 +1,6 @@
 import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { FRAME_SIZE } from "../../state/constants.ts";
+import { clamp } from "../../utils/helpers.ts";
 
 export type Direction = "front" | "back" | "left" | "right";
 export type EditorTool =
@@ -32,7 +33,7 @@ export const MAX_BRUSH_SIZE = 8;
 type Rgba = { r: number; g: number; b: number; a: number };
 
 export function clampBrushSize(value: number): number {
-  return Math.min(MAX_BRUSH_SIZE, Math.max(MIN_BRUSH_SIZE, value));
+  return clamp(value, MIN_BRUSH_SIZE, MAX_BRUSH_SIZE);
 }
 
 export function sampleColor(

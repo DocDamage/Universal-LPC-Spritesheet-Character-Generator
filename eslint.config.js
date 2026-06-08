@@ -176,21 +176,6 @@ export default [
     rules: commonRules,
   },
   {
-    files: ["issue382-golden-runner.js"],
-    languageOptions: {
-      parserOptions: {
-        ...sharedParserOptions,
-        sourceType: "module",
-      },
-      globals: {
-        ...globals.browser,
-        ...globals.es2021,
-        m: "readonly",
-      },
-    },
-    rules: commonRules,
-  },
-  {
     ...eslintPluginPrettierRecommended,
     files: ["**/*.{js,cjs,ts}"],
   },

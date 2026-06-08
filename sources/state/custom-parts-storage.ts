@@ -1,4 +1,4 @@
-import { get2DContext } from "../canvas/canvas-utils.ts";
+import { createCanvas, get2DContext } from "../canvas/canvas-utils.ts";
 import { debugWarn } from "../utils/debug.ts";
 import type { CustomPart } from "./catalog.ts";
 import type { ZipFolder } from "../utils/zip-helpers.ts";
@@ -173,9 +173,11 @@ function canvasFromDataUrl(dataUrl: string): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
+      const { canvas } = createCanvas(
+        img.naturalWidth || img.width,
+        img.naturalHeight || img.height,
+        true,
+      );
       get2DContext(canvas, true).drawImage(img, 0, 0);
       resolve(canvas);
     };

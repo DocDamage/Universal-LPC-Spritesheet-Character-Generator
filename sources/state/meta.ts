@@ -28,6 +28,28 @@ function logIfNotFound(itemId: string): (err: LoadError) => LoadError {
 
 export type LayerToLoad = { zPos: number; path: string };
 
+/**
+ * Check whether a given animation name is supported by an item's metadata.
+ * Handles special remappings (e.g. "combat_idle" → "combat", "backslash" → "1h_slash"/"1h_backslash").
+ */
+export function supportsAnimation(
+  meta: Pick<ItemMerged, "animations">,
+  animName: string,
+): boolean {
+  if (!meta.animations || meta.animations.length === 0) return false;
+  if (animName === "combat_idle") return meta.animations.includes("combat");
+  if (animName === "backslash") {
+    return (
+      meta.animations.includes("1h_slash") ||
+      meta.animations.includes("1h_backslash")
+    );
+  }
+  if (animName === "halfslash") {
+    return meta.animations.includes("1h_halfslash");
+  }
+  return meta.animations.includes(animName);
+}
+
 /** Sort layers by zPos. */
 export function getSortedLayers(
   catalog: MetaCatalog,

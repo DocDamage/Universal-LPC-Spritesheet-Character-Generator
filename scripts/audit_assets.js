@@ -300,6 +300,32 @@ function variantToFilename(variant) {
   return variant ? variant.replace(/_/g, "-") : "";
 }
 
+function expandTemplatePaths(basePath, meta) {
+  const placeholders = [...basePath.matchAll(/\${(.*?)}/g)].map(
+    (match) => match[1],
+  );
+  if (placeholders.length === 0) return [basePath];
+
+  let expanded = [basePath];
+  for (const placeholder of placeholders) {
+    const replacements = [
+      ...new Set(Object.values(meta.replace_in_path?.[placeholder] ?? {})),
+    ].filter(Boolean);
+
+    if (replacements.length === 0) {
+      return [{ template: basePath, unresolved: placeholder }];
+    }
+
+    expanded = expanded.flatMap((templatePath) =>
+      replacements.map((replacement) =>
+        templatePath.replaceAll(`\${${placeholder}}`, replacement),
+      ),
+    );
+  }
+
+  return expanded;
+}
+
 function getSpritePath(
   itemId,
   variant,
@@ -316,12 +342,6 @@ function getSpritePath(
   let basePath = layer[bodyType];
   if (!basePath) return null;
 
-  // Placeholder resolution simplified for audit
-  if (basePath.includes("${")) {
-    // Return template, needs special handling or placeholder verification
-    return { template: basePath };
-  }
-
   if (!variant && !recolors) {
     const parts = itemId.split("_");
     variant = parts[parts.length - 1];
@@ -333,7 +353,18 @@ function getSpritePath(
   }
 
   const fileName = !recolors ? `/${variantToFilename(variant)}` : "";
-  return `spritesheets/${basePath}${animName}${fileName}.png`;
+  const expandedPaths = expandTemplatePaths(basePath, meta);
+  if (
+    expandedPaths.length === 1 &&
+    typeof expandedPaths[0] === "object" &&
+    expandedPaths[0].template
+  ) {
+    return expandedPaths[0];
+  }
+
+  return expandedPaths.map(
+    (expandedPath) => `spritesheets/${expandedPath}${animName}${fileName}.png`,
+  );
 }
 
 console.log("Auditing Slot Configurations and Assets...");
@@ -394,17 +425,22 @@ for (const slot of SLOT_CONFIG) {
                 continue;
               }
 
-              if (basePath.includes("${")) {
-                // Skips template path matching for now or warn
-                continue;
-              }
-              const pth = `spritesheets/${basePath}${variantToFilename(variant || "")}.png`;
-              const fullPath = path.resolve(pth);
-              if (!fs.existsSync(fullPath)) {
-                console.log(
-                  `    [Error] Missing asset for ${itemId}${variantName} (custom anim: ${customAnimName}, bodyType: ${bodyType}): ${pth}`,
-                );
-                missingAssetsCount++;
+              const expandedPaths = expandTemplatePaths(basePath, meta);
+              for (const expandedPath of expandedPaths) {
+                if (typeof expandedPath === "object") {
+                  console.log(
+                    `    [Warning] Unresolved template ${expandedPath.template} (${expandedPath.unresolved}) for ${itemId}${variantName}`,
+                  );
+                  continue;
+                }
+                const pth = `spritesheets/${expandedPath}${variantToFilename(variant || "")}.png`;
+                const fullPath = path.resolve(pth);
+                if (!fs.existsSync(fullPath)) {
+                  console.log(
+                    `    [Error] Missing asset for ${itemId}${variantName} (custom anim: ${customAnimName}, bodyType: ${bodyType}): ${pth}`,
+                  );
+                  missingAssetsCount++;
+                }
               }
               continue;
             }
@@ -430,16 +466,20 @@ for (const slot of SLOT_CONFIG) {
               if (!pthResult) continue;
 
               if (pthResult.template) {
-                // Verify placeholder templates if possible
+                console.log(
+                  `    [Warning] Unresolved template ${pthResult.template} (${pthResult.unresolved}) for ${itemId}${variantName}`,
+                );
                 continue;
               }
 
-              const fullPath = path.resolve(pthResult);
-              if (!fs.existsSync(fullPath)) {
-                console.log(
-                  `    [Error] Missing asset for ${itemId}${variantName} (anim: ${queryAnim}, bodyType: ${bodyType}, layer ${layerNum}): ${pthResult}`,
-                );
-                missingAssetsCount++;
+              for (const pth of pthResult) {
+                const fullPath = path.resolve(pth);
+                if (!fs.existsSync(fullPath)) {
+                  console.log(
+                    `    [Error] Missing asset for ${itemId}${variantName} (anim: ${queryAnim}, bodyType: ${bodyType}, layer ${layerNum}): ${pth}`,
+                  );
+                  missingAssetsCount++;
+                }
               }
             }
           }

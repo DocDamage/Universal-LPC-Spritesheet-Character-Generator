@@ -4,7 +4,8 @@
 // The new image can be found at the /universal folder of the asset with the variant name.
 
 import fs from "node:fs";
-import { execSync } from "node:child_process";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { debugLog } from "../utils/debug.js";
 
 const walk = function (dir) {
@@ -35,6 +36,30 @@ const masterSheetNames = [
   "shoot",
   "hurt",
 ];
+
+function imageDimensions(imagePath) {
+  const output = execFileSync(
+    "magick",
+    ["identify", "-format", "%w,%h", imagePath],
+    { encoding: "utf8" },
+  ).trim();
+  const [width, height] = output.split(",").map(Number);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    throw new Error(`Could not determine dimensions for ${imagePath}`);
+  }
+  return { width, height };
+}
+
+function transparentPlaceholder(referencePath, outputPath) {
+  const { width, height } = imageDimensions(referencePath);
+  execFileSync("magick", [
+    "-size",
+    `${width}x${height}`,
+    "xc:none",
+    outputPath,
+  ]);
+}
+
 walkDirectories.forEach(function (walkDirectory) {
   debugLog(`Start processing sheet: ${walkDirectory}`);
   const list = fs.readdirSync(walkDirectory + "/walk");
@@ -53,24 +78,41 @@ walkDirectories.forEach(function (walkDirectory) {
   fs.mkdirSync(universalFolder);
   variants.forEach(function (variant) {
     let imagesToCompose = [];
+    const existingVariantPaths = masterSheetNames
+      .map((animation) => `${walkDirectory}/${animation}/${variant}`)
+      .filter((variantPath) => fs.existsSync(variantPath));
+    const referencePath = existingVariantPaths[0];
+    if (!referencePath) {
+      debugLog("No source images found for variant, skipping", variant);
+      return;
+    }
+    const placeholderPath = path.join(
+      universalFolder,
+      `__transparent_${variant}`,
+    );
+
     masterSheetNames.forEach(function (animation) {
       const variantPath = `${walkDirectory}/${animation}/${variant}`;
       if (fs.existsSync(`${walkDirectory}/${animation}/${variant}`)) {
         imagesToCompose.push(variantPath);
       } else {
         debugLog("variantPath does NOT exist", variantPath);
-        // TODO: Load a dummy here in order to preserve right sequence
+        if (!fs.existsSync(placeholderPath)) {
+          transparentPlaceholder(referencePath, placeholderPath);
+        }
+        imagesToCompose.push(placeholderPath);
       }
     });
     debugLog("composing images", imagesToCompose);
 
     const newFile = `${universalFolder}/${variant}`;
-    const inputArguments = imagesToCompose.join(" ");
-    const command = `magick convert -background transparent -append ${inputArguments} ${newFile}`;
-    execSync(command, (err) => {
-      if (err) {
-        throw err;
-      }
-    });
+    execFileSync("magick", [
+      "convert",
+      "-background",
+      "transparent",
+      "-append",
+      ...imagesToCompose,
+      newFile,
+    ]);
   });
 });

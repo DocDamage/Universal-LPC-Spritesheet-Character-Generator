@@ -160,12 +160,20 @@ describe("ItemWithRecolors", function () {
     );
   });
 
-  // TODO (unimplemented): Same Testem/Mithril issue as ItemWithVariants — `.tree-label` click
-  // often does not toggle `expandedNodes` for non–Body Color item ids; Body Color → `body-body`
-  // still works (see test below). Intended: `state.expandedNodes.iwr_shirt === true` and
-  // `.palette-recolor-list` present after click.
   it("row label expands expandedNodes when starting collapsed", function () {
-    this.skip();
+    const meta = seedRecolorShirt();
+    const view = () => m(ItemWithRecolors, baseAttrs(meta));
+
+    m.render(host, view());
+    assert.strictEqual(host.querySelector(".palette-recolor-list"), null);
+
+    host
+      .querySelector(".tree-label")
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    m.render(host, view());
+
+    assert.isTrue(state.expandedNodes.iwr_shirt);
+    assert.notEqual(host.querySelector(".palette-recolor-list"), null);
   });
 
   it("uses body-body as expandedNodes key when the display name is Body Color", function () {

@@ -292,13 +292,123 @@ The primary implementation points are:
 - `tests/visual/editor-e2e.spec.js` for Playwright end-to-end coverage of the
   editor (open, fullscreen, zoom, draw, save, reload persistence).
 
-For editor changes, start with:
+## Export Wizard
+
+The **Download** panel includes an **Export Wizard** button that opens a compact
+modal with structured export guidance. The wizard lets you:
+
+1. **Choose a target workflow:** Generic, Godot, Phaser, RPG Maker, Preview
+   GIF/WebP, Raw PNG spritesheet, or Individual frames.
+2. **See the output summary:** file tree, format (ZIP vs PNG vs GIF/WebP),
+   estimated source frames, tween-generated frames, total frames, FPS, and
+   engine-preset manifest status.
+3. **Review warnings:** large tween exports, missing tween data, individual-frame
+   size estimates.
+4. **Confirm and export:** the wizard calls the same export handlers as the
+   direct buttons, with the same confirmation dialogues for large exports.
+
+### Export Inspector / Summary
+
+When you pick an export target, the wizard builds a structured summary:
+
+```ts
+{
+  title: "Godot tweened animation sheets",
+  format: "ZIP",
+  includesTweenFrames: true,
+  sourceFrames: 832,
+  generatedTweenFrames: 1664,
+  totalFrames: 2496,
+  fps: 12,
+  paths: [
+    "standard/walk.png",
+    "tweened/standard/walk.png",
+    "credits/TWEEN_EXPORT_README.txt",
+    "engine-presets/godot.json"
+  ],
+  warnings: []
+}
+```
+
+A file-tree preview shows the archive layout so users understand what they will
+download without needing to know internal ZIP paths.
+
+## Custom Asset Import Validation
+
+Imported weapon and tool images are validated before saving. The validation
+checks:
+
+- **Empty image:** if no opaque pixels are found, an error blocks the save.
+- **Missing transparency:** if every pixel is fully opaque, a warning is shown.
+- **Dimensions:** images smaller than 16×16 produce an error; spritesheet-size
+  images in single-image mode produce a warning.
+- **LPC standard multiples:** spritesheet-mode imports warn when dimensions are
+  not standard LPC frame-size multiples.
+- **Edge bleeding:** if content touches the top edge, the import may be cropped.
+- **Excessive size:** very large images produce an info-level note.
+
+Validation uses severity levels:
+
+- `error`: import is blocked; the Save button is disabled.
+- `warning`: a prompt is shown but the user can continue after acknowledging.
+- `info`: a helpful note without blocking.
+
+## Animation Settings Management
+
+Tween settings are now managed with global commands available from the preview
+panel:
+
+- **Reset current animation override** — remove the per-animation tween override
+  for the active animation and fall back to global defaults.
+- **Clear all overrides** — remove every per-animation tween override, so all
+  animations use the global settings.
+- **Copy settings to all animations** — duplicate the current global settings as
+  explicit per-animation overrides for every standard animation.
+- **Reset all tween settings** — restore factory defaults (Off mode, 1
+  in-between, 8 FPS, original preset) and clear all overrides.
+
+The override count is shown as a **"Overrides: N"** badge in the preview
+controls area. Animations that have active overrides are marked in the animation
+selector.
+
+## Export Progress Reporting & Cancellation
+
+Long-running exports (especially large tween ZIPs) now report progress through
+a lightweight progress tracker. Phases:
+
+1. **Preparing** — gathering selections and catalog data.
+2. **Rendering** — compositing sprite canvases for each animation/direction.
+3. **Tweening** — generating interpolated frames (when tween mode is active).
+4. **Encoding** — compressing frames to PNG byte arrays.
+5. **Archiving** — writing ZIP entries and finalizing the archive.
+
+Progress can be **cancelled** mid-flight via an `AbortController` signal. The
+cancel button is visible during export, and cancellation cleans up the running
+state so the UI remains usable. On cancellation a toast notification confirms
+the action.
+
+Progress state is accessible via:
+
+- `getExportProgress()` — returns the current `ExportProgress | null`.
+- `getExportPercent()` — returns a 0–100 percentage.
+- `cancelExport()` — aborts the current export.
+
+## Key Implementation Files
+
+- `sources/state/export-options.ts` — export target model and summary builder.
+- `sources/components/download/ExportWizard.ts` — wizard modal component.
+- `sources/components/download/Download.ts` — integrated wizard trigger and
+  tween hint.
+- `sources/state/custom-asset-validation.ts` — image validation logic.
+- `sources/state/tween-settings.ts` — global/override management, estimates,
+  README builder, engine presets, plus clear/reset/copy-all commands.
+- `sources/state/export-progress.ts` — progress tracking and cancellation.
+
+## Validation Commands
 
 ```bash
 npm run type-check
 npm run test:node
 node ./node_modules/testem/testem.js ci --launch "headless chrome"
+npm run test:visual
 ```
-
-Use `npm run test:visual` when a change affects layout, fullscreen rendering,
-or visible editor controls.

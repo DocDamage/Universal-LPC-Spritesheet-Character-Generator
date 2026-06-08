@@ -35,7 +35,11 @@ Highlights:
 - **Custom asset library management:** tag assets, filter by tag, duplicate, rename, delete, and export/import backup ZIPs.
 - **Customizable shortcuts:** rebind any shortcut from the help modal; conflicts are highlighted and preferences persist in localStorage.
 - Use `Ctrl+K` for the command palette and `Ctrl+/` for shortcut help.
-- Export PNG spritesheets, animated GIF/WebP previews, character JSON, credits, ZIP packs, tweened individual-frame PNGs, and tweened per-animation spritesheets with shared toast notifications, export estimates, engine preset manifests, and confirmation dialogs.
+- **Export wizard:** choose a target workflow (Generic, Godot, Phaser, RPG Maker, Preview GIF/WebP, Raw PNG, Individual frames) and see the output format, file paths, and frame estimate before exporting.
+- **Export preview & inspector:** a structured summary shows the file tree, estimated source/tween frame counts, per-animation overrides, and warnings about large exports.
+- **Custom asset import validation:** imported images are checked for empty content, missing transparency, dimension correctness, and edge bleeding; errors block saving, warnings show a prompt.
+- **Unified animation settings management:** global tween settings with clear-all-overrides, copy-settings-to-all-animations, and reset-defaults commands; override count badge and per-animation override markers visible in the UI.
+- **Progress reporting & cancellation:** long exports show progress phases (preparing, rendering, tweening, encoding, archiving) and can be cancelled mid-flight with an AbortController-backed signal.
 
 ### History
 

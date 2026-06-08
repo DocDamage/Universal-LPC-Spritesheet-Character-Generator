@@ -96,6 +96,43 @@ export function hasTweenOverride(animationName: string): boolean {
   return Boolean(state.previewTweenOverrides[animationName]);
 }
 
+/** Clear all per-animation tween overrides. */
+export function clearAllTweenOverrides(): void {
+  for (const key of Object.keys(state.previewTweenOverrides)) {
+    delete state.previewTweenOverrides[key];
+  }
+}
+
+/** Copy current global settings to all standard animations as overrides. */
+export function copySettingsToAllAnimations(): void {
+  const globalSettings = getGlobalTweenSettings();
+  for (const anim of ANIMATIONS) {
+    if (anim.noExport) continue;
+    state.previewTweenOverrides[anim.value] = { ...globalSettings };
+  }
+}
+
+/** Reset all tween settings to their defaults. */
+export function resetAllTweenSettings(): void {
+  clearAllTweenOverrides();
+  state.previewTweenMode = "off";
+  state.previewTweenInbetweens = 1;
+  state.previewTweenFps = 8;
+  state.previewTweenMotionStrength = 1;
+  state.previewTweenAlphaThreshold = 1;
+  state.previewTweenPreset = "original";
+}
+
+/** Return the number of animations that have per-animation overrides. */
+export function getOverrideCount(): number {
+  return Object.keys(state.previewTweenOverrides).length;
+}
+
+/** Return the list of animation names that have active overrides. */
+export function getOverriddenAnimations(): string[] {
+  return Object.keys(state.previewTweenOverrides).sort();
+}
+
 export function estimateTweenExportFrames(): TweenExportEstimate {
   const standardAnimations = ANIMATIONS.filter((anim) => !anim.noExport);
   const customAnimationNames = Array.from(addedCustomAnimations);

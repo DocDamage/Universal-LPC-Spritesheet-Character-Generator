@@ -40,6 +40,7 @@ import {
   importCustomPartsZip,
 } from "../../state/custom-parts-storage.ts";
 import { get2DContext } from "../../canvas/canvas-utils.ts";
+import { validateCustomAsset } from "../../state/custom-asset-validation.ts";
 
 type SlotSelectorAttrs = {
   slot: SlotDef;
@@ -277,12 +278,49 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
           catalog,
         );
         if (preview) {
+          // Validate the imported image
+          const srcCtx = get2DContext(preview.sourceCanvas, true);
+          const srcImageData = srcCtx.getImageData(
+            0,
+            0,
+            preview.sourceCanvas.width,
+            preview.sourceCanvas.height,
+          );
+          const validation = validateCustomAsset(srcImageData, "weapon");
+          if (!validation.passed) {
+            const errorMsg = validation.issues
+              .filter((i) => i.severity === "error")
+              .map((i) => i.message)
+              .join("; ");
+            const warningMsg = validation.issues
+              .filter((i) => i.severity !== "error")
+              .map((i) => i.message)
+              .join("; ");
+            vnode.state.importStatus = [
+              errorMsg ? `Error: ${errorMsg}` : "",
+              warningMsg ? `Warning: ${warningMsg}` : "",
+            ]
+              .filter(Boolean)
+              .join(". ");
+            if (errorMsg) {
+              m.redraw();
+              return;
+            }
+          } else {
+            const warningMsg = validation.issues
+              .filter((i) => i.severity !== "info")
+              .map((i) => i.message)
+              .join("; ");
+            vnode.state.importStatus = warningMsg
+              ? `Adjust alignment, then click Import. Note: ${warningMsg}`
+              : "Adjust alignment, then click Import";
+          }
+
           vnode.state.importPreviewFile = file;
           vnode.state.importPreviewReferenceCanvas = preview.referenceCanvas;
           vnode.state.importPreviewSourceCanvas = preview.sourceCanvas;
           vnode.state.importPreviewSourceBounds = preview.sourceBounds;
           vnode.state.importPreviewReferenceBounds = preview.referenceBounds;
-          vnode.state.importStatus = "Adjust alignment, then click Import";
         } else {
           vnode.state.importStatus = "Unable to build preview";
         }

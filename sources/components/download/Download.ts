@@ -26,11 +26,16 @@ import { debugLog } from "../../utils/debug.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import { requestConfirmation, showToast } from "../../state/notifications.ts";
 import { estimateTweenExportFrames } from "../../state/tween-settings.ts";
+import { ExportWizard } from "./ExportWizard.ts";
 
 const zipExportTitle = "Wait for layer data to finish loading";
 
 type DownloadAttrs = {
   catalog: Pick<CatalogReader, "isLayersReady">;
+};
+
+type DownloadState = {
+  showWizard: boolean;
 };
 
 function getTweenExportHint(): string | null {
@@ -56,7 +61,10 @@ async function confirmLargeTweenExport(): Promise<boolean> {
   });
 }
 
-export const Download: m.Component<DownloadAttrs> = {
+export const Download: m.Component<DownloadAttrs, DownloadState> = {
+  oninit(vnode) {
+    vnode.state.showWizard = false;
+  },
   view(vnode) {
     const zipDisabled = !vnode.attrs.catalog.isLayersReady();
     const tweenExportHint = getTweenExportHint();
@@ -150,6 +158,13 @@ export const Download: m.Component<DownloadAttrs> = {
         defaultOpen: true,
       },
       [
+        vnode.state.showWizard
+          ? m(ExportWizard, {
+              close: () => {
+                vnode.state.showWizard = false;
+              },
+            })
+          : null,
         m("div.buttons.is-flex.is-flex-wrap-wrap", { id: "download-buttons" }, [
           m(
             "button.button.is-small.is-primary",
@@ -264,6 +279,17 @@ export const Download: m.Component<DownloadAttrs> = {
             "Import from Clipboard (JSON)",
           ),
         ]),
+        m("hr"),
+        m(
+          "button.button.is-medium.is-warning",
+          {
+            onclick: () => {
+              vnode.state.showWizard = true;
+            },
+            style: { width: "100%" },
+          },
+          "Export Wizard",
+        ),
       ],
     );
   },

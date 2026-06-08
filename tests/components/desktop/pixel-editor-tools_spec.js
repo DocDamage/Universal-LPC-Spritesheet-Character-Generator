@@ -22,6 +22,12 @@ function getPixel(canvas, x, y) {
   return Array.from(get2DContext(canvas, true).getImageData(x, y, 1, 1).data);
 }
 
+function paintPixel(canvas, x, y, color) {
+  const ctx = get2DContext(canvas, true);
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, 1, 1);
+}
+
 describe("components/desktop/pixel-editor-tools.ts", () => {
   it("mirrors propagated front-view brush edits onto the right side", () => {
     const canvases = createDirectionCanvases();
@@ -46,6 +52,39 @@ describe("components/desktop/pixel-editor-tools.ts", () => {
       255, 0, 0, 255,
     ]);
     expect(getPixel(canvases.right, 10, 20)).to.deep.equal([0, 0, 0, 0]);
+  });
+
+  it("mirrors propagated front-view eraser edits onto the right side", () => {
+    const canvases = createDirectionCanvases();
+    const x = 9;
+    const y = 22;
+    const mirroredX = FRAME_SIZE - 1 - x;
+
+    for (const direction of ["front", "back", "left"]) {
+      paintPixel(canvases[direction], x, y, "#ff0000");
+    }
+    paintPixel(canvases.right, mirroredX, y, "#ff0000");
+    paintPixel(canvases.right, x, y, "#00ff00");
+
+    const toolState = {
+      activeDirection: "front",
+      tool: "eraser",
+      activeColor: "#ff0000",
+      autoPropagate: true,
+      canvases,
+      brushSize: 1,
+      mirrorX: false,
+      mirrorY: false,
+      alphaLocked: false,
+    };
+
+    applyBrush(toolState, { x, y }, "erase");
+
+    expect(getPixel(canvases.front, x, y)).to.deep.equal([0, 0, 0, 0]);
+    expect(getPixel(canvases.back, x, y)).to.deep.equal([0, 0, 0, 0]);
+    expect(getPixel(canvases.left, x, y)).to.deep.equal([0, 0, 0, 0]);
+    expect(getPixel(canvases.right, mirroredX, y)).to.deep.equal([0, 0, 0, 0]);
+    expect(getPixel(canvases.right, x, y)).to.deep.equal([0, 255, 0, 255]);
   });
 
   it("does not propagate side-view edits to other directions", () => {

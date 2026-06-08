@@ -38,7 +38,7 @@ import {
   type Point,
 } from "./pixel-editor-tools.ts";
 
-type PartEditorState = PixelEditorToolState & {
+export type PartEditorState = PixelEditorToolState & {
   loading: boolean;
   baseItemId: string | null;
   name: string;
@@ -81,7 +81,7 @@ type PartEditorState = PixelEditorToolState & {
   historyIndex: number;
 };
 
-type EditorLayer = {
+export type EditorLayer = {
   id: string;
   name: string;
   canvases: Record<Direction, HTMLCanvasElement>;
@@ -91,7 +91,7 @@ type EditorLayer = {
   alphaLocked: boolean;
 };
 
-type EditorLayerSnapshot = {
+export type EditorLayerSnapshot = {
   id: string;
   name: string;
   visible: boolean;
@@ -101,19 +101,19 @@ type EditorLayerSnapshot = {
   canvases: Record<Direction, string>;
 };
 
-type EditorSnapshot = {
+export type EditorSnapshot = {
   activeLayerId: string | null;
   nextLayerNumber: number;
   layers: EditorLayerSnapshot[];
 };
 
-type EditorContextSnapshot = EditorSnapshot & {
+export type EditorContextSnapshot = EditorSnapshot & {
   originalCanvases: Record<Direction, string>;
   history: string[];
   historyIndex: number;
 };
 
-type OnionCanvases = {
+export type OnionCanvases = {
   previous: Record<Direction, HTMLCanvasElement> | null;
   next: Record<Direction, HTMLCanvasElement> | null;
 };
@@ -124,14 +124,14 @@ type FrameOverride = {
   canvases: Record<Direction, HTMLCanvasElement>;
 };
 
-type SelectionRect = {
+export type SelectionRect = {
   x: number;
   y: number;
   width: number;
   height: number;
 };
 
-type SelectionMoveState = {
+export type SelectionMoveState = {
   startPoint: Point;
   sourceRect: SelectionRect;
   baseCanvas: HTMLCanvasElement;
@@ -140,7 +140,7 @@ type SelectionMoveState = {
   layerId: string;
 };
 
-type SelectionClipboard = {
+export type SelectionClipboard = {
   width: number;
   height: number;
   imageData: ImageData;
@@ -182,13 +182,49 @@ const DIRECTION_ROWS: Record<Direction, number> = {
   front: 2,
   right: 3,
 };
-const MIN_EDITOR_ZOOM = 2;
-const MAX_EDITOR_ZOOM = 16;
-const DEFAULT_EDITOR_ZOOM = 4;
+export type EditorWheelZoomInput = {
+  zoom: number;
+  deltaY: number;
+  pointerRatioX?: number;
+  pointerRatioY?: number;
+};
+
+export type EditorWheelZoomUpdate = {
+  nextZoom: number;
+  scrollLeftDelta: number;
+  scrollTopDelta: number;
+  changed: boolean;
+};
+
+export const MIN_EDITOR_ZOOM = 2;
+export const MAX_EDITOR_ZOOM = 16;
+export const DEFAULT_EDITOR_ZOOM = 4;
 const MAX_EXTRACTED_PALETTE_COLORS = 36;
 
-function clampEditorZoom(value: number): number {
+export function clampEditorZoom(value: number): number {
   return Math.min(MAX_EDITOR_ZOOM, Math.max(MIN_EDITOR_ZOOM, value));
+}
+
+export function getEditorWheelZoomUpdate({
+  zoom,
+  deltaY,
+  pointerRatioX = 0.5,
+  pointerRatioY = 0.5,
+}: EditorWheelZoomInput): EditorWheelZoomUpdate {
+  const oldZoom = clampEditorZoom(zoom);
+  const nextZoom = clampEditorZoom(oldZoom + (deltaY < 0 ? 1 : -1));
+  const sizeDelta = FRAME_SIZE * (nextZoom - oldZoom);
+  const boundedRatioX = Math.min(1, Math.max(0, pointerRatioX));
+  const boundedRatioY = Math.min(1, Math.max(0, pointerRatioY));
+  const scrollLeftDelta = sizeDelta * boundedRatioX;
+  const scrollTopDelta = sizeDelta * boundedRatioY;
+
+  return {
+    nextZoom,
+    scrollLeftDelta: scrollLeftDelta === 0 ? 0 : scrollLeftDelta,
+    scrollTopDelta: scrollTopDelta === 0 ? 0 : scrollTopDelta,
+    changed: nextZoom !== oldZoom,
+  };
 }
 
 function createDirectionCanvases(): Record<Direction, HTMLCanvasElement> {
@@ -226,6 +262,77 @@ function cropFrame(
     FRAME_SIZE,
   );
   return canvas;
+}
+
+export function createPartEditorStateForTests(
+  overrides: Partial<PartEditorState> = {},
+): PartEditorState {
+  const stateObj = {
+    loading: false,
+    baseItemId: null,
+    name: "",
+    activeEditorTab: "edit",
+    activeDirection: "front",
+    tool: "pen",
+    activeColor: "#ff0000",
+    autoPropagate: true,
+    isDrawing: false,
+    zoom: DEFAULT_EDITOR_ZOOM,
+    brushSize: 1,
+    mirrorX: false,
+    mirrorY: false,
+    showGrid: true,
+    isFullscreen: false,
+    shapeStart: null,
+    shapeEnd: null,
+    shapeFilled: false,
+    lastPoint: null,
+    selectionRect: null,
+    selectionDraftStart: null,
+    selectionMove: null,
+    clipboard: null,
+    keyboardHandler: null,
+    history: [],
+    historyIndex: -1,
+    canvases: createDirectionCanvases(),
+    originalCanvases: createDirectionCanvases(),
+    editLayers: [],
+    activeLayerId: null,
+    nextLayerNumber: 1,
+    globalEditorContext: null,
+    frameEditorContexts: {},
+    availableFrameAnimations: ["walk"],
+    frameMode: false,
+    frameAnimation: "walk",
+    frameIndex: 0,
+    onionSkin: false,
+    onionOpacity: 0.28,
+    onionCanvases: null,
+    replaceFromColor: "#000000",
+    replaceToColor: "#ff0000",
+    replaceTolerance: 0,
+    replaceAllDirections: false,
+    transformAllDirections: false,
+    alphaLocked: false,
+  } as PartEditorState;
+
+  Object.assign(stateObj, overrides);
+  if (!stateObj.canvases) {
+    stateObj.canvases = createDirectionCanvases();
+  }
+  if (!stateObj.originalCanvases) {
+    stateObj.originalCanvases = createDirectionCanvases();
+  }
+  if (!stateObj.editLayers || stateObj.editLayers.length === 0) {
+    resetEditLayers(stateObj);
+  }
+  recomposeCanvases(stateObj);
+  if (!stateObj.history || stateObj.history.length === 0) {
+    stateObj.history = [];
+    stateObj.historyIndex = -1;
+    saveHistory(stateObj);
+  }
+  return stateObj;
 }
 
 export const PartEditor: m.Component<{}, PartEditorState> = {
@@ -458,10 +565,6 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
     const handleCanvasWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const oldZoom = vnode.state.zoom;
-      const nextZoom = clampEditorZoom(oldZoom + (e.deltaY < 0 ? 1 : -1));
-      if (nextZoom === oldZoom) return;
-
       const stageEl = e.currentTarget as HTMLElement;
       const canvasEl = stageEl.querySelector(
         ".editor-pixel-canvas",
@@ -473,12 +576,18 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       const pointerRatioY = rect
         ? Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
         : 0.5;
-      const sizeDelta = FRAME_SIZE * (nextZoom - oldZoom);
+      const zoomUpdate = getEditorWheelZoomUpdate({
+        zoom: vnode.state.zoom,
+        deltaY: e.deltaY,
+        pointerRatioX,
+        pointerRatioY,
+      });
+      if (!zoomUpdate.changed) return;
 
-      setZoom(nextZoom);
+      setZoom(zoomUpdate.nextZoom);
       requestAnimationFrame(() => {
-        stageEl.scrollLeft += sizeDelta * pointerRatioX;
-        stageEl.scrollTop += sizeDelta * pointerRatioY;
+        stageEl.scrollLeft += zoomUpdate.scrollLeftDelta;
+        stageEl.scrollTop += zoomUpdate.scrollTopDelta;
       });
     };
 
@@ -3623,3 +3732,22 @@ function resetCanvases(stateObj: PartEditorState): void {
     stateObj.historyIndex = 0;
   }
 }
+
+export const partEditorTestApi = {
+  addEditLayer,
+  cloneDirectionCanvases,
+  composeLayersIntoCanvases,
+  createDirectionCanvases,
+  createEditorContextSnapshot,
+  deleteActiveLayer,
+  duplicateActiveLayer,
+  flattenVisibleLayers,
+  getActiveLayer,
+  getActiveLayerIndex,
+  getFrameContextKey,
+  mergeActiveLayerDown,
+  moveActiveLayer,
+  recomposeCanvases,
+  resetEditLayers,
+  switchEditorContext,
+};

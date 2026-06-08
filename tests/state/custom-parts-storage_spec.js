@@ -79,6 +79,67 @@ describe("state/custom-parts-storage.ts", () => {
     expect(Array.from(restoredPixel)).to.deep.equal([255, 0, 0, 255]);
   });
 
+  it("persists imported weapon alignment metadata and multiple animation sheets", async () => {
+    const walkSheet = document.createElement("canvas");
+    walkSheet.width = 4;
+    walkSheet.height = 4;
+    const walkCtx = get2DContext(walkSheet, true);
+    walkCtx.fillStyle = "#ff0000";
+    walkCtx.fillRect(1, 1, 1, 1);
+
+    const slashSheet = document.createElement("canvas");
+    slashSheet.width = 6;
+    slashSheet.height = 8;
+    const slashCtx = get2DContext(slashSheet, true);
+    slashCtx.fillStyle = "#0000ff";
+    slashCtx.fillRect(3, 5, 1, 1);
+
+    registerCustomPart({
+      itemId: "custom_weapon_import_persistence_test",
+      name: "Imported Hammer",
+      type_name: "weapon",
+      baseItemId: "weapon_sword_longsword",
+      drawLayerNum: 5,
+      drawZPos: 175,
+      sheets: { walk: walkSheet, slash: slashSheet },
+      image: walkSheet,
+    });
+
+    await waitForCustomPartsPersistence();
+    clearCustomParts({ persist: false });
+
+    await hydrateCustomPartsFromStorage();
+
+    const restored = customParts.custom_weapon_import_persistence_test;
+    expect(restored).to.include({
+      itemId: "custom_weapon_import_persistence_test",
+      name: "Imported Hammer",
+      type_name: "weapon",
+      baseItemId: "weapon_sword_longsword",
+      drawLayerNum: 5,
+      drawZPos: 175,
+    });
+    expect(Object.keys(restored.sheets).sort()).to.deep.equal([
+      "slash",
+      "walk",
+    ]);
+    expect(restored.image).to.equal(restored.sheets.walk);
+    expect(restored.sheets.slash.width).to.equal(6);
+    expect(restored.sheets.slash.height).to.equal(8);
+
+    const restoredWalkPixel = get2DContext(
+      restored.sheets.walk,
+      true,
+    ).getImageData(1, 1, 1, 1).data;
+    const restoredSlashPixel = get2DContext(
+      restored.sheets.slash,
+      true,
+    ).getImageData(3, 5, 1, 1).data;
+
+    expect(Array.from(restoredWalkPixel)).to.deep.equal([255, 0, 0, 255]);
+    expect(Array.from(restoredSlashPixel)).to.deep.equal([0, 0, 255, 255]);
+  });
+
   it("persists custom part rename and delete actions", async () => {
     const sheet = document.createElement("canvas");
     sheet.width = 1;

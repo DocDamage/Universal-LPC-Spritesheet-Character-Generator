@@ -1,9 +1,9 @@
 # Sprite Editor Features
 
-This guide documents the desktop editor work added on the
-`codex/editor-pro-tools` branch. It is intended for users who want to edit
-sprites directly in the app and for contributors who need a quick map of the
-new editor and import workflows.
+This guide documents the desktop editor work on the `codex/editor-pro-tools` branch.
+It is intended for users who want to edit sprites directly in the app and for
+contributors who need a quick map of the editor, import, and asset-management
+workflows.
 
 ## Getting to the Editor
 
@@ -19,16 +19,19 @@ asset remains untouched.
 ## Editing Workspace
 
 - **Canvas zoom:** use the zoom slider, `Ctrl++`, `Ctrl+-`, `Ctrl+0`, or scroll
-  the mouse wheel over the editor canvas. Editor zoom currently ranges from
-  `2x` to `16x`.
+the mouse wheel over the editor canvas. Editor zoom currently ranges from `2x` to
+`16x`.
 - **Fullscreen editor:** press `F` or use the fullscreen control. Fullscreen
-  expands the editing surface and enables the pro editor tabs.
+expands the editing surface and enables the pro editor tabs.
 - **Direction views:** edit front, back, left, and right views from the direction
-  thumbnails. When auto-propagation is enabled, front-view edits copy to the
-  rear and side views; left and right side changes are mirrored rather than
-  placed at the same x-position.
+thumbnails. When auto-propagation is enabled, front-view edits copy to the rear
+and side views; left and right side changes are mirrored rather than placed at
+the same x-position.
 - **Tooltips:** buttons, sliders, import controls, and editor tabs include hover
-  titles with their purpose and shortcut where applicable.
+titles with their purpose and shortcut where applicable.
+- **Status bar:** a bottom bar shows the current cursor pixel position `(x,y)`,
+active direction, zoom level, active layer name, brush size, and frame number
+(when in frame mode).
 
 ## Base Tools
 
@@ -49,27 +52,49 @@ Fullscreen adds the pro editor panel, split into **Edit** and **Animation** tabs
 
 The **Edit** tab adds:
 
-- Marquee selection with drag-to-move, arrow-key nudging, `Ctrl+C`,
-  `Ctrl+V`, `Ctrl+D`, `Delete` / `Backspace`, and `Esc`.
+- Marquee selection with drag-to-move, arrow-key nudging, `Ctrl+C`, `Ctrl+V`,
+  `Ctrl+D`, `Delete` / `Backspace`, and `Esc`.
+- **Selection upgrades:** copy/paste works across directions (left/right
+  selections auto-mirror when pasted). Arrow keys nudge the selection 1px at a
+  time, or 10px when `Shift` is held. Flip, rotate, and clear operate on the
+  selection only when one is active; otherwise they affect the whole layer.
 - Shape tools for line, rectangle, and ellipse drawing, with an optional fill
   toggle.
 - Flood fill.
 - Extracted palette chips from the visible sprite plus color replacement with
   tolerance and optional all-direction replacement.
 - Transform tools for flip horizontal, flip vertical, rotate clockwise, rotate
-  counterclockwise, and clear. These operate on the selection when one exists,
-  otherwise on the active layer.
+  counterclockwise, and clear.
 - Symmetry toggles for mirrored strokes across the x-axis or y-axis.
 - Pixel grid toggle and editor zoom reset.
 
 The **Animation** tab adds:
 
 - A dedicated timeline area separated from the paint tools.
+- **Live playback:** a play/pause button loops through animation frames at
+  200 ms per frame.
+- **Scrubbable timeline:** a strip of frame thumbnails lets you click any frame
+  to jump directly to it.
+- **Per-frame dirty indicators:** small dots appear on frames that carry edits,
+  so you can see at a glance which frames differ from the global base.
+- **Apply Global to Frame:** a button copies the global standing-frame edits
+  into the currently selected frame.
 - Global mode for standing-frame edits and frame mode for per-animation-frame
   edits.
 - Animation selection and frame navigation.
 - Onion-skin previews of neighboring frames with adjustable ghost opacity.
 - `,` and `.` shortcuts for previous and next animation frame.
+
+## Autosave & Recovery
+
+The editor automatically saves a draft of your work to IndexedDB every time the
+history changes (debounced to 500 ms). If you refresh the page or the browser
+crashes, the next time you open the same part you will see a recovery prompt
+asking whether to restore the draft or discard it.
+
+A **"You have unsaved changes"** warning appears if you try to close the editor
+or leave the page while edits are pending. The draft is cleared automatically
+once you click **Save as New Custom Part**.
 
 ## Layers
 
@@ -86,7 +111,7 @@ Layer actions include:
 - Delete the active layer when more than one layer exists.
 - Toggle layer visibility.
 - Rename layers inline.
-- Adjust layer opacity.
+- Adjust layer opacity (slider changes are debounced to avoid redundant redraws).
 - Toggle pixel lock with `/`.
 - Toggle alpha lock with `?` or `Shift+/`.
 
@@ -107,8 +132,10 @@ The importer can:
   reference asset supports them.
 - Preserve right-facing orientation for full-sheet imports and mirror
   single-image imports for right-facing rows.
-- Apply manual tuning after auto-alignment with x-offset, y-offset, and scale
-  controls.
+- **Better alignment UI:** a side-by-side preview shows the reference asset and
+  the imported image overlaid with hand/socket guide crosshairs. Use **Reset
+  alignment** to zero offsets, **Center on reference** to auto-center the import,
+  and **Nudge by 1px** arrow buttons for fine-tuning.
 - Mirror side-row x-offsets so left/right adjustments stay symmetrical.
 - Save imported assets as custom parts backed by IndexedDB.
 - Keep saved imports available in the slot library with select, rename, and
@@ -120,11 +147,30 @@ The reference asset controls the destination slot, z-position, animation list,
 and custom animation support. The imported part is registered as a custom asset
 and can be selected like a built-in option.
 
+## Custom Asset Library Management
+
+Saved custom parts and imports can be organized with **tags**. Type a tag when
+saving (or edit it later) and filter the library list by tag.
+
+Library actions for each asset:
+
+- **Select** — equip the asset on the character.
+- **Rename** — change the display name.
+- **Duplicate** — create a copy with a new ID and a "(Copy)" suffix.
+- **Delete** — remove the asset from IndexedDB.
+
+**Export / Import backup:** use the **Export All** button to download a ZIP
+containing a `manifest.json` plus one PNG per animation sheet. Use **Import
+Backup** to restore assets from a previously exported ZIP.
+
 ## App Shortcuts
 
-Global shortcuts work outside text inputs and editor form fields:
+Global shortcuts work outside text inputs and editor form fields. Shortcuts are
+now **customizable** — open the keyboard-shortcuts modal (`Ctrl+/`) and click
+any entry to rebind it. Conflicting shortcuts are highlighted in red. A
+**Reset to defaults** button restores the original key map.
 
-| Action                           | Shortcut           |
+| Action                           | Default shortcut   |
 | -------------------------------- | ------------------ |
 | Open command palette             | `Ctrl+K`           |
 | Show keyboard shortcuts          | `Ctrl+/`           |
@@ -145,6 +191,29 @@ Global shortcuts work outside text inputs and editor form fields:
 The command palette lists available commands and is the best place to discover
 keyboard-driven actions.
 
+## Mobile / Touch Editing
+
+The editor includes a dedicated pass for touch devices:
+
+- **Two-finger pan & pinch-zoom** on the canvas: drag two fingers to pan the
+  view, pinch to zoom in or out.
+- **Larger touch targets:** on devices without a hover pointer (`hover: none`),
+  buttons, sliders, and layer controls expand to finger-friendly sizes.
+- **Stacked mobile layout:** when a touch screen is detected (or the viewport is
+  narrower than 768 px), the editor switches to a vertical stack: the canvas
+  sits on top and the pro panel becomes a full-width accordion below it.
+
+## Performance
+
+Several optimizations keep the editor responsive even with large edit histories:
+
+- **Thumbnail caching:** the 64×64 direction thumbnails are cached in memory and
+  only invalidated when layers actually change.
+- **Debounced slider redraws:** layer opacity and other slider inputs wait 100 ms
+  after the last movement before triggering a full canvas recomposition.
+- **Batched layer recomposition:** redundant `clearRect` + `drawImage` cycles are
+  coalesced during rapid edits so the browser does less work per frame.
+
 ## Notifications
 
 The app now uses a shared in-app notification and confirmation layer instead of
@@ -158,19 +227,30 @@ and legacy app mounts.
 The primary implementation points are:
 
 - `sources/components/desktop/PartEditor.ts` for the pixel editor, fullscreen
-  pro tools, layers, animation tab, shortcuts, and editor save flow.
+  pro tools, layers, animation tab, shortcuts, autosave/recovery, status bar,
+  selection upgrades, and editor save flow.
 - `sources/components/desktop/pixel-editor-tools.ts` for brush, fill, line,
   shape, selection, and canvas editing helpers.
+- `sources/state/editor-autosave.ts` for IndexedDB draft persistence and
+  recovery prompts.
 - `sources/components/desktop/custom-weapon-import.ts` for reference-based
   weapon/tool alignment.
-- `sources/components/desktop/SlotSelector.ts` for import controls and saved
-  custom asset library UI.
+- `sources/components/desktop/SlotSelector.ts` for import controls, alignment
+  preview, and saved custom asset library UI (tags, export/import ZIP,
+  duplicate).
 - `sources/state/catalog.ts` and `sources/state/custom-parts-storage.ts` for
-  custom part registration and IndexedDB persistence.
+  custom part registration, IndexedDB persistence, tags, and ZIP backup
+  export/import.
 - `sources/state/commands.ts` for the global command registry, command palette
   shortcuts, and editor command titles.
+- `sources/state/shortcut-preferences.ts` for user-customizable shortcut
+  overrides, conflict detection, and localStorage persistence.
+- `sources/components/desktop/ShortcutHelpModal.ts` for the editable shortcut
+  map UI.
 - `sources/state/notifications.ts` and `sources/components/notifications/*`
   for toasts and confirmations.
+- `tests/visual/editor-e2e.spec.js` for Playwright end-to-end coverage of the
+  editor (open, fullscreen, zoom, draw, save, reload persistence).
 
 For editor changes, start with:
 

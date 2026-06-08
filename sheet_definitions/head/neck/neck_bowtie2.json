@@ -58,12 +58,8 @@
     {
       "file": "neck/tie/bowtie2",
       "notes": "",
-      "authors": [
-        "ElizaWy"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["ElizaWy"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing/Feminine%2C%20Thin/Accessories",
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing/Masculine%2C%20Thin/Accessories/Neckwear%2001%20-%20Bowtie",

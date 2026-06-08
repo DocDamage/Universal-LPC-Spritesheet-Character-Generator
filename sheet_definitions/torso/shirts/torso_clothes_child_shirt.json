@@ -16,24 +16,14 @@
     "red",
     "white"
   ],
-  "animations": [
-    "walk"
-  ],
+  "animations": ["walk"],
   "credits": [
     {
       "file": "torso/clothes/shirt/child",
       "notes": "",
-      "authors": [
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-clothes-for-children"
-      ]
+      "authors": ["Nila122"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-clothes-for-children"]
     }
   ],
   "type_name": "clothes"

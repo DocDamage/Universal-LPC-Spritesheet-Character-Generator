@@ -116,7 +116,48 @@ async function openEditorForSlot(page, label) {
 
   const partEditor = page.locator(".part-editor");
   await expect(partEditor).toBeVisible();
+  await expect(
+    page.locator(".part-editor-body input[type=text]").first(),
+  ).toBeVisible();
   return { slot, partEditor };
+}
+
+async function drawOnEditorCanvas(page, offset = 8) {
+  await page.evaluate((moveOffset) => {
+    const canvas = document.querySelector(".editor-pixel-canvas");
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    canvas.dispatchEvent(
+      new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+        clientX: cx,
+        clientY: cy,
+        buttons: 1,
+      }),
+    );
+    canvas.dispatchEvent(
+      new MouseEvent("mousemove", {
+        bubbles: true,
+        cancelable: true,
+        clientX: cx + moveOffset,
+        clientY: cy + moveOffset,
+        buttons: 1,
+      }),
+    );
+    canvas.dispatchEvent(
+      new MouseEvent("mouseup", {
+        bubbles: true,
+        cancelable: true,
+        clientX: cx + moveOffset,
+        clientY: cy + moveOffset,
+        buttons: 1,
+      }),
+    );
+  }, offset);
 }
 
 /**
@@ -286,15 +327,7 @@ test.describe("Part Editor E2E", () => {
     const { slot } = await openEditorForSlot(page, "Hair");
 
     // Draw something first
-    const canvas = page.locator(".editor-pixel-canvas");
-    const box = await canvas.boundingBox();
-    expect(box).not.toBeNull();
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
-    await page.mouse.move(centerX, centerY);
-    await page.mouse.down();
-    await page.mouse.move(centerX + 4, centerY + 4);
-    await page.mouse.up();
+    await drawOnEditorCanvas(page, 4);
     await page.waitForTimeout(200);
 
     // Fill in a custom name
@@ -358,40 +391,7 @@ test.describe("Part Editor E2E", () => {
     await openEditorForSlot(page, "Hair");
 
     // Draw something
-    const canvas = page.locator(".editor-pixel-canvas");
-    const box = await canvas.boundingBox();
-    expect(box).not.toBeNull();
-    await page.evaluate(() => {
-      const c = document.querySelector(".editor-pixel-canvas");
-      if (!c) return;
-      const rect = c.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      c.dispatchEvent(
-        new MouseEvent("mousedown", {
-          bubbles: true,
-          clientX: cx,
-          clientY: cy,
-          buttons: 1,
-        }),
-      );
-      c.dispatchEvent(
-        new MouseEvent("mousemove", {
-          bubbles: true,
-          clientX: cx + 8,
-          clientY: cy + 8,
-          buttons: 1,
-        }),
-      );
-      c.dispatchEvent(
-        new MouseEvent("mouseup", {
-          bubbles: true,
-          clientX: cx + 8,
-          clientY: cy + 8,
-          buttons: 1,
-        }),
-      );
-    });
+    await drawOnEditorCanvas(page);
     await page.waitForTimeout(300);
 
     // Name and save

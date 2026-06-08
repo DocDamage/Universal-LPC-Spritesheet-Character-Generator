@@ -43,16 +43,9 @@
     {
       "file": "eyes/cyclops",
       "notes": "original by kirts, repositioned by JaidynReiman along with shading and recolors",
-      "authors": [
-        "kirts",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/cyclops-and-his-eye"
-      ]
+      "authors": ["kirts", "JaidynReiman"],
+      "licenses": ["CC0"],
+      "urls": ["https://opengameart.org/content/cyclops-and-his-eye"]
     }
   ],
   "type_name": "eyes"

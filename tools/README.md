@@ -1,17 +1,14 @@
-LPC Sprite Character Tools
-=============================================
+# LPC Sprite Character Tools
 
 These assets are various tools to help generate sheets.
 
 It is recommended to [use these in conjunction with lpctools.](LPCTOOLS.md)
-
 
 ### Masks
 
 Masks are intended to aid in adjusting the positions of assets and cutouts. When mapping assets with a mask, it will handle cutouts automatically if you use lpctools.
 
 The "references" sheet under Masks is for setting offsets in relation to the head. This is useful for positioning static assets on the head, such as heads themselves, appendages, facial assets, hats, hair, etc.
-
 
 ### Palettes
 
@@ -22,6 +19,7 @@ The base "palettes" directory contains the standard palettes used by this genera
 ### Layouts
 
 Layouts are for use in lpctools, like so:
+
 ```
 lpctools arrange distribute --layout layout/universal-expanded.json --input /path/to/split/assets --output hat/helmet/bascinet/adult.png --offsets tools/masks/reference_points.png --mask tools/masks/masks_male_head.png
 lpctools arrange separate --layout layout/universal-expanded.json --input hat/helmet/bascinet/adult.png --output characters/updates/hat/helmet/bascinet/_separated/
@@ -30,8 +28,6 @@ lpctools arrange separate --layout layout/universal-expanded.json --input hat/he
 Arrange a set of assets to all frames with the correct layout. `universal-expanded.json` is the new set that includes idle, run, jump, climb, sit, emotes, backslash, and halfslash. In the future I'd also like to add grab/carry/lift. You can also separate the assets into individual animations using the "separate" comman.
 
 These are also equivalent to the built-in lpctools layout's "universal" and "universal-expanded".
-
-
 
 ### Cutouts
 

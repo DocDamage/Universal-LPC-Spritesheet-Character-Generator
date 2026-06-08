@@ -1,5 +1,4 @@
-LPC Sprite Character Palettes
-=============================================
+# LPC Sprite Character Palettes
 
 I just collected all the palette variants I found where there's some consistency among the variations. Among the palettes that exist here are:
 
@@ -12,6 +11,7 @@ I just collected all the palette variants I found where there's some consistency
 With multi-colored assets, I think its more ideal to have a separate layer to be able to freely mix and match colors. This isn't necessary but it adds more flexibility.
 
 I also have some combined variants:
+
 1. Fur Colors (Body "Fur" Colors + "Hair" Colors, there's some crossover here so maybe these could be trimmed back)
 2. Cloth + Metal Colors (so you can have both cloth and metal shoes/boots for example if you want)
 

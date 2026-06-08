@@ -26,15 +26,8 @@
     "pregnant": "tools/smash/foreground/",
     "teen": "tools/smash/foreground/"
   },
-  "variants": [
-    "axe",
-    "hammer",
-    "pickaxe"
-  ],
-  "animations": [
-    "walk",
-    "slash_128"
-  ],
+  "variants": ["axe", "hammer", "pickaxe"],
+  "animations": ["walk", "slash_128"],
   "credits": [
     {
       "file": "tools/smash",
@@ -46,12 +39,8 @@
         "Johannes Sjölund (wulax)",
         "and Inboxninja"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-hand-tools"
-      ]
+      "licenses": ["CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-hand-tools"]
     }
   ],
   "type_name": "weapon"

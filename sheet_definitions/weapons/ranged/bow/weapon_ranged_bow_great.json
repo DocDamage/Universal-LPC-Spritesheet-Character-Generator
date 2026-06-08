@@ -50,12 +50,7 @@
     "silver",
     "steel"
   ],
-  "animations": [
-    "walk",
-    "shoot",
-    "hurt",
-    "walk_128"
-  ],
+  "animations": ["walk", "shoot", "hurt", "walk_128"],
   "credits": [
     {
       "file": "weapon/ranged/bow/great",
@@ -66,9 +61,7 @@
         "Johannes Sjölund (wulax)",
         "Pierre Vigier (pvigier)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-weapons-two-bows-a-spear-and-a-trident",
         "https://opengameart.org/content/lpc-walk-animations-for-bows"

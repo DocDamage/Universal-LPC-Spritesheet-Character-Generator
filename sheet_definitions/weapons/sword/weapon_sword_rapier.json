@@ -30,26 +30,14 @@
     "female": "weapon/sword/rapier/attack_slash/",
     "pregnant": "weapon/sword/rapier/attack_slash/"
   },
-  "variants": [
-    "rapier"
-  ],
-  "animations": [
-    "walk",
-    "hurt",
-    "slash_oversize"
-  ],
+  "variants": ["rapier"],
+  "animations": ["walk", "hurt", "slash_oversize"],
   "credits": [
     {
       "file": "weapon/sword/rapier",
       "notes": "",
-      "authors": [
-        "Johannes Sjölund (wulax)",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "authors": ["Johannes Sjölund (wulax)", "bluecarrot16"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-extended-weapon-animations"

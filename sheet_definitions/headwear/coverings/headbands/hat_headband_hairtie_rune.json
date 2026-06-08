@@ -32,14 +32,8 @@
     {
       "file": "hat/headband/hairtie",
       "notes": "",
-      "authors": [
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman"],
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-relm-hair-xlong-ponytail",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
@@ -49,10 +43,7 @@
   "recolors": {
     "material": "cloth",
     "base": "red",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "hairtie_rune"
 }

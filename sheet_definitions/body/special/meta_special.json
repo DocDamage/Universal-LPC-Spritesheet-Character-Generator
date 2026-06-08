@@ -1,4 +1,12 @@
 {
-    "priority": 30,
-    "animations": ["spellcast", "thrust", "walk", "slash", "shoot", "hurt", "watering"]
+  "priority": 30,
+  "animations": [
+    "spellcast",
+    "thrust",
+    "walk",
+    "slash",
+    "shoot",
+    "hurt",
+    "watering"
+  ]
 }

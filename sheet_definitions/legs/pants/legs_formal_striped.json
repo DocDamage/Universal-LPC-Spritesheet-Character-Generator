@@ -38,11 +38,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
@@ -61,11 +57,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
@@ -78,11 +70,15 @@
   "recolors": {
     "material": "cloth",
     "base": null,
-    "source": ["#101820", "#182611", "#1b2f15", "#203416", "#314f22", "#446d29"],
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "source": [
+      "#101820",
+      "#182611",
+      "#1b2f15",
+      "#203416",
+      "#314f22",
+      "#446d29"
+    ],
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "legs"
 }

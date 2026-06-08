@@ -1,9 +1,6 @@
 {
   "name": "Orc child",
-  "tags": [
-    "orc",
-    "child"
-  ],
+  "tags": ["orc", "child"],
   "layer_1": {
     "zPos": 100,
     "child": "head/heads/orc/child/"
@@ -32,16 +29,8 @@
     {
       "file": "head/heads/orc/child",
       "notes": "child base by kheftel, orc version created by Nila122, head extracted by bluecarrot16",
-      "authors": [
-        "Nila122",
-        "kheftel",
-        "Stephen Challener (Redshrike)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Nila122", "kheftel", "Stephen Challener (Redshrike)"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-child-standing-template",
@@ -52,11 +41,7 @@
   "recolors": {
     "material": "body",
     "base": "ulpc.green",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

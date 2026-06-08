@@ -31,13 +31,8 @@
     {
       "file": "hair/bob",
       "notes": "Original by bluecarrot16. Edited and animated by ElizaWy.",
-      "authors": [
-        "ElizaWy",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC0"
-      ],
+      "authors": ["ElizaWy", "bluecarrot16"],
+      "licenses": ["CC0"],
       "urls": [
         "https://opengameart.org/content/lpc-hair",
         "https://github.com/ElizaWy/LPC/blob/main/Characters/Hair",
@@ -45,13 +40,9 @@
       ]
     }
   ],
-    "recolors": {
+  "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hair"
 }

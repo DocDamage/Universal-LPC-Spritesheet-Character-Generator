@@ -1,9 +1,11 @@
 # LPC Character Generator — Editor Enhancement Plan
 
 ## Overview
+
 Implement 10 major editor enhancements for the Universal LPC Spritesheet Character Generator.
 
 ## Current State
+
 - Branch: `codex/editor-pro-tools`
 - Baseline commit: `3228f6373d` (established agent baseline)
 - Stack: Mithril.js + TypeScript + Vite + Bulma CSS + Playwright + Testem
@@ -20,9 +22,11 @@ Implement 10 major editor enhancements for the Universal LPC Spritesheet Charact
 ## Task Groups
 
 ### Worker 1: Editor Core (PartEditor.ts + pixel-editor-tools.ts + new modules)
+
 **Tasks:** 1 (Autosave), 2 (Status bar), 5 (Selection upgrades), 6 (Animation polish), 8 (Mobile/touch), 9 (Performance polish)
 
 **Deliverables:**
+
 - **Autosave & Recovery:**
   - New module `sources/state/editor-autosave.ts` with IndexedDB storage for draft edits
   - Auto-save on every history change (debounced 500ms)
@@ -52,9 +56,11 @@ Implement 10 major editor enhancements for the Universal LPC Spritesheet Charact
   - Avoid unnecessary redraws while moving sliders (debounce slider oninput, only redraw on onchange or after 100ms idle)
 
 ### Worker 2: Import, Shortcuts & Asset Library
+
 **Tasks:** 3 (Import alignment UI), 4 (Editable shortcuts), 7 (Custom asset library)
 
 **Deliverables:**
+
 - **Better Import Alignment UI:**
   - Overlay imported weapon/tool against reference asset in import panel (side-by-side canvas preview)
   - Hand/socket guide markers (draw crosshairs at estimated grip point)
@@ -74,9 +80,11 @@ Implement 10 major editor enhancements for the Universal LPC Spritesheet Charact
   - Duplicate custom assets ("Duplicate" button next to rename/delete)
 
 ### Worker 3: E2E Tests
+
 **Task:** 10 (More E2E coverage)
 
 **Deliverables:**
+
 - Playwright tests in `tests/visual/editor-e2e.spec.js`:
   - Open editor from slot selector
   - Toggle fullscreen mode
@@ -89,27 +97,32 @@ Implement 10 major editor enhancements for the Universal LPC Spritesheet Charact
 ## Shared Contracts
 
 ### PartEditor.ts Integration Points
+
 - Worker 1 owns all PartEditor.ts changes. Do not modify PartEditor.ts in other workers.
 - New modules should export clean APIs:
   - `editor-autosave.ts`: `saveDraft(state)`, `loadDraft(itemId): Promise<Partial<PartEditorState>|null>`, `clearDraft(itemId)`, `hasUnsavedDraft(itemId)`
   - `shortcut-preferences.ts`: `loadShortcutPrefs()`, `saveShortcutPrefs(prefs)`, `getShortcut(commandId)`, `resetShortcuts()`
 
 ### CSS Conventions
+
 - Use existing BEM-style classes: `.part-editor-*`, `.desktop-slot-*`
 - Mobile styles: add `.part-editor-mobile` class when touch detected, use `@media (hover: none)`
 - Status bar: `.part-editor-status-bar`
 
 ### Test Conventions
+
 - Browser tests: `tests/components/desktop/PartEditor_spec.js` for unit-style
 - Node tests: `tests/node/state/editor-autosave_spec.js` for autosave logic
 - Playwright: `tests/visual/editor-e2e.spec.js` for E2E
 
 ## Merge Order
+
 1. Worker 1 (Editor Core) — largest, establishes new APIs
 2. Worker 2 (Import/Shortcuts/Assets) — independent, touches different files
 3. Worker 3 (Tests) — independent
 
 ## Validation Commands
+
 ```bash
 npm run type-check
 npm run test:node
@@ -118,6 +131,7 @@ npm run test:visual
 ```
 
 ## Worktrees
+
 - Main: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator`
 - Worker 1: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator/../.worktrees/editor-core`
 - Worker 2: `D:/LPC character generator/LPC character generator/Universal-LPC-Spritesheet-Character-Generator/../.worktrees/import-shortcuts-assets`

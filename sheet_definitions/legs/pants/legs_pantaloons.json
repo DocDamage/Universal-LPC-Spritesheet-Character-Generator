@@ -37,12 +37,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 2.0",
-        "GPL 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "GPL 2.0", "GPL 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-pirates",
         "https://opengameart.org/content/more-lpc-clothes-and-hair",
@@ -58,12 +53,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-pirates",
         "https://opengameart.org/content/more-lpc-clothes-and-hair",
@@ -78,22 +68,13 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/more-lpc-clothes-and-hair"
-      ]
+      "licenses": ["CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/more-lpc-clothes-and-hair"]
     }
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "legs"
 }

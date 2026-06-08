@@ -31,13 +31,8 @@
     {
       "file": "hat/helmet/xeon",
       "notes": "original version by Stephen Challener (Redshrike), color reduction by JaidynReiman",
-      "authors": [
-        "Stephen Challener (Redshrike)",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["Stephen Challener (Redshrike)", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/four-characters-my-lpc-entries",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
@@ -46,11 +41,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hat"
 }

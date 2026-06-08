@@ -40,10 +40,7 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-pirates"

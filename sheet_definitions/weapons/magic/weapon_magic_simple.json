@@ -16,29 +16,15 @@
     "teen": "weapon/magic/simple/background/",
     "pregnant": "weapon/magic/simple/background/"
   },
-  "variants": [
-    "simple"
-  ],
-  "animations": [
-    "spellcast",
-    "thrust",
-    "walk",
-    "hurt"
-  ],
+  "variants": ["simple"],
+  "animations": ["spellcast", "thrust", "walk", "hurt"],
   "credits": [
     {
       "file": "weapon/magic/simple",
       "notes": "original by DrJamgo, hands switched and split into to layers by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "Dr. Jamgo"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-simple-staff"
-      ]
+      "authors": ["bluecarrot16", "Dr. Jamgo"],
+      "licenses": ["CC0"],
+      "urls": ["https://opengameart.org/content/lpc-simple-staff"]
     }
   ],
   "type_name": "weapon"

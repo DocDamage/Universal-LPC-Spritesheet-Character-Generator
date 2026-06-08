@@ -1,9 +1,6 @@
 {
   "name": "Human Male Plump",
-  "tags": [
-    "human",
-    "adult"
-  ],
+  "tags": ["human", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/human/male_plump/",
@@ -36,14 +33,8 @@
     {
       "file": "head/heads/human/male_plump",
       "notes": "original head by Redshrike, plump version by ??",
-      "authors": [
-        "Stephen Challener (Redshrike)",
-        "??"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Stephen Challener (Redshrike)", "??"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-folk"
@@ -53,20 +44,13 @@
   "recolors": {
     "color_1": {
       "material": "body",
-      "palettes": [
-        "ulpc",
-        "lpcr",
-        "all.lpcr"
-      ]
+      "palettes": ["ulpc", "lpcr", "all.lpcr"]
     },
     "color_2": {
       "type_name": "eyes",
       "label": "Eye Color",
       "material": "eye",
-      "palettes": [
-        "ulpc",
-        "lpcr"
-      ]
+      "palettes": ["ulpc", "lpcr"]
     }
   },
   "type_name": "head"

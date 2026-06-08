@@ -21,19 +21,20 @@ The palette recolor system allows sprite color variants to be generated on-the-f
 2. **A palette JSON file** defining color mappings
 
 The system automatically:
+
 - Detects if an item should use palette-based recoloring from its sheet definition
 - Lazy-loads the appropriate palette file on first use
 - Recolors sprites in real-time using GPU acceleration (with CPU fallback)
 
 ## Benefits
 
-| Benefit | Description |
-|---------|-------------|
-| 🚀 **Performance** | GPU-accelerated: 90-120ms vs 190-230ms per preview (CPU) |
-| 🎨 **Consistency** | Single source of truth for all color variants |
-| 🔧 **Maintainability** | Add new colors by editing JSON, not creating image files |
-| 💾 **Storage** | Fewer files to maintain (1 source + palette vs N variant files) |
-| 🔄 **Flexibility** | Palettes support 1-32 colors (not limited to 8) |
+| Benefit                | Description                                                     |
+| ---------------------- | --------------------------------------------------------------- |
+| 🚀 **Performance**     | GPU-accelerated: 90-120ms vs 190-230ms per preview (CPU)        |
+| 🎨 **Consistency**     | Single source of truth for all color variants                   |
+| 🔧 **Maintainability** | Add new colors by editing JSON, not creating image files        |
+| 💾 **Storage**         | Fewer files to maintain (1 source + palette vs N variant files) |
+| 🔄 **Flexibility**     | Palettes support 1-32 colors (not limited to 8)                 |
 
 ## Understanding the System
 
@@ -61,7 +62,7 @@ Both WebGL and CPU implementations use **tolerance-based matching**:
 
 ```javascript
 // A pixel matches a palette color if RGB values are within tolerance
-tolerance = 1  // ±1 per channel (R, G, B)
+tolerance = 1; // ±1 per channel (R, G, B)
 
 // Example: Does pixel #CC8665 match palette color #CC8665?
 // R: |204 - 204| = 0 ≤ 1 ✓
@@ -132,12 +133,14 @@ Palette files are JSON objects where each key is a variant name and each value i
 ### Palette Requirements
 
 ✅ **Required:**
+
 - All variants must have the **same number of colors**
 - Must include a `"source"` variant (the base colors to map from)
 - Color count must be between **1-32** (WebGL texture limit)
 - Colors must be valid hex format (`#RRGGBB`)
 
 ✅ **Flexible:**
+
 - Color count can be any number from 1-32 (not limited to 8)
 - Different palette types can have different color counts
   - Example: Body palette has 8 colors, cloth palette could have 12
@@ -148,15 +151,15 @@ Colors in the array typically represent a **shadow → highlight** progression:
 
 ```javascript
 [
-  "#271920",  // Darkest shadow
-  "#271920",  // Deep shadow
-  "#99423c",  // Shadow
-  "#cc8665",  // Mid-tone
-  "#E4A47C",  // Light mid-tone
-  "#F9D5BA",  // Highlight
-  "#FAECE7",  // Bright highlight
-  "#f8f3eb"   // Lightest highlight
-]
+  "#271920", // Darkest shadow
+  "#271920", // Deep shadow
+  "#99423c", // Shadow
+  "#cc8665", // Mid-tone
+  "#E4A47C", // Light mid-tone
+  "#F9D5BA", // Highlight
+  "#FAECE7", // Bright highlight
+  "#f8f3eb", // Lightest highlight
+];
 ```
 
 This structure matches how LPC sprites are typically shaded, with darker colors for shadows and lighter colors for highlights.
@@ -194,10 +197,10 @@ Edit the item's JSON file in `sheet_definitions/` and add the `recolors` field:
 
 ### Recolors Field Reference
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `base` | string | Source variant name to load (e.g., "light", "orange") |
-| `palette` | string | Palette name - must match a key in `PALETTE_FILES` |
+| Field     | Type   | Description                                           |
+| --------- | ------ | ----------------------------------------------------- |
+| `base`    | string | Source variant name to load (e.g., "light", "orange") |
+| `palette` | string | Palette name - must match a key in `PALETTE_FILES`    |
 
 ### Available Palette Names
 
@@ -232,10 +235,7 @@ Here's a complete sheet definition using palette recoloring:
     "male": "body/bodies/male/",
     "female": "body/bodies/female/"
   },
-  "variants": [
-    "light", "amber", "olive", "taupe",
-    "bronze", "brown", "black"
-  ],
+  "variants": ["light", "amber", "olive", "taupe", "bronze", "brown", "black"],
   "animations": ["walk", "idle", "jump", "run"],
   "path": ["body", "body"],
   "recolors": {
@@ -246,6 +246,7 @@ Here's a complete sheet definition using palette recoloring:
 ```
 
 With this configuration:
+
 - Only `spritesheets/body/bodies/male/walk/light.png` needs to exist (no other color variants per animation)
 - The palette system generates "amber", "olive", etc. at runtime
 - All 7 color variants work without needing 7 separate PNG files
@@ -271,14 +272,16 @@ cat tools/palettes/ulpc-hair-palettes.json | grep -E '^\s+"[^"]+":' | head -20
 The generator exposes several debugging functions for testing palette recoloring:
 
 #### Check Configuration
+
 ```javascript
-getPaletteRecolorConfig()
+getPaletteRecolorConfig();
 // Returns: { forceCPU: false, useWebGL: true, activeMode: "webgl" }
 ```
 
 #### View Statistics
+
 ```javascript
-getPaletteRecolorStats()
+getPaletteRecolorStats();
 // Shows breakdown of operations:
 // 📊 Palette Recolor Statistics:
 //   WebGL (GPU): 450 (95.7%)
@@ -288,15 +291,17 @@ getPaletteRecolorStats()
 ```
 
 #### Force CPU Mode (Testing)
+
 ```javascript
-setPaletteRecolorMode("cpu")
+setPaletteRecolorMode("cpu");
 // Switch back to GPU:
-setPaletteRecolorMode("webgl")
+setPaletteRecolorMode("webgl");
 ```
 
 #### Reset Statistics
+
 ```javascript
-resetPaletteRecolorStats()
+resetPaletteRecolorStats();
 ```
 
 ### Visual Verification Steps
@@ -319,26 +324,27 @@ Compare WebGL vs CPU performance:
 
 ```javascript
 // 1. Reset stats
-resetPaletteRecolorStats()
+resetPaletteRecolorStats();
 
 // 2. Generate some previews with WebGL (default)
 // (interact with the generator, change colors)
 
 // 3. Check timing
-getPaletteRecolorStats()  // Note WebGL operations
+getPaletteRecolorStats(); // Note WebGL operations
 
 // 4. Force CPU mode
-setPaletteRecolorMode("cpu")
-resetPaletteRecolorStats()
+setPaletteRecolorMode("cpu");
+resetPaletteRecolorStats();
 
 // 5. Generate same previews with CPU
 // (repeat same interactions)
 
 // 6. Compare
-getPaletteRecolorStats()  // Compare operation counts and feel the difference
+getPaletteRecolorStats(); // Compare operation counts and feel the difference
 ```
 
 Expected performance:
+
 - **WebGL**: 90-120ms per full spritesheet preview
 - **CPU**: 190-230ms per full spritesheet preview
 
@@ -357,6 +363,7 @@ head -20 tools/palettes/ulpc-hair-palettes.json
 ```
 
 Expected output:
+
 ```json
 {
   "orange": ["#260D14", "#6A1108", ...],
@@ -373,8 +380,8 @@ Check if "hair" is already in `PALETTE_FILES` in `sources/canvas/palette-recolor
 
 ```javascript
 const PALETTE_FILES = {
-  'body': 'tools/palettes/ulpc-body-palettes.json',
-  'hair': 'tools/palettes/ulpc-hair-palettes.json',  // ✓ Already there!
+  body: "tools/palettes/ulpc-body-palettes.json",
+  hair: "tools/palettes/ulpc-hair-palettes.json", // ✓ Already there!
   // ...
 };
 ```
@@ -436,12 +443,14 @@ ls spritesheets/hair/afro/adult/orange.png
 ### Before/After Comparison
 
 **Before:**
+
 - 27 PNG files per hair style
 - Manual palette generation using lpctools
 - Larger repository size
 - Hard to add new colors
 
 **After:**
+
 - 1 PNG file per hair style (source variant)
 - Real-time GPU recoloring
 - ~60% faster rendering
@@ -455,6 +464,7 @@ ls spritesheets/hair/afro/adult/orange.png
 **Symptom**: Console shows no "Loaded X palette" message when selecting a variant
 
 **Solutions**:
+
 - **Note**: Palettes load lazily - you'll only see the message when using a non-base variant
 - Check that `PALETTE_FILES` in `palette-recolor.js` has the palette name mapped
 - Verify JSON file is valid (use JSON validator)
@@ -467,6 +477,7 @@ ls spritesheets/hair/afro/adult/orange.png
 **Symptom**: Recolored sprites have incorrect colors
 
 **Solutions**:
+
 - Verify source variant matches `sourceVariant` in config
 - Check that source image uses exact palette colors
 - Verify tolerance matching (some colors may be slightly off due to anti-aliasing)
@@ -477,6 +488,7 @@ ls spritesheets/hair/afro/adult/orange.png
 **Symptom**: Generator feels slow or laggy
 
 **Solutions**:
+
 - Check if WebGL is active: `getPaletteRecolorConfig()`
 - View stats to see GPU usage: `getPaletteRecolorStats()`
 - Check for fallbacks (indicates WebGL errors)
@@ -488,6 +500,7 @@ ls spritesheets/hair/afro/adult/orange.png
 **Symptom**: Some color variants don't appear in generator
 
 **Solutions**:
+
 - Check sheet definition `variants` array matches palette file keys
 - Verify palette file has all expected variants
 - Check for typos in variant names (case-sensitive)
@@ -498,6 +511,7 @@ ls spritesheets/hair/afro/adult/orange.png
 **Symptom**: Error about too many WebGL contexts
 
 **Solutions**:
+
 - The system uses a shared WebGL context to avoid this
 - If error persists, force CPU mode: `setPaletteRecolorMode("cpu")`
 - Close other browser tabs using WebGL
@@ -508,6 +522,7 @@ ls spritesheets/hair/afro/adult/orange.png
 **Symptom**: Palette-generated colors differ from original PNG files
 
 **Solutions**:
+
 - Source variant may have been modified
 - Palette file may be outdated
 - Regenerate palette using lpctools

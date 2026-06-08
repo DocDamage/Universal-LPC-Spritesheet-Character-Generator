@@ -40,10 +40,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-faun-and-minotaur",
@@ -62,10 +59,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-faun-and-minotaur",
@@ -76,11 +70,15 @@
   "recolors": {
     "material": "cloth",
     "base": null,
-    "source": ["#1d131e", "#3a200e", "#4B2B13", "#663a1a", "#975f43", "#996B4A"],
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "source": [
+      "#1d131e",
+      "#3a200e",
+      "#4B2B13",
+      "#663a1a",
+      "#975f43",
+      "#996B4A"
+    ],
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "legs"
 }

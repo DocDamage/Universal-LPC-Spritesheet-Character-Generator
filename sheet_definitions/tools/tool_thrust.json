@@ -16,15 +16,8 @@
     "pregnant": "tools/thrust/foreground/",
     "teen": "tools/thrust/foreground/"
   },
-  "variants": [
-    "hoe",
-    "shovel",
-    "watering"
-  ],
-  "animations": [
-    "walk",
-    "hurt"
-  ],
+  "variants": ["hoe", "shovel", "watering"],
+  "animations": ["walk", "hurt"],
   "credits": [
     {
       "file": "tools/thrust",
@@ -36,12 +29,8 @@
         "Johannes Sjölund (wulax)",
         "and Inboxninja"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-hand-tools"
-      ]
+      "licenses": ["CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-hand-tools"]
     }
   ],
   "type_name": "weapon"

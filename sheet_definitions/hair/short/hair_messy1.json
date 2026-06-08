@@ -31,27 +31,17 @@
     {
       "file": "hair/messy1",
       "notes": "",
-      "authors": [
-        "JaidynReiman",
-        "Manuel Riecke (MrBeast)"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman", "Manuel Riecke (MrBeast)"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-expanded-hair"
       ]
     }
   ],
-    "recolors": {
+  "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hair"
 }

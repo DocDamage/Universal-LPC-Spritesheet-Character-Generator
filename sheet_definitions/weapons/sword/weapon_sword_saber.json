@@ -30,14 +30,8 @@
     "female": "weapon/sword/saber/attack_slash/",
     "pregnant": "weapon/sword/saber/attack_slash/"
   },
-  "variants": [
-    "saber"
-  ],
-  "animations": [
-    "walk",
-    "hurt",
-    "slash_oversize"
-  ],
+  "variants": ["saber"],
+  "animations": ["walk", "hurt", "slash_oversize"],
   "credits": [
     {
       "file": "weapon/sword/saber",
@@ -48,9 +42,7 @@
         "gr3yh47",
         "bluecarrot16"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-extended-weapon-animations"

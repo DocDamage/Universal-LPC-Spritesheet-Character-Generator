@@ -1,3 +1,9 @@
 node_modules
 package-lock.json
 dist
+
+# Intentionally invalid JSON fixtures used by validation tests.
+tests/node/scripts/build2-invalid/palettes/bad_lpcr.json
+tests/node/scripts/build3-errors/meta-errors/body/meta_body_broken.json
+tests/node/scripts/build3-errors/sheets/body/bad_json.json
+tests/node/scripts/build4-expansive/sheets/body/errors/bad_json_expansive.json

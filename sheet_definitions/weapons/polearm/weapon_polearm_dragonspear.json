@@ -54,10 +54,7 @@
     "silver",
     "steel"
   ],
-  "animations": [
-    "walk_128",
-    "thrust_oversize"
-  ],
+  "animations": ["walk_128", "thrust_oversize"],
   "credits": [
     {
       "file": "weapon/polearm/dragonspear",
@@ -67,9 +64,7 @@
         "gr3yh47",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-weapons-two-bows-a-spear-and-a-trident",
         "https://opengameart.org/content/lpc-extended-weapon-animations"

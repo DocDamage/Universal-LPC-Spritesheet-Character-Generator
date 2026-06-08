@@ -17,23 +17,14 @@
     "female": "shield/spartan/fg/",
     "pregnant": "shield/spartan/fg/"
   },
-  "variants": [
-    "spartan"
-  ],
+  "variants": ["spartan"],
   "credits": [
     {
       "file": "shield/spartan",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Sander Frenken (castelonia)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-shields"
-      ]
+      "authors": ["bluecarrot16", "Sander Frenken (castelonia)"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-shields"]
     }
   ],
   "aliases": {

@@ -29,11 +29,7 @@
         "Tuomo Untinen (reemax)",
         "Michael Whitlock (bigbeargames)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-kite-shield",
         "https://opengameart.org/content/lpc-shields-pack"

@@ -29,16 +29,8 @@
     {
       "file": "torso/clothes/blouse",
       "notes": "original princess.xcf by Sharm, edited to blouse by ElizaWy; adapted to v3 bases by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "ElizaWy",
-        "Lanea Zimmerman (Sharm)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "ElizaWy", "Lanea Zimmerman (Sharm)"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-7-womens-shirts"

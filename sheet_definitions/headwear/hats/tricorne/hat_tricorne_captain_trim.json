@@ -1,12 +1,7 @@
 {
   "name": "Tricorne Captain Trim",
-  "tags": [
-    "tricorne",
-    "captain_trim"
-  ],
-  "required_tags": [
-    "captain"
-  ],
+  "tags": ["tricorne", "captain_trim"],
+  "required_tags": ["captain"],
   "layer_1": {
     "zPos": 131,
     "male": "hat/pirate/tricorne/captain/trim/adult/",
@@ -73,12 +68,8 @@
     {
       "file": "hat/pirate/tricorne/captain",
       "notes": "Pirate Hat by Bluecarrot16, layers and added animations by JaidynReiman",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["bluecarrot16"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-pirates",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

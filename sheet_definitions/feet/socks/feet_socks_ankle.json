@@ -63,10 +63,7 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
         "https://opengameart.org/content/lpc-expanded-socks-shoes"
@@ -75,13 +72,8 @@
     {
       "file": "feet/socks/ankle",
       "notes": "original by ElizaWy, remaining frames by JaidynReiman",
-      "authors": [
-        "ElizaWy",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["ElizaWy", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
         "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",

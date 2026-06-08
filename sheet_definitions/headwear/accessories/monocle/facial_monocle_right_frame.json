@@ -1,13 +1,7 @@
 {
   "name": "Right Monocle Frame Color",
-  "tags": [
-    "facial",
-    "monocle",
-    "monocle_trim"
-  ],
-  "required_tags": [
-    "monocle_right"
-  ],
+  "tags": ["facial", "monocle", "monocle_trim"],
+  "required_tags": ["monocle_right"],
   "layer_1": {
     "zPos": 115,
     "male": "facial/monocle/right/frame/adult/",
@@ -74,15 +68,8 @@
     {
       "file": "facial/monocle",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Thane Brimhall (pennomi)",
-        "laetissima"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "Thane Brimhall (pennomi)", "laetissima"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/clothing-facial-features-and-ui-elements",
         "https://opengameart.org/content/lpc-gentleman",

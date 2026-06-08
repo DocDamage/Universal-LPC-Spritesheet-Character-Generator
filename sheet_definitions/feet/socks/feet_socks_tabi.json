@@ -62,11 +62,7 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-kimono-relm",
         "https://opengameart.org/content/lpc-expanded-socks-shoes"

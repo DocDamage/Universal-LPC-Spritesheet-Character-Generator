@@ -24,5 +24,5 @@ export const paths = [
   "items/055 iverness_cloak__black_.png",
   "items/100 human_male__light_.png",
   "items/120 natural__violet_.png",
-  "items/140 longsword__longsword_.png"
+  "items/140 longsword__longsword_.png",
 ];

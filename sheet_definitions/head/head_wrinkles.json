@@ -33,22 +33,14 @@
     {
       "file": "head/wrinkles",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC0"
-      ],
+      "authors": ["bluecarrot16"],
+      "licenses": ["CC0"],
       "urls": []
     }
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "aliases": {
     "wrinkes=*": "wrinkles=*"

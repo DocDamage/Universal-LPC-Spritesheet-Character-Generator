@@ -36,13 +36,8 @@
     "female": "weapon/sword/longsword_alt/slash/behind/",
     "pregnant": "weapon/sword/longsword_alt/slash/behind/"
   },
-  "variants": [
-    "longsword_alt"
-  ],
-  "animations": [
-    "walk_128",
-    "slash_128"
-  ],
+  "variants": ["longsword_alt"],
+  "animations": ["walk_128", "slash_128"],
   "credits": [
     {
       "file": "weapon/sword/longsword_alt",
@@ -50,12 +45,8 @@
       "authors": [
         "Pierre Vigier and DCSS artists (see https://github.com/crawl/tiles/blob/master/ARTISTS.md)"
       ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-dcss-swords"
-      ]
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-dcss-swords"]
     }
   ],
   "type_name": "weapon"

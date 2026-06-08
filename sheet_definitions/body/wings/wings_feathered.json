@@ -1,9 +1,7 @@
 {
   "name": "Feathered Wings",
   "priority": 10,
-  "tags": [
-    "wings"
-  ],
+  "tags": ["wings"],
   "layer_1": {
     "zPos": 105,
     "male": "body/wings/feathered/adult/fg/",
@@ -78,17 +76,9 @@
     {
       "file": "body/wings/feathered",
       "notes": "Original by ElizaWy, added to most remaining frames by JaidynReiman",
-      "authors": [
-        "ElizaWy",
-        "Stephen Challener (Redshrike)",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-wings-new-animations"
-      ]
+      "authors": ["ElizaWy", "Stephen Challener (Redshrike)", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-wings-new-animations"]
     }
   ],
   "type_name": "wings"

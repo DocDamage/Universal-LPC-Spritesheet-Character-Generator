@@ -38,10 +38,7 @@
         "Johannes Sjölund (wulax)",
         "Sander Frenken (castelonia)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-full-plate-golden-armor",
@@ -53,11 +50,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "visor"
 }

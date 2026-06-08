@@ -1,9 +1,6 @@
 {
   "name": "Wolf child",
-  "tags": [
-    "animal",
-    "child"
-  ],
+  "tags": ["animal", "child"],
   "layer_1": {
     "zPos": 100,
     "child": "head/heads/wolf/child/"
@@ -39,10 +36,7 @@
         "William.Thompsonj",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-wolf-animation",
@@ -54,11 +48,7 @@
   "recolors": {
     "material": "body",
     "base": "ulpc.fur_brown",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

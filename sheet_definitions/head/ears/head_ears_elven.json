@@ -41,10 +41,7 @@
         "Matthew Krohn (makrohn)",
         "JaidynReiman"
       ],
-      "licenses": [
-        "GPL 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["GPL 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-base-character-expressions",
         "http://opengameart.org/content/lpc-clothing-updates"
@@ -53,11 +50,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "ears"
 }

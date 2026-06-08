@@ -1,5 +1,5 @@
 {
-    "label": "Shoe / Boots Accessory",
-    "priority": 30,
-    "required": ["male", "female", "teen", "muscular", "pregnant"]
+  "label": "Shoe / Boots Accessory",
+  "priority": 30,
+  "required": ["male", "female", "teen", "muscular", "pregnant"]
 }

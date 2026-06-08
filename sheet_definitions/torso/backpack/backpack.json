@@ -1,9 +1,6 @@
 {
   "name": "Backpack",
-  "tags": [
-    "back",
-    "backpack"
-  ],
+  "tags": ["back", "backpack"],
   "preview_row": 0,
   "layer_1": {
     "zPos": 110,
@@ -38,17 +35,9 @@
     {
       "file": "backpack/backpack",
       "notes": "trivial adjustments by bluecarrot16 to be compatible with v3 bases",
-      "authors": [
-        "Benjamin K. Smith (BenCreating)",
-        "macmanmatty"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-backpacks"
-      ]
+      "authors": ["Benjamin K. Smith (BenCreating)", "macmanmatty"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-backpacks"]
     }
   ],
   "type_name": "backpack"

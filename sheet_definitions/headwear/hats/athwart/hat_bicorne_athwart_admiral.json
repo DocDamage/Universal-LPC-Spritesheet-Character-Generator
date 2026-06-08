@@ -1,10 +1,6 @@
 {
   "name": "Bicorne Athwart Admiral",
-  "tags": [
-    "bicorne",
-    "athwart",
-    "athwart_admiral"
-  ],
+  "tags": ["bicorne", "athwart", "athwart_admiral"],
   "layer_1": {
     "zPos": 130,
     "male": "hat/pirate/bicorne/athwart/admiral/adult/",
@@ -62,13 +58,8 @@
     {
       "file": "hat/pirate/bicorne/athwart/admiral",
       "notes": "Pirate Hat by Bluecarrot16, layers and added animations by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["bluecarrot16", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-pirates",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

@@ -1,13 +1,8 @@
 {
   "name": "Split Kimono Trim",
   "priority": 40,
-  "tags": [
-    "dress",
-    "kimono_trim"
-  ],
-  "required_tags": [
-    "kimono_split"
-  ],
+  "tags": ["dress", "kimono_trim"],
+  "required_tags": ["kimono_split"],
   "layer_1": {
     "zPos": 31,
     "female": "dress/kimono/split/trim/universal/female/",
@@ -57,14 +52,8 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-kimono-relm"
-      ]
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-kimono-relm"]
     }
   ],
   "type_name": "dress_trim"

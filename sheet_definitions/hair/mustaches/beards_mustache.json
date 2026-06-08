@@ -31,26 +31,14 @@
     {
       "file": "beards/mustache/basic",
       "notes": "Original by Nemisys, repositioning by JaidynReiman.",
-      "authors": [
-        "JaidynReiman",
-        "Carlo Enrico Victoria (Nemisys)"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-brunet-mustache"
-      ]
+      "authors": ["JaidynReiman", "Carlo Enrico Victoria (Nemisys)"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-brunet-mustache"]
     }
   ],
   "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "mustache"
 }

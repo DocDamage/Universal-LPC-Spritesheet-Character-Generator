@@ -14,23 +14,14 @@
     "female": "shield/two_engrailed/trim/fg/female/",
     "pregnant": "shield/two_engrailed/trim/fg/female/"
   },
-  "variants": [
-    "two_engrailed_trim"
-  ],
+  "variants": ["two_engrailed_trim"],
   "credits": [
     {
       "file": "shield/two_engrailed",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Sander Frenken (castelonia)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-shields"
-      ]
+      "authors": ["bluecarrot16", "Sander Frenken (castelonia)"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-shields"]
     }
   ],
   "type_name": "shield_trim"

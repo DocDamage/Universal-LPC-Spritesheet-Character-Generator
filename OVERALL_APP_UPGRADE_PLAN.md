@@ -103,11 +103,7 @@ export concepts.
      | "zip-split-animation-item"
      | "zip-individual-frames";
 
-   export type EngineTarget =
-     | "generic"
-     | "godot"
-     | "phaser"
-     | "rpg-maker";
+   export type EngineTarget = "generic" | "godot" | "phaser" | "rpg-maker";
    ```
 
 4. For each export option, model:

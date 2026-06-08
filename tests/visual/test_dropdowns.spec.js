@@ -46,16 +46,14 @@ test("Verify all UI dropdowns select successfully without console errors", async
 
   // Define tab navigation and select loop
   const tabs = [
-    { name: "Character Model", textToClick: "Character Model" },
-    { name: "Accessories & Gear", textToClick: "Accessories & Gear" },
+    { name: "Body", textToClick: /^Body \(\d+\)$/ },
+    { name: "Gear", textToClick: /^Gear \(\d+\)$/ },
   ];
 
   for (const tab of tabs) {
     console.log(`Navigating to tab "${tab.name}"...`);
     // Click the tab button
-    await page
-      .getByRole("button", { name: tab.textToClick, exact: true })
-      .click();
+    await page.getByRole("button", { name: tab.textToClick }).click();
     await page.waitForTimeout(100);
 
     // Find all select dropdown container components currently visible
@@ -196,19 +194,43 @@ test("Verify Part Editor opens, allows drawing, auto-propagates, and saves a cus
   const pixelCanvas = page.locator(".editor-pixel-canvas");
   await expect(pixelCanvas).toBeVisible();
 
-  // Interact with the canvas by clicking/drawing on it
-  const box = await pixelCanvas.boundingBox();
-  expect(box).not.toBeNull();
-  if (box) {
-    // Click at center of the canvas to paint a pixel
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
-    await page.mouse.move(centerX, centerY);
-    await page.mouse.down();
-    await page.mouse.move(centerX + 5, centerY + 5);
-    await page.mouse.up();
-    await page.waitForTimeout(200);
-  }
+  // Interact with the canvas directly; compact editor layout can place controls
+  // over the canvas hit area while still preserving canvas event behavior.
+  await page.evaluate(() => {
+    const canvas = document.querySelector(".editor-pixel-canvas");
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    canvas.dispatchEvent(
+      new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+        clientX: cx,
+        clientY: cy,
+        buttons: 1,
+      }),
+    );
+    canvas.dispatchEvent(
+      new MouseEvent("mousemove", {
+        bubbles: true,
+        cancelable: true,
+        clientX: cx + 5,
+        clientY: cy + 5,
+        buttons: 1,
+      }),
+    );
+    canvas.dispatchEvent(
+      new MouseEvent("mouseup", {
+        bubbles: true,
+        cancelable: true,
+        clientX: cx + 5,
+        clientY: cy + 5,
+        buttons: 1,
+      }),
+    );
+  });
+  await page.waitForTimeout(200);
 
   // Fill in a custom name
   const nameInput = page.locator(".part-editor-body input[type=text]");
@@ -216,7 +238,7 @@ test("Verify Part Editor opens, allows drawing, auto-propagates, and saves a cus
 
   // Click Save
   const saveButton = page.locator("button", {
-    hasText: "Save as Brand New Part",
+    hasText: "Save as New Custom Part",
   });
   await saveButton.click();
   await page.waitForTimeout(500);

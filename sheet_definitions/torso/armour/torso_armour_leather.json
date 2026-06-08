@@ -24,16 +24,8 @@
     {
       "file": "torso/armour/leather",
       "notes": "adapted to v3 bases by bluecarrot16, reduced colors and climb/emote/jump by JaidynReiman",
-      "authors": [
-        "Johannes Sjölund (wulax)",
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Johannes Sjölund (wulax)", "bluecarrot16", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-clothing-updates",
@@ -50,11 +42,7 @@
         "bluecarrot16",
         "JaidynReiman"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-combat-armor-for-women",
@@ -72,11 +60,7 @@
         "bluecarrot16",
         "JaidynReiman"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-combat-armor-for-women",
@@ -89,21 +73,13 @@
     "color_1": {
       "material": "cloth",
       "base": "leather",
-      "palettes": [
-        "ulpc",
-        "metal.ulpc",
-        "all.lpcr"
-      ]
+      "palettes": ["ulpc", "metal.ulpc", "all.lpcr"]
     },
     "color_2": {
       "type_name": "leather_armor_belt",
       "label": "Leather Armor Belt",
       "material": "metal",
-      "palettes": [
-        "ulpc",
-        "lpcr",
-        "all.lpcr"
-      ]
+      "palettes": ["ulpc", "lpcr", "all.lpcr"]
     }
   },
   "type_name": "armour"

@@ -1,10 +1,6 @@
 {
   "name": "Boarman",
-  "tags": [
-    "animal",
-    "boarman",
-    "adult"
-  ],
+  "tags": ["animal", "boarman", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/boarman/adult/",
@@ -41,10 +37,7 @@
         "Benjamin K. Smith (BenCreating)",
         "Daniel Eddeland (daneeklu)"
       ],
-      "licenses": [
-        "CC-BY 3.0",
-        "GPL 2.0"
-      ],
+      "licenses": ["CC-BY 3.0", "GPL 2.0"],
       "urls": [
         "https://opengameart.org/content/lpc-style-farm-animals",
         "https://opengameart.org/content/lpc-wild-boar",
@@ -55,11 +48,7 @@
   "recolors": {
     "material": "body",
     "base": "ulpc.fur_brown",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

@@ -31,25 +31,17 @@
     {
       "file": "hair/curly_short2",
       "notes": "",
-      "authors": [
-        "ElizaWy"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["ElizaWy"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Hair",
         "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
       ]
     }
   ],
-    "recolors": {
+  "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hair"
 }

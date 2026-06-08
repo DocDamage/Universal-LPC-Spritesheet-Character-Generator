@@ -70,13 +70,8 @@
     {
       "file": "hat/formal/tiara",
       "notes": "",
-      "authors": [
-        "Luke Mehl"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Luke Mehl"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/female-mage-clothing-set",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

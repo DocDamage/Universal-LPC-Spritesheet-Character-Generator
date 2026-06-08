@@ -1,5 +1,5 @@
 {
-    "label": "Weapons",
-    "priority": 100,
-    "required": ["male", "female", "teen", "muscular", "pregnant"]
+  "label": "Weapons",
+  "priority": 100,
+  "required": ["male", "female", "teen", "muscular", "pregnant"]
 }

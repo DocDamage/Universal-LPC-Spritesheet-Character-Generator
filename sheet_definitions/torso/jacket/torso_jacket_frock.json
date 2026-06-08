@@ -34,15 +34,9 @@
     {
       "file": "torso/jacket/frock",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-pirates"
-      ]
+      "authors": ["bluecarrot16"],
+      "licenses": ["CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-pirates"]
     }
   ],
   "type_name": "jacket"

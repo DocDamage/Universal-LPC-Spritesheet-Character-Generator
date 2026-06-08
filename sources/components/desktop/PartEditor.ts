@@ -3930,13 +3930,16 @@ function debouncedRecomposeCanvases(stateObj: PartEditorState): void {
 }
 
 function debouncedAutosave(stateObj: PartEditorState): void {
-  if (!stateObj.baseItemId) return;
+  const baseItemId = stateObj.baseItemId;
+  if (!baseItemId) return;
   if (stateObj.autosaveDebounceTimer) {
     window.clearTimeout(stateObj.autosaveDebounceTimer);
   }
   stateObj.autosaveDebounceTimer = window.setTimeout(() => {
     const snapshot = JSON.stringify(createEditorContextSnapshot(stateObj));
-    void saveDraft(stateObj.baseItemId!, snapshot);
+    void saveDraft(baseItemId, snapshot).catch((err) => {
+      debugWarn("Unable to autosave editor draft:", err);
+    });
   }, 500);
 }
 

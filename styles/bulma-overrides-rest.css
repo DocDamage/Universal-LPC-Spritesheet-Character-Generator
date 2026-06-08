@@ -8,8 +8,17 @@
  * margin-bottom -8px on both. (Do not combine with margin-top:-8px on the CategoryTree box — that
  * stacked and caused Argos-wide vertical drift.)
  */
-#mithril-filters > div > .box:nth-child(2) .collapsible-content > .mb-4:nth-child(3) .tags:not(.has-addons),
-#mithril-filters .box.has-background-light > div:nth-child(3) > div.mb-3 .buttons {
+#mithril-filters
+  > div
+  > .box:nth-child(2)
+  .collapsible-content
+  > .mb-4:nth-child(3)
+  .tags:not(.has-addons),
+#mithril-filters
+  .box.has-background-light
+  > div:nth-child(3)
+  > div.mb-3
+  .buttons {
   gap: revert;
   row-gap: revert;
   column-gap: revert;
@@ -39,8 +48,19 @@
   color: rgb(0, 0, 0) !important;
   display: block !important;
   font-family:
-    "system-ui", -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans",
-    "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    "system-ui",
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
+    Helvetica,
+    Arial,
+    sans-serif !important;
   font-size: 0 !important;
   font-weight: 400 !important;
   line-height: normal !important;

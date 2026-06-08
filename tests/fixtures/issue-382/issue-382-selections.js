@@ -2,122 +2,119 @@
 // Source: tests/fixtures/issue-382/issue-382-selections.json
 // Used by tests/state/zip-issue-382_spec.js and issue382-golden-runner.js (repo root)
 export default {
-  "version": 2,
-  "bodyType": "male",
-  "selections": {
-    "body": {
-      "itemId": "body",
-      "subId": null,
-      "variant": "",
-      "recolor": "light",
-      "name": "Body Color (light)"
+  version: 2,
+  bodyType: "male",
+  selections: {
+    body: {
+      itemId: "body",
+      subId: null,
+      variant: "",
+      recolor: "light",
+      name: "Body Color (light)",
     },
-    "head": {
-      "itemId": "heads_human_male",
-      "subId": null,
-      "variant": "",
-      "recolor": "light",
-      "name": "Human Male (light)"
+    head: {
+      itemId: "heads_human_male",
+      subId: null,
+      variant: "",
+      recolor: "light",
+      name: "Human Male (light)",
     },
-    "hair": {
-      "itemId": "hair_natural",
-      "subId": null,
-      "variant": "violet",
-      "recolor": "",
-      "name": "Natural (violet)"
+    hair: {
+      itemId: "hair_natural",
+      subId: null,
+      variant: "violet",
+      recolor: "",
+      name: "Natural (violet)",
     },
-    "jacket": {
-      "itemId": "torso_jacket_iverness",
-      "subId": null,
-      "variant": "black",
-      "recolor": "",
-      "name": "Iverness cloak (black)"
+    jacket: {
+      itemId: "torso_jacket_iverness",
+      subId: null,
+      variant: "black",
+      recolor: "",
+      name: "Iverness cloak (black)",
     },
-    "legs": {
-      "itemId": "legs_pants2",
-      "subId": null,
-      "variant": "",
-      "recolor": "orange",
-      "name": "Long Pants (orange)"
+    legs: {
+      itemId: "legs_pants2",
+      subId: null,
+      variant: "",
+      recolor: "orange",
+      name: "Long Pants (orange)",
     },
-    "shoes": {
-      "itemId": "feet_shoes_revised",
-      "subId": null,
-      "variant": "bluegray",
-      "recolor": "",
-      "name": "Revised Shoes (bluegray)"
+    shoes: {
+      itemId: "feet_shoes_revised",
+      subId: null,
+      variant: "bluegray",
+      recolor: "",
+      name: "Revised Shoes (bluegray)",
     },
-    "weapon": {
-      "itemId": "weapon_sword_longsword",
-      "subId": null,
-      "variant": "longsword",
-      "recolor": "",
-      "name": "Longsword (longsword)"
-    }
+    weapon: {
+      itemId: "weapon_sword_longsword",
+      subId: null,
+      variant: "longsword",
+      recolor: "",
+      name: "Longsword (longsword)",
+    },
   },
-  "selectedAnimation": "slash_oversize",
-  "showTransparencyGrid": true,
-  "applyTransparencyMask": false,
-  "matchBodyColorEnabled": true,
-  "compactDisplay": false,
-  "enabledLicenses": {
-    "CC0": true,
+  selectedAnimation: "slash_oversize",
+  showTransparencyGrid: true,
+  applyTransparencyMask: false,
+  matchBodyColorEnabled: true,
+  compactDisplay: false,
+  enabledLicenses: {
+    CC0: true,
     "CC-BY-SA": true,
     "CC-BY": true,
     "OGA-BY": true,
-    "GPL": true
+    GPL: true,
   },
-  "enabledAnimations": {
-    "spellcast": false,
-    "thrust": false,
-    "walk": false,
-    "slash": false,
-    "shoot": false,
-    "hurt": false,
-    "climb": false,
-    "idle": false,
-    "jump": false,
-    "sit": false,
-    "emote": false,
-    "run": false,
-    "watering": false,
-    "combat": false,
+  enabledAnimations: {
+    spellcast: false,
+    thrust: false,
+    walk: false,
+    slash: false,
+    shoot: false,
+    hurt: false,
+    climb: false,
+    idle: false,
+    jump: false,
+    sit: false,
+    emote: false,
+    run: false,
+    watering: false,
+    combat: false,
     "1h_slash": false,
     "1h_backslash": false,
-    "1h_halfslash": false
+    "1h_halfslash": false,
   },
-  "url": "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/#sex=male&body=Body_Color_light&head=Human_Male_light&hair=Natural_violet&jacket=Iverness_cloak_black&legs=Long_Pants_orange&shoes=Revised_Shoes_bluegray&weapon=Longsword_longsword",
-  "layers": [
+  url: "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/#sex=male&body=Body_Color_light&head=Human_Male_light&hair=Natural_violet&jacket=Iverness_cloak_black&legs=Long_Pants_orange&shoes=Revised_Shoes_bluegray&weapon=Longsword_longsword",
+  layers: [
     {
-      "itemId": "weapon_sword_longsword",
-      "name": "Longsword (longsword)",
-      "variant": "longsword",
-      "recolors": null,
-      "zPos": 9,
-      "layerNum": 2,
-      "yPos": 512,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "weapon/sword/longsword/universal_behind/walk/longsword.png",
-      "supportedAnimations": [
-        "walk",
-        "hurt"
-      ]
+      itemId: "weapon_sword_longsword",
+      name: "Longsword (longsword)",
+      variant: "longsword",
+      recolors: null,
+      zPos: 9,
+      layerNum: 2,
+      yPos: 512,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "weapon/sword/longsword/universal_behind/walk/longsword.png",
+      supportedAnimations: ["walk", "hurt"],
     },
     {
-      "itemId": "body",
-      "name": "Body Color (light)",
-      "variant": "",
-      "recolors": {
-        "body": "light"
+      itemId: "body",
+      name: "Body Color (light)",
+      variant: "",
+      recolors: {
+        body: "light",
       },
-      "zPos": 10,
-      "layerNum": 1,
-      "yPos": 0,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "body/bodies/male/spellcast.png",
-      "supportedAnimations": [
+      zPos: 10,
+      layerNum: 1,
+      yPos: 0,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "body/bodies/male/spellcast.png",
+      supportedAnimations: [
         "spellcast",
         "thrust",
         "walk",
@@ -132,21 +129,21 @@ export default {
         "run",
         "combat_idle",
         "backslash",
-        "halfslash"
-      ]
+        "halfslash",
+      ],
     },
     {
-      "itemId": "feet_shoes_revised",
-      "name": "Revised Shoes (bluegray)",
-      "variant": "bluegray",
-      "recolors": null,
-      "zPos": 15,
-      "layerNum": 1,
-      "yPos": 0,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "feet/shoes/revised/male/spellcast/bluegray.png",
-      "supportedAnimations": [
+      itemId: "feet_shoes_revised",
+      name: "Revised Shoes (bluegray)",
+      variant: "bluegray",
+      recolors: null,
+      zPos: 15,
+      layerNum: 1,
+      yPos: 0,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "feet/shoes/revised/male/spellcast/bluegray.png",
+      supportedAnimations: [
         "spellcast",
         "thrust",
         "walk",
@@ -161,23 +158,23 @@ export default {
         "run",
         "combat_idle",
         "backslash",
-        "halfslash"
-      ]
+        "halfslash",
+      ],
     },
     {
-      "itemId": "legs_pants2",
-      "name": "Long Pants (orange)",
-      "variant": "",
-      "recolors": {
-        "legs": "orange"
+      itemId: "legs_pants2",
+      name: "Long Pants (orange)",
+      variant: "",
+      recolors: {
+        legs: "orange",
       },
-      "zPos": 20,
-      "layerNum": 1,
-      "yPos": 0,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "legs/pants2/male/spellcast.png",
-      "supportedAnimations": [
+      zPos: 20,
+      layerNum: 1,
+      yPos: 0,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "legs/pants2/male/spellcast.png",
+      supportedAnimations: [
         "spellcast",
         "thrust",
         "walk",
@@ -192,43 +189,43 @@ export default {
         "run",
         "combat_idle",
         "backslash",
-        "halfslash"
-      ]
+        "halfslash",
+      ],
     },
     {
-      "itemId": "torso_jacket_iverness",
-      "name": "Iverness cloak (black)",
-      "variant": "black",
-      "recolors": null,
-      "zPos": 55,
-      "layerNum": 1,
-      "yPos": 0,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "torso/jacket/iverness/male/spellcast/black.png",
-      "supportedAnimations": [
+      itemId: "torso_jacket_iverness",
+      name: "Iverness cloak (black)",
+      variant: "black",
+      recolors: null,
+      zPos: 55,
+      layerNum: 1,
+      yPos: 0,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "torso/jacket/iverness/male/spellcast/black.png",
+      supportedAnimations: [
         "spellcast",
         "thrust",
         "walk",
         "slash",
         "shoot",
-        "hurt"
-      ]
+        "hurt",
+      ],
     },
     {
-      "itemId": "heads_human_male",
-      "name": "Human Male (light)",
-      "variant": "",
-      "recolors": {
-        "head": "light"
+      itemId: "heads_human_male",
+      name: "Human Male (light)",
+      variant: "",
+      recolors: {
+        head: "light",
       },
-      "zPos": 100,
-      "layerNum": 1,
-      "yPos": 0,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "head/heads/human/male/spellcast.png",
-      "supportedAnimations": [
+      zPos: 100,
+      layerNum: 1,
+      yPos: 0,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "head/heads/human/male/spellcast.png",
+      supportedAnimations: [
         "spellcast",
         "thrust",
         "walk",
@@ -243,21 +240,21 @@ export default {
         "run",
         "combat_idle",
         "backslash",
-        "halfslash"
-      ]
+        "halfslash",
+      ],
     },
     {
-      "itemId": "hair_natural",
-      "name": "Natural (violet)",
-      "variant": "violet",
-      "recolors": null,
-      "zPos": 120,
-      "layerNum": 1,
-      "yPos": 0,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "hair/natural/adult/spellcast/violet.png",
-      "supportedAnimations": [
+      itemId: "hair_natural",
+      name: "Natural (violet)",
+      variant: "violet",
+      recolors: null,
+      zPos: 120,
+      layerNum: 1,
+      yPos: 0,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "hair/natural/adult/spellcast/violet.png",
+      supportedAnimations: [
         "spellcast",
         "thrust",
         "walk",
@@ -272,32 +269,30 @@ export default {
         "run",
         "combat_idle",
         "backslash",
-        "halfslash"
-      ]
+        "halfslash",
+      ],
     },
     {
-      "itemId": "weapon_sword_longsword",
-      "name": "Longsword (longsword)",
-      "variant": "longsword",
-      "recolors": null,
-      "zPos": 140,
-      "layerNum": 1,
-      "yPos": 512,
-      "isCustom": false,
-      "needsRecolor": false,
-      "fileName": "weapon/sword/longsword/walk/longsword.png",
-      "supportedAnimations": [
-        "walk",
-        "hurt"
-      ]
-    }
+      itemId: "weapon_sword_longsword",
+      name: "Longsword (longsword)",
+      variant: "longsword",
+      recolors: null,
+      zPos: 140,
+      layerNum: 1,
+      yPos: 512,
+      isCustom: false,
+      needsRecolor: false,
+      fileName: "weapon/sword/longsword/walk/longsword.png",
+      supportedAnimations: ["walk", "hurt"],
+    },
   ],
-  "credits": [
+  credits: [
     {
-      "fileName": "body/bodies/male/slash_oversize.png",
-      "file": "body/bodies/male",
-      "notes": "see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)",
-      "authors": [
+      fileName: "body/bodies/male/slash_oversize.png",
+      file: "body/bodies/male",
+      notes:
+        "see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)",
+      authors: [
         "bluecarrot16",
         "JaidynReiman",
         "Benjamin K. Smith (BenCreating)",
@@ -307,14 +302,10 @@ export default {
         "MuffinElZangano",
         "Durrani",
         "Johannes Sjölund (wulax)",
-        "Stephen Challener (Redshrike)"
+        "Stephen Challener (Redshrike)",
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
+      licenses: ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
+      urls: [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-male-jumping-animation-by-durrani",
@@ -323,117 +314,92 @@ export default {
         "https://opengameart.org/content/lpc-be-seated",
         "https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads",
         "https://opengameart.org/content/lpc-jump-expanded",
-        "https://opengameart.org/content/lpc-character-bases"
-      ]
+        "https://opengameart.org/content/lpc-character-bases",
+      ],
     },
     {
-      "fileName": "head/heads/human/male/slash_oversize.png",
-      "file": "head/heads/human/male",
-      "notes": "original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16",
-      "authors": [
+      fileName: "head/heads/human/male/slash_oversize.png",
+      file: "head/heads/human/male",
+      notes:
+        "original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16",
+      authors: [
         "bluecarrot16",
         "Benjamin K. Smith (BenCreating)",
-        "Stephen Challener (Redshrike)"
+        "Stephen Challener (Redshrike)",
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
+      licenses: ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
+      urls: [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
-        "https://opengameart.org/content/lpc-character-bases"
-      ]
+        "https://opengameart.org/content/lpc-character-bases",
+      ],
     },
     {
-      "fileName": "hair/natural/adult/slash_oversize/violet.png",
-      "file": "hair/natural",
-      "notes": "Original by bluecarrot16, animations by ElizaWy.",
-      "authors": [
-        "ElizaWy",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
+      fileName: "hair/natural/adult/slash_oversize/violet.png",
+      file: "hair/natural",
+      notes: "Original by bluecarrot16, animations by ElizaWy.",
+      authors: ["ElizaWy", "bluecarrot16"],
+      licenses: ["CC0"],
+      urls: [
         "https://opengameart.org/content/lpc-hair",
         "https://github.com/ElizaWy/LPC/blob/main/Characters/Hair",
-        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
-      ]
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",
+      ],
     },
     {
-      "fileName": "torso/jacket/iverness/male/slash_oversize/black.png",
-      "file": "torso/jacket/iverness",
-      "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-gentleman"
-      ]
+      fileName: "torso/jacket/iverness/male/slash_oversize/black.png",
+      file: "torso/jacket/iverness",
+      notes: "",
+      authors: ["bluecarrot16"],
+      licenses: ["CC-BY-SA 3.0", "GPL 3.0"],
+      urls: ["https://opengameart.org/content/lpc-gentleman"],
     },
     {
-      "fileName": "legs/pants2/male/slash_oversize.png",
-      "file": "legs/pants2/male",
-      "notes": "original overalls by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, pants by JaidynReiman",
-      "authors": [
+      fileName: "legs/pants2/male/slash_oversize.png",
+      file: "legs/pants2/male",
+      notes:
+        "original overalls by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, pants by JaidynReiman",
+      authors: [
         "JaidynReiman",
         "ElizaWy",
         "Bluecarrot16",
         "Johannes Sjölund (wulax)",
-        "Stephen Challener (Redshrike)"
+        "Stephen Challener (Redshrike)",
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
+      licenses: ["OGA-BY 3.0", "GPL 3.0"],
+      urls: [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
         "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",
-        "https://opengameart.org/content/lpc-expanded-pants"
-      ]
+        "https://opengameart.org/content/lpc-expanded-pants",
+      ],
     },
     {
-      "fileName": "feet/shoes/revised/male/slash_oversize/bluegray.png",
-      "file": "feet/shoes/revised/male",
-      "notes": "original overalls and shoes by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, shoes by JaidynReiman",
-      "authors": [
+      fileName: "feet/shoes/revised/male/slash_oversize/bluegray.png",
+      file: "feet/shoes/revised/male",
+      notes:
+        "original overalls and shoes by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, shoes by JaidynReiman",
+      authors: [
         "JaidynReiman",
         "ElizaWy",
         "Bluecarrot16",
         "Stephen Challener (Redshrike)",
-        "Johannes Sjölund (wulax)"
+        "Johannes Sjölund (wulax)",
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
+      licenses: ["OGA-BY 3.0", "GPL 3.0"],
+      urls: [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
-        "https://opengameart.org/content/lpc-expanded-socks-shoes"
-      ]
+        "https://opengameart.org/content/lpc-expanded-socks-shoes",
+      ],
     },
     {
-      "fileName": "weapon/sword/longsword/slash_oversize/longsword.png",
-      "file": "weapon/sword/longsword",
-      "notes": "",
-      "authors": [
-        "Johannes Sjölund (wulax)",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
+      fileName: "weapon/sword/longsword/slash_oversize/longsword.png",
+      file: "weapon/sword/longsword",
+      notes: "",
+      authors: ["Johannes Sjölund (wulax)", "bluecarrot16"],
+      licenses: ["OGA-BY 3.0", "CC-BY-SA 3.0"],
+      urls: [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
-        "https://opengameart.org/content/lpc-extended-weapon-animations"
-      ]
-    }
-  ]
+        "https://opengameart.org/content/lpc-extended-weapon-animations",
+      ],
+    },
+  ],
 };

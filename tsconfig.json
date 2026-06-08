@@ -28,7 +28,7 @@
     // noPropertyAccessFromIndexSignature — noisy on config-bag patterns
     // (state, metadata objects) that use dotted access extensively.
     // TODO: Revisit when the migration is done
-    "noPropertyAccessFromIndexSignature": false,
+    "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["sources", "scripts", "vite", "tests"],
+  "include": ["sources", "scripts", "vite", "tests"]
 }

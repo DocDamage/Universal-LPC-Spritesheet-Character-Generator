@@ -32,11 +32,7 @@
     "silver",
     "steel"
   ],
-  "animations": [
-    "walk",
-    "thrust",
-    "hurt"
-  ],
+  "animations": ["walk", "thrust", "hurt"],
   "credits": [
     {
       "file": "weapon/polearm/spear",
@@ -46,9 +42,7 @@
         "Johannes Sjölund (wulax)",
         "Inboxninja"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-spear-and-shovel-reworked"

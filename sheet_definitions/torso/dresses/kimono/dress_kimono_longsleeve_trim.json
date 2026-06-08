@@ -1,13 +1,8 @@
 {
   "name": "Kimono Sleeves Trim",
   "priority": 60,
-  "tags": [
-    "arms",
-    "sleeves_trim"
-  ],
-  "required_tags": [
-    "kimono_long_sleeves"
-  ],
+  "tags": ["arms", "sleeves_trim"],
+  "required_tags": ["kimono_long_sleeves"],
   "layer_1": {
     "zPos": 32,
     "female": "dress/kimono/sleeves/trim/universal/female/",
@@ -62,14 +57,8 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-kimono-relm"
-      ]
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-kimono-relm"]
     }
   ],
   "type_name": "dress_sleeves_trim"

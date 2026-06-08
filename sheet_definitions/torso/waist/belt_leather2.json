@@ -7,25 +7,14 @@
     "female": "torso/waist/belt_leather2/female/",
     "teen": "torso/waist/belt_leather2/female/"
   },
-  "variants": [
-    "leather"
-  ],
+  "variants": ["leather"],
   "credits": [
     {
       "file": "torso/waist/belt_leather2",
       "notes": "",
-      "authors": [
-        "Johannes Sjölund (wulax)",
-        "Matthew Krohn (makrohn)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-combat-armor-for-women"
-      ]
+      "authors": ["Johannes Sjölund (wulax)", "Matthew Krohn (makrohn)"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-combat-armor-for-women"]
     }
   ],
   "aliases": {

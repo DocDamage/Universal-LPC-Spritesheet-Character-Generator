@@ -54,10 +54,7 @@
     "silver",
     "steel"
   ],
-  "animations": [
-    "walk_128",
-    "thrust_oversize"
-  ],
+  "animations": ["walk_128", "thrust_oversize"],
   "credits": [
     {
       "file": "weapon/polearm/longspear",
@@ -67,9 +64,7 @@
         "Johannes Sjölund (wulax)",
         "Inboxninja"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
       ]

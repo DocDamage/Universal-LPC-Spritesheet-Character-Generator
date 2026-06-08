@@ -35,9 +35,7 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "http://opengameart.org/content/lpc-revised-character-basics",
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
@@ -48,10 +46,7 @@
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "sleeves"
 }

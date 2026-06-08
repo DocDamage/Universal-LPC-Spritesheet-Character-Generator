@@ -1,12 +1,7 @@
 {
   "name": "Santa Trim",
-  "tags": [
-    "santa",
-    "santa_wool"
-  ],
-  "required_tags": [
-    "santa_hat"
-  ],
+  "tags": ["santa", "santa_wool"],
+  "required_tags": ["santa_hat"],
   "layer_1": {
     "zPos": 131,
     "female": "hat/holiday/santa/adult/",
@@ -64,14 +59,8 @@
     {
       "file": "hat/holiday/santa",
       "notes": "Santa Hat by bluecarrot16, split into layers by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-santa",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

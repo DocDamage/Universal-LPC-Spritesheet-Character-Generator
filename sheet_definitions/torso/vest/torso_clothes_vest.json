@@ -52,10 +52,7 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-2-characters",
         "https://opengameart.org/content/lpc-gentleman",
@@ -71,13 +68,8 @@
         "Thane Brimhall (pennomi)",
         "laetissima"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-2-characters"
-      ]
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-2-characters"]
     },
     {
       "file": "torso/clothes/vest/male/gray.png",
@@ -88,13 +80,8 @@
         "Thane Brimhall (pennomi)",
         "laetissima"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-2-characters"
-      ]
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-2-characters"]
     }
   ],
   "type_name": "vest"

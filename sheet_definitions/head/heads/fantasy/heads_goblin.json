@@ -1,9 +1,6 @@
 {
   "name": "Goblin",
-  "tags": [
-    "goblin",
-    "adult"
-  ],
+  "tags": ["goblin", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/goblin/adult/",
@@ -41,12 +38,7 @@
         "Stephen Challener (Redshrike)",
         "William.Thomsponj"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY 4.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY 4.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-goblin",
         "https://opengameart.org/content/lpc-folk"
@@ -56,11 +48,7 @@
   "recolors": {
     "material": "body",
     "base": "ulpc.green",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

@@ -533,5 +533,5 @@ export const paths = [
   "standard/watering/up/5.png",
   "standard/watering/up/6.png",
   "standard/watering/up/7.png",
-  "standard/watering/up/8.png"
+  "standard/watering/up/8.png",
 ];

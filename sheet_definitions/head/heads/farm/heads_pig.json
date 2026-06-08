@@ -1,9 +1,6 @@
 {
   "name": "Pig",
-  "tags": [
-    "animal",
-    "adult"
-  ],
+  "tags": ["animal", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/pig/adult/",
@@ -36,14 +33,8 @@
     {
       "file": "head/heads/pig",
       "notes": "original pig by daneeklu, adapted to modular head by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "Daniel Eddeland (daneeklu)"
-      ],
-      "licenses": [
-        "CC-BY 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "Daniel Eddeland (daneeklu)"],
+      "licenses": ["CC-BY 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-style-farm-animals",
         "http://opengameart.org/content/lpc-folk"
@@ -52,11 +43,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

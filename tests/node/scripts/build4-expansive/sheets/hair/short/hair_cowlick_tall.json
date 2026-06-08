@@ -59,13 +59,8 @@
     {
       "file": "hair/cowlick_tall",
       "notes": "",
-      "authors": [
-        "Fabzy",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "authors": ["Fabzy", "bluecarrot16"],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/the-revolution-hair",
         "https://opengameart.org/content/lpc-hair"

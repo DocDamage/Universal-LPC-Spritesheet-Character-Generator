@@ -31,26 +31,17 @@
     {
       "file": "hair/messy3",
       "notes": "",
-      "authors": [
-        "Fabzy",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
+      "authors": ["Fabzy", "bluecarrot16"],
+      "licenses": ["CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/the-revolution-hair",
         "https://opengameart.org/content/lpc-hair"
       ]
     }
   ],
-    "recolors": {
+  "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hair"
 }

@@ -14,23 +14,14 @@
     "female": "shield/crusader/fg/female/",
     "pregnant": "shield/crusader/fg/female/"
   },
-  "variants": [
-    "crusader"
-  ],
+  "variants": ["crusader"],
   "credits": [
     {
       "file": "shield/crusader",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Sander Frenken (castelonia)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-shields"
-      ]
+      "authors": ["bluecarrot16", "Sander Frenken (castelonia)"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-shields"]
     }
   ],
   "aliases": {

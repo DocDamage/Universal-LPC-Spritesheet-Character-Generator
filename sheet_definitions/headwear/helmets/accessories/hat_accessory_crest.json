@@ -31,12 +31,8 @@
     {
       "file": "hat/accessory/crest",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["bluecarrot16"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-helmets",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
@@ -45,11 +41,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "accessory"
 }

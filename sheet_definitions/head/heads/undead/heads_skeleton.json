@@ -1,9 +1,6 @@
 {
   "name": "Skeleton",
-  "tags": [
-    "monster",
-    "skeleton"
-  ],
+  "tags": ["monster", "skeleton"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/skeleton/adult/",
@@ -12,9 +9,7 @@
     "pregnant": "head/heads/skeleton/adult/",
     "teen": "head/heads/skeleton/adult/"
   },
-  "variants": [
-    "skeleton"
-  ],
+  "variants": ["skeleton"],
   "animations": [
     "spellcast",
     "thrust",
@@ -43,11 +38,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",

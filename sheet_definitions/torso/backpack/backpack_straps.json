@@ -1,12 +1,7 @@
 {
   "name": "Straps",
-  "tags": [
-    "back",
-    "backpack_straps"
-  ],
-  "required_tags": [
-    "backpack"
-  ],
+  "tags": ["back", "backpack_straps"],
+  "required_tags": ["backpack"],
   "layer_1": {
     "zPos": 110,
     "male": "backpack/straps/male/",
@@ -40,17 +35,9 @@
     {
       "file": "backpack/straps",
       "notes": "trivial adjustments by bluecarrot16 to be compatible with v3 bases",
-      "authors": [
-        "Benjamin K. Smith (BenCreating)",
-        "macmanmatty"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-backpacks"
-      ]
+      "authors": ["Benjamin K. Smith (BenCreating)", "macmanmatty"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-backpacks"]
     }
   ],
   "type_name": "backpack_straps"

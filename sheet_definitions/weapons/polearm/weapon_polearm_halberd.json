@@ -48,15 +48,8 @@
     "female": "weapon/polearm/halberd/attack_slash/",
     "pregnant": "weapon/polearm/halberd/attack_slash/"
   },
-  "variants": [
-    "halberd"
-  ],
-  "animations": [
-    "walk",
-    "hurt",
-    "thrust_oversize",
-    "slash_oversize"
-  ],
+  "variants": ["halberd"],
+  "animations": ["walk", "hurt", "thrust_oversize", "slash_oversize"],
   "credits": [
     {
       "file": "weapon/polearm/halberd",
@@ -66,13 +59,8 @@
         "bluecarrot16",
         "Sander Frenken (castelonia)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-medieval-weapons"
-      ]
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-medieval-weapons"]
     }
   ],
   "type_name": "weapon"

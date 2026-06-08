@@ -31,15 +31,8 @@
     {
       "file": "hat/cloth/hood_sack/adult",
       "notes": "original by Nila122, adapted to human heads by JaidynReiman",
-      "authors": [
-        "Nila122",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Nila122", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-lizard-headgear",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
@@ -48,10 +41,7 @@
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "hat"
 }

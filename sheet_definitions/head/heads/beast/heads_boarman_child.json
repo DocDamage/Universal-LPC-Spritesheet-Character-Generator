@@ -1,10 +1,6 @@
 {
   "name": "Boarman child",
-  "tags": [
-    "animal",
-    "boarman",
-    "child"
-  ],
+  "tags": ["animal", "boarman", "child"],
   "layer_1": {
     "zPos": 100,
     "child": "head/heads/boarman/child/"
@@ -38,10 +34,7 @@
         "Benjamin K. Smith (BenCreating)",
         "Daniel Eddeland (daneeklu)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-style-farm-animals",
         "https://opengameart.org/content/lpc-wild-boar",
@@ -53,11 +46,7 @@
   "recolors": {
     "material": "body",
     "base": "fur_brown",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

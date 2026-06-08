@@ -59,17 +59,9 @@
     {
       "file": "hair/extensions/bangs/long_wavyr",
       "notes": "",
-      "authors": [
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-expanded-long-hair"
-      ]
+      "authors": ["JaidynReiman"],
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-expanded-long-hair"]
     }
   ],
   "type_name": "hairextr"

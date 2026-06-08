@@ -1,29 +1,28 @@
-How to (Re)Build Sheets With LPC Tools
-=============================================
+# How to (Re)Build Sheets With LPC Tools
 
 The instructions below can be used to build or rebuild sheets if so desired using LPCTools.
 
-
 ### Install LPCTools
+
 [LPCTools](https://github.com/bluecarrot16/lpctools) must be installed first.
 
 [Install LPCTools and its prerequisites using these instructions.](LPCTOOLS.md)
-
 
 #### Rebuild Sheets
 
 Rebuilding sheets can be useful if you expand lpctools to support other base assets in the future.
 
 To rebuild the sheets from scratch, run the following commands in a command terminal:
+
 1. `wsl` (only if running from windows)
 2. `conda activate lpctools`
 3. `cd /path/to/folder/`
-    - Alternatively, you can include the full path to the folder and/or file in `--input` and `--output`
+   - Alternatively, you can include the full path to the folder and/or file in `--input` and `--output`
 4. `lpctools arrange distribute --input _build/ --output universal.png --mask masks/masks_male_head.png --offsets masks/reference_points.png --layout universal-expanded`
 5. `lpctools arrange separate --input universal.png --output-dir universal/ --layout universal-expanded`
-    - `lpctools arrange repack --input universal.png --from universal-expanded --to cast thrust walk slash short hurt climb idle jump sit emote run combat_idle backslash halfslash --output-dir _universal/ --layout universal-expanded`
+   - `lpctools arrange repack --input universal.png --from universal-expanded --to cast thrust walk slash short hurt climb idle jump sit emote run combat_idle backslash halfslash --output-dir _universal/ --layout universal-expanded`
 6. `lpctools arrange combine --input _universal/ --output _combined.png --layout universal-expanded`
-    - `lpctools arrange repack --input _universal/{cast,thrust,walk,slash,shoot,hurt,climb,idle,jump,sit,emote,run,combat_idle,backslash,halfslash} --from cast thrust walk slash short hurt climb idle jump sit emote run combat_idle backslash halfslash --to universal-expanded --output-dir _combined.png --layout universal-expanded`
+   - `lpctools arrange repack --input _universal/{cast,thrust,walk,slash,shoot,hurt,climb,idle,jump,sit,emote,run,combat_idle,backslash,halfslash} --from cast thrust walk slash short hurt climb idle jump sit emote run combat_idle backslash halfslash --to universal-expanded --output-dir _combined.png --layout universal-expanded`
 
 The "layout" should be whatever layout you wish, but universal-expanded is the original "universal" layout from the Universal LPC Spritesheet but with additional animation bases added onto it. To get the original universal sheets before expanded frames were added, use the "universal" layout rather than "universal-expanded".
 
@@ -37,7 +36,6 @@ The "layout" should be whatever layout you wish, but universal-expanded is the o
 
 "Repack" can be used to handle either separate or combine, or switch to a different format entirely.
 
-
 #### Getting Repalettes
 
 To get repalettes, simply run the following command:
@@ -46,6 +44,7 @@ To get repalettes, simply run the following command:
 You can do this with any files and any of the palette sheets. The palette sheet name applies to the type of material used in the sheet, and you can usually figure out what matches it based on the sheet. If the base colors to not match the "source" in the palette sheet, the repalette won't work.
 
 For more information on palettes, check out the following:
+
 - [Standard ULPC Palettes](palettes/README.md)
 - [Custom Palettes](palettes/custom/README.md) (used for specific assets)
 - [Convert to LPC Revised Palettes or Visa-Versa](palettes/conversions/README.md)

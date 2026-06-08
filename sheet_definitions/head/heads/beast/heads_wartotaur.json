@@ -1,9 +1,6 @@
 {
   "name": "Wartotaur",
-  "tags": [
-    "animal",
-    "wartotaur"
-  ],
+  "tags": ["animal", "wartotaur"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/wartotaur/adult/",
@@ -36,15 +33,8 @@
     {
       "file": "head/heads/wartotaur",
       "notes": "original \"wart-o-taur\" concept and sprite by Redshrike, extended to 4 directions and head extracted by Evert, cleanup and hurt/cast animations by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "Evert",
-        "Stephen Challener (Redshrike)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY 3.0"
-      ],
+      "authors": ["bluecarrot16", "Evert", "Stephen Challener (Redshrike)"],
+      "licenses": ["OGA-BY 3.0", "CC-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/tower-defense-prototyping-assets-4-monsters-some-tiles-a-background-image",
         "https://opengameart.org/content/wartotaur-4-directions",
@@ -55,11 +45,7 @@
   "recolors": {
     "material": "body",
     "base": "ulpc.fur_brown",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

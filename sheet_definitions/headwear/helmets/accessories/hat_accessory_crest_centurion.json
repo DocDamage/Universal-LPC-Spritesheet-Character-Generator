@@ -31,13 +31,8 @@
     {
       "file": "hat/accessory/crest_centurion",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "DCSS authors"
-      ],
-      "licenses": [
-        "CC0"
-      ],
+      "authors": ["bluecarrot16", "DCSS authors"],
+      "licenses": ["CC0"],
       "urls": [
         "http://opengameart.org/content/dungeon-crawl-32x32-tiles",
         "https://opengameart.org/content/cc0-headgear-icons",
@@ -48,11 +43,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "accessory"
 }

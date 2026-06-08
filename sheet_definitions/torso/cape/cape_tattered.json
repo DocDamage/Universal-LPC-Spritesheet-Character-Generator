@@ -1,9 +1,6 @@
 {
   "name": "Tattered",
-  "tags": [
-    "back",
-    "cape"
-  ],
+  "tags": ["back", "cape"],
   "layer_1": {
     "zPos": 85,
     "male": "cape/tattered/female/",
@@ -50,15 +47,8 @@
     {
       "file": "cape/tattered",
       "notes": "",
-      "authors": [
-        "Nila122",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Nila122", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more",
         "https://opengameart.org/content/lpc-roman-armor"
@@ -67,15 +57,8 @@
     {
       "file": "cape/tattered_behind",
       "notes": "",
-      "authors": [
-        "Nila122",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Nila122", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more",
         "https://opengameart.org/content/lpc-roman-armor"

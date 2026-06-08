@@ -27,16 +27,8 @@
     {
       "file": "legs/skirts/legion",
       "notes": "original by Nila122 to legion, adapted to v3 bases by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "Nila122"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-roman-armor",
         "http://opengameart.org/content/lpc-clothing-updates"
@@ -45,11 +37,7 @@
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "metal.ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "metal.ulpc", "all.lpcr"]
   },
   "type_name": "legs"
 }

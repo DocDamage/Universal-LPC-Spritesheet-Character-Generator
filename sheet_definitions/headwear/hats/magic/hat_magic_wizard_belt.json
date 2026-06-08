@@ -1,12 +1,7 @@
 {
   "name": "Wizard Hat Belt",
-  "tags": [
-    "wizard",
-    "hat_trim"
-  ],
-  "required_tags": [
-    "pointed_wizard"
-  ],
+  "tags": ["wizard", "hat_trim"],
+  "required_tags": ["pointed_wizard"],
   "layer_1": {
     "zPos": 131,
     "male": "hat/magic/wizard/belt/adult/",
@@ -75,11 +70,7 @@
         "Tuomo Untinen (reemax)",
         "JaidynReiman"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-items-and-game-effects",
         "https://opengameart.org/content/lpc-pointed-hats",

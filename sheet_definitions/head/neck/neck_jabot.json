@@ -46,16 +46,9 @@
     {
       "file": "neck/jabot",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-pirates"
-      ]
+      "authors": ["bluecarrot16"],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-pirates"]
     }
   ],
   "type_name": "neck"

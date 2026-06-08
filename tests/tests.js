@@ -15,6 +15,7 @@ import "./canvas/palette-recolor-cache_spec.js";
 import "./canvas/palette-recolor-merge_spec.js";
 import "./canvas/renderer-issue-364_spec.js";
 import "./components/CollapsibleSection_spec.js";
+import "./components/download/Download_spec.js";
 import "./components/FiltersPanel_spec.js";
 import "./components/desktop/PartEditor_spec.js";
 import "./components/desktop/custom-weapon-import_spec.js";

@@ -6,6 +6,14 @@ import { applyTransparencyMaskToCanvas } from "./mask.ts";
 import { canvas } from "./renderer.ts";
 import { customAnimations } from "../custom-animations.ts";
 import type { CustomAnimationDefinition } from "../custom-animations.ts";
+import {
+  DEFAULT_TWEEN_SETTINGS,
+  buildTweenSteps,
+  drawTweenedCanvas,
+  normalizeTweenFps,
+  normalizeTweenInbetweens,
+} from "./tween.ts";
+import type { TweenSettings } from "./tween.ts";
 
 declare global {
   interface Window {
@@ -21,11 +29,18 @@ let animRowNum = 4; // default for walk (number of rows to stack)
 let currentFrameIndex = 0;
 let lastFrameTime = Date.now();
 let animationFrameId: number | null = null;
+let tweenSettings: TweenSettings = { ...DEFAULT_TWEEN_SETTINGS };
 
 // Track custom animations present in current render
 let currentCustomAnimations: Record<string, CustomAnimationDefinition> = {};
 let customAnimYPositions: Record<string, number> = {}; // Y positions of custom animations in canvas
 export let activeCustomAnimation: string | null = null; // Currently selected custom animation for preview
+
+type PreviewGeometry = {
+  frameSize: number;
+  previewWidth: number;
+  yOffset: number;
+};
 
 /**
  * Set which animation to preview
@@ -73,6 +88,28 @@ export function setPreviewAnimation(animationName: string): number[] {
   return animationFrames; // Return for display
 }
 
+export function setPreviewTweenSettings(
+  nextSettings: Partial<TweenSettings>,
+): TweenSettings {
+  tweenSettings = {
+    mode: nextSettings.mode ?? tweenSettings.mode,
+    inbetweens:
+      nextSettings.inbetweens === undefined
+        ? tweenSettings.inbetweens
+        : normalizeTweenInbetweens(nextSettings.inbetweens),
+    fps:
+      nextSettings.fps === undefined
+        ? tweenSettings.fps
+        : normalizeTweenFps(nextSettings.fps),
+  };
+  currentFrameIndex = 0;
+  return tweenSettings;
+}
+
+export function getPreviewTweenSettings(): TweenSettings {
+  return { ...tweenSettings };
+}
+
 /**
  * Draw one preview frame for a given index into `animationFrames` (the cycle).
  * Used by the animation loop and by visual tests (static frame, no rAF).
@@ -82,20 +119,50 @@ function paintPreviewFrameForCycleIndex(cycleIndex: number): void {
     return;
   }
 
-  previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  const geometry = getPreviewGeometry();
+  const sourceCanvas = getSourceCanvas();
+  preparePreviewCanvas(geometry);
+  drawPreviewBackground();
+  drawAnimationCycleFrame(previewCtx, sourceCanvas, geometry, cycleIndex);
+}
 
-  // Draw transparency grid if enabled
-  if (state.showTransparencyGrid) {
-    drawTransparencyBackground(
-      previewCtx,
-      previewCanvas.width,
-      previewCanvas.height,
-    );
+function paintPreviewTweenStep(stepIndex: number): void {
+  if (!previewCtx || !canvas || !previewCanvas) {
+    return;
   }
 
-  const currentFrame = animationFrames[cycleIndex];
+  const steps = buildTweenSteps(animationFrames, tweenSettings);
+  const step = steps[stepIndex % steps.length];
+  if (!step || !step.isTween || tweenSettings.mode === "off") {
+    paintPreviewFrameForCycleIndex(step?.sourceIndex ?? 0);
+    return;
+  }
 
-  // Determine frameSize and Y offset based on animation type
+  const geometry = getPreviewGeometry();
+  const sourceCanvas = getSourceCanvas();
+  preparePreviewCanvas(geometry);
+  drawPreviewBackground();
+
+  const fromFrameCanvas = renderCycleFrameToCanvas(
+    sourceCanvas,
+    geometry,
+    step.sourceIndex,
+  );
+  const toFrameCanvas = renderCycleFrameToCanvas(
+    sourceCanvas,
+    geometry,
+    (step.sourceIndex + 1) % animationFrames.length,
+  );
+  drawTweenedCanvas(
+    previewCtx,
+    fromFrameCanvas,
+    toFrameCanvas,
+    tweenSettings.mode,
+    step.t,
+  );
+}
+
+function getPreviewGeometry(): PreviewGeometry {
   let frameSize = FRAME_SIZE;
   let yOffset = 0;
 
@@ -107,45 +174,100 @@ function paintPreviewFrameForCycleIndex(cycleIndex: number): void {
     }
   }
 
-  const previewWidth = animRowNum * frameSize;
+  return {
+    frameSize,
+    previewWidth: animRowNum * frameSize,
+    yOffset,
+  };
+}
+
+function preparePreviewCanvas(geometry: PreviewGeometry): void {
+  if (!previewCanvas || !previewCtx) {
+    return;
+  }
+
   if (
-    previewCanvas.width !== previewWidth ||
-    previewCanvas.height !== frameSize
+    previewCanvas.width !== geometry.previewWidth ||
+    previewCanvas.height !== geometry.frameSize
   ) {
-    previewCanvas.width = previewWidth;
-    previewCanvas.height = frameSize;
+    previewCanvas.width = geometry.previewWidth;
+    previewCanvas.height = geometry.frameSize;
     previewCtx.imageSmoothingEnabled = false;
   }
 
-  let tmpCanvas: HTMLCanvasElement;
+  previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+}
+
+function drawPreviewBackground(): void {
+  if (!previewCtx || !previewCanvas) {
+    return;
+  }
+
+  if (state.showTransparencyGrid) {
+    drawTransparencyBackground(
+      previewCtx,
+      previewCanvas.width,
+      previewCanvas.height,
+    );
+  }
+}
+
+function getSourceCanvas(): HTMLCanvasElement {
+  if (!canvas) {
+    throw new Error("Renderer canvas is not initialized");
+  }
+
   if (state.applyTransparencyMask) {
     // using a tmpCanvas here to avoid modifying the original offscreen canvas
     // which causes a bug if the user toggles the checkbox multiple times
-    tmpCanvas = document.createElement("canvas");
+    const tmpCanvas = document.createElement("canvas");
     tmpCanvas.width = canvas.width;
     tmpCanvas.height = canvas.height;
     const tmpCtx = get2DContext(tmpCanvas);
     tmpCtx.drawImage(canvas, 0, 0);
     applyTransparencyMaskToCanvas(tmpCanvas, tmpCtx);
-  } else {
-    tmpCanvas = canvas;
+    return tmpCanvas;
   }
+
+  return canvas;
+}
+
+function renderCycleFrameToCanvas(
+  sourceCanvas: HTMLCanvasElement,
+  geometry: PreviewGeometry,
+  cycleIndex: number,
+): HTMLCanvasElement {
+  const frameCanvas = document.createElement("canvas");
+  frameCanvas.width = geometry.previewWidth;
+  frameCanvas.height = geometry.frameSize;
+  const frameCtx = get2DContext(frameCanvas, true);
+  drawAnimationCycleFrame(frameCtx, sourceCanvas, geometry, cycleIndex);
+  return frameCanvas;
+}
+
+function drawAnimationCycleFrame(
+  targetCtx: CanvasRenderingContext2D,
+  sourceCanvas: HTMLCanvasElement,
+  geometry: PreviewGeometry,
+  cycleIndex: number,
+): void {
+  const currentFrame = animationFrames[cycleIndex];
 
   // Draw stacked rows from main canvas to preview
   for (let i = 0; i < animRowNum; i++) {
     const srcY = activeCustomAnimation
-      ? yOffset + i * frameSize // Custom animation: use Y offset + row * frameSize
+      ? geometry.yOffset + i * geometry.frameSize // Custom animation: use Y offset + row * frameSize
       : (animRowStart + i) * FRAME_SIZE; // Standard animation: use row * 64
-    previewCtx.drawImage(
-      tmpCanvas,
-      currentFrame * frameSize, // source x
+    targetCtx.drawImage(
+      sourceCanvas,
+      currentFrame * geometry.frameSize, // source x
       srcY, // source y
-      frameSize, // source width
-      frameSize, // source height
-      i * frameSize, // dest x (spread horizontally)
+      geometry.frameSize, // source width
+      geometry.frameSize, // source height
+      i * geometry.frameSize, // dest x (spread horizontally)
       0, // dest y
-      frameSize, // dest width
-      frameSize, // dest height
+      geometry.frameSize, // dest width
+      geometry.frameSize, // dest height
     );
   }
 }
@@ -181,7 +303,7 @@ export function startPreviewAnimation(): void {
   }
 
   function nextFrame(): void {
-    const fpsInterval = 1000 / 8; // 8 FPS
+    const fpsInterval = 1000 / tweenSettings.fps;
     const now = Date.now();
     const elapsed = now - lastFrameTime;
 
@@ -189,8 +311,12 @@ export function startPreviewAnimation(): void {
       lastFrameTime = now - (elapsed % fpsInterval);
 
       if (previewCtx && canvas) {
-        currentFrameIndex = (currentFrameIndex + 1) % animationFrames.length;
-        paintPreviewFrameForCycleIndex(currentFrameIndex);
+        const stepCount = Math.max(
+          1,
+          buildTweenSteps(animationFrames, tweenSettings).length,
+        );
+        currentFrameIndex = (currentFrameIndex + 1) % stepCount;
+        paintPreviewTweenStep(currentFrameIndex);
       }
     }
 

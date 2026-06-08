@@ -22,6 +22,13 @@ import { showToast } from "../state/notifications.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 import type { State } from "../state/state.ts";
 import type { DrawCall } from "../canvas/renderer.ts";
+import {
+  buildTweenSteps,
+  drawTweenedCanvas,
+  normalizeTweenFps,
+  normalizeTweenInbetweens,
+} from "../canvas/tween.ts";
+import type { TweenSettings } from "../canvas/tween.ts";
 
 /**
  * Subset of the JSZip folder API consumed by these helpers and downstream
@@ -363,8 +370,98 @@ export async function addStandardAnimationToZipCustomFolder(
 
 export type ExtractedFrames = Record<
   string,
-  Array<{ canvas: HTMLCanvasElement; frameNumber: number }>
+  Array<{ canvas: HTMLCanvasElement; frameNumber: number | string }>
 >;
+
+export function expandExtractedFramesWithTweens(
+  frames: ExtractedFrames,
+  settings: TweenSettings,
+): ExtractedFrames {
+  const normalizedSettings: TweenSettings = {
+    mode: settings.mode,
+    inbetweens: normalizeTweenInbetweens(settings.inbetweens),
+    fps: normalizeTweenFps(settings.fps),
+  };
+
+  if (normalizedSettings.mode === "off") {
+    return frames;
+  }
+
+  const expandedFrames: ExtractedFrames = {};
+
+  for (const [direction, frameList] of Object.entries(frames)) {
+    if (frameList.length === 0) {
+      expandedFrames[direction] = [];
+      continue;
+    }
+
+    const tweenSteps = buildTweenSteps(frameList, normalizedSettings);
+    expandedFrames[direction] = tweenSteps.map((step, stepIndex) => {
+      if (!step.isTween) {
+        return step.from;
+      }
+
+      const tweenCanvas = document.createElement("canvas");
+      tweenCanvas.width = step.from.canvas.width;
+      tweenCanvas.height = step.from.canvas.height;
+      const tweenCtx = get2DContext(tweenCanvas, true);
+      drawTweenedCanvas(
+        tweenCtx,
+        step.from.canvas,
+        step.to.canvas,
+        normalizedSettings.mode,
+        step.t,
+      );
+
+      return {
+        canvas: tweenCanvas,
+        frameNumber: `${step.from.frameNumber}_tween_${stepIndex}`,
+      };
+    });
+  }
+
+  return expandedFrames;
+}
+
+export function composeFrameRowsToSpritesheet(
+  frames: ExtractedFrames,
+  directions: readonly string[] = DIRECTIONS,
+): HTMLCanvasElement | null {
+  const populatedDirections = directions.filter(
+    (direction) => (frames[direction] ?? []).length > 0,
+  );
+  if (populatedDirections.length === 0) {
+    return null;
+  }
+
+  const firstFrame = frames[populatedDirections[0]]?.[0]?.canvas;
+  if (!firstFrame) {
+    return null;
+  }
+
+  const frameWidth = firstFrame.width;
+  const frameHeight = firstFrame.height;
+  const maxFrameCount = Math.max(
+    ...populatedDirections.map((direction) => frames[direction]?.length ?? 0),
+  );
+  const spritesheet = document.createElement("canvas");
+  spritesheet.width = maxFrameCount * frameWidth;
+  spritesheet.height = directions.length * frameHeight;
+  const spritesheetCtx = get2DContext(spritesheet, true);
+
+  directions.forEach((direction, directionIndex) => {
+    const frameList = frames[direction] ?? [];
+    frameList.forEach((frame, frameIndex) => {
+      spritesheetCtx.drawImage(
+        frame.canvas,
+        frameIndex * frameWidth,
+        directionIndex * frameHeight,
+      );
+    });
+  });
+
+  return spritesheet;
+}
 
 /**
  * Splits a built-in LPC animation canvas (rows = directions, 13 frames per row)

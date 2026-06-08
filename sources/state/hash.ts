@@ -109,6 +109,9 @@ export function updateState(updates: Partial<typeof state>): void {
 export function resetState(): void {
   state.bodyType = "male";
   state.selections = {};
+  state.previewTweenMode = "off";
+  state.previewTweenInbetweens = 1;
+  state.previewTweenFps = 8;
 }
 
 // `window.location.hash` is immutable in tests, this is so we can use a stub to manage it.

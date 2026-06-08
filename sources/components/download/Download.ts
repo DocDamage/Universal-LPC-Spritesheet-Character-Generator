@@ -30,9 +30,20 @@ type DownloadAttrs = {
   catalog: Pick<CatalogReader, "isLayersReady">;
 };
 
+function getTweenExportHint(): string | null {
+  if (state.previewTweenMode === "off") {
+    return null;
+  }
+
+  const inbetweenLabel =
+    state.previewTweenInbetweens === 1 ? "in-between" : "in-betweens";
+  return `Tween exports include ${state.previewTweenInbetweens} ${inbetweenLabel} per source frame at ${state.previewTweenFps} FPS. Split-by-animation ZIPs add tweened spritesheets under tweened/. Individual-frame ZIPs add tween PNGs beside source frames.`;
+}
+
 export const Download: m.Component<DownloadAttrs> = {
   view(vnode) {
     const zipDisabled = !vnode.attrs.catalog.isLayersReady();
+    const tweenExportHint = getTweenExportHint();
 
     const exportToClipboard = async (): Promise<void> => {
       if (!window.canvasRenderer) {
@@ -170,6 +181,15 @@ export const Download: m.Component<DownloadAttrs> = {
           ),
           state.zipIndividualFrames && state.zipIndividualFrames.isRunning
             ? m("span.loading")
+            : null,
+          tweenExportHint
+            ? m(
+                "span.tag.is-info.is-light",
+                {
+                  title: tweenExportHint,
+                },
+                "Tween frames enabled",
+              )
             : null,
           m(
             "button.button.is-small.is-link",

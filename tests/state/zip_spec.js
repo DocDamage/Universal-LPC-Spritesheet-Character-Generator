@@ -229,6 +229,27 @@ describe("state/zip.ts", () => {
       expect(fakeZip.files.get("standard/1h_slash.png")).to.exist;
     });
 
+    it("adds tweened spritesheets under tweened/ when preview tweening is enabled", async () => {
+      state.previewTweenMode = "crossfade";
+      state.previewTweenInbetweens = 1;
+      state.previewTweenFps = 12;
+
+      await exportSplitAnimations();
+
+      expect(fakeZip.files.get(`standard/${ANIMATIONS[0].value}.png`)).to.exist;
+      expect(fakeZip.files.get(`tweened/standard/${ANIMATIONS[0].value}.png`))
+        .to.exist;
+      const metadata = JSON.parse(fakeZip.files.get("credits/metadata.json"));
+      expect(metadata.tweenedAnimations.settings).to.deep.equal({
+        mode: "crossfade",
+        inbetweens: 1,
+        fps: 12,
+      });
+      expect(metadata.tweenedAnimations.standard.exported).to.include(
+        ANIMATIONS[0].value,
+      );
+    });
+
     it("includes character.json, credits credits.txt/credits.csv, and credits/metadata.json", async () => {
       await exportSplitAnimations();
 
@@ -1326,6 +1347,43 @@ describe("state/zip.ts", () => {
 
       expect(fakeZip.files.get("standard/watering/up/0.png")).to.exist;
       expect(fakeZip.files.get("standard/1h_slash/up/0.png")).to.exist;
+    });
+
+    it("adds tweened individual frames when preview tweening is enabled", async () => {
+      state.previewTweenMode = "crossfade";
+      state.previewTweenInbetweens = 1;
+      state.previewTweenFps = 12;
+
+      const extractStub = sandbox.stub().callsFake(() => smallAnimCanvas());
+      const framesSpy = sinon.spy(() => ({
+        up: [
+          { canvas: frameCanvas(), frameNumber: 1 },
+          { canvas: frameCanvas(), frameNumber: 2 },
+        ],
+      }));
+
+      await exportIndividualFrames({
+        extractAnimationFromCanvas: extractStub,
+        extractFramesFromAnimation: framesSpy,
+      });
+
+      expect(fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/1.png`)).to
+        .exist;
+      expect(
+        fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/1_tween_1.png`),
+      ).to.exist;
+      expect(fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/2.png`)).to
+        .exist;
+      expect(
+        fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/2_tween_3.png`),
+      ).to.exist;
+
+      const metadata = JSON.parse(fakeZip.files.get("credits/metadata.json"));
+      expect(metadata.tweening).to.deep.equal({
+        mode: "crossfade",
+        inbetweens: 1,
+        fps: 12,
+      });
     });
 
     it("includes character.json, credits credits.txt/credits.csv, and credits/metadata.json", async () => {

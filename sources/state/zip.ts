@@ -26,10 +26,12 @@ import {
   addAnimationSliceToZip,
   addCanvasToZip,
   addStandardAnimationToZipCustomFolder,
+  composeFrameRowsToSpritesheet,
   addCharacterJsonAndCredits,
   downloadZipBlob,
   extractFramesFromAnimation,
   extractFramesFromCustomAnimation,
+  expandExtractedFramesWithTweens,
   guardZipExportEnvironment,
   newAnimationFromSheet,
   zipExportTimestamp,
@@ -65,6 +67,10 @@ declare global {
 type ExportSplitAnimationsDeps = {
   addAnimationSliceToZip: typeof addAnimationSliceToZip;
   addCanvasToZip: typeof addCanvasToZip;
+  composeFrameRowsToSpritesheet: typeof composeFrameRowsToSpritesheet;
+  expandExtractedFramesWithTweens: typeof expandExtractedFramesWithTweens;
+  extractFramesFromAnimation: typeof extractFramesFromAnimation;
+  extractFramesFromCustomAnimation: typeof extractFramesFromCustomAnimation;
 };
 
 function errorMessage(err: unknown): string {
@@ -93,6 +99,14 @@ export const exportSplitAnimations = async (
   const baseAddAnimationSliceToZip =
     deps.addAnimationSliceToZip ?? addAnimationSliceToZip;
   const baseAddCanvasToZip = deps.addCanvasToZip ?? addCanvasToZip;
+  const composeFrameRowsToSpritesheetFn =
+    deps.composeFrameRowsToSpritesheet ?? composeFrameRowsToSpritesheet;
+  const expandExtractedFramesWithTweensFn =
+    deps.expandExtractedFramesWithTweens ?? expandExtractedFramesWithTweens;
+  const extractFramesFromAnimationFn =
+    deps.extractFramesFromAnimation ?? extractFramesFromAnimation;
+  const extractFramesFromCustomAnimationFn =
+    deps.extractFramesFromCustomAnimation ?? extractFramesFromCustomAnimation;
 
   if (!guardZipExportEnvironment()) return;
 
@@ -128,12 +142,23 @@ export const exportSplitAnimations = async (
     // Create folder structure to match original
     const standardFolder = zip.folder("standard");
     const customFolder = zip.folder("custom");
+    const tweenedFolder = zip.folder("tweened");
+    const tweenedStandardFolder = tweenedFolder.folder("standard");
+    const tweenedCustomFolder = tweenedFolder.folder("custom");
     const creditsFolder = zip.folder("credits");
 
     // Get available animations from canvas renderer
     const animationList = ANIMATIONS;
     const exportedStandard: string[] = [];
     const failedStandard: string[] = [];
+    const exportedTweenedStandard: string[] = [];
+    const failedTweenedStandard: string[] = [];
+    const tweenSettings = {
+      mode: state.previewTweenMode,
+      inbetweens: state.previewTweenInbetweens,
+      fps: state.previewTweenFps,
+    };
+    const shouldExportTweenedSheets = tweenSettings.mode !== "off";
 
     for (const anim of animationList) {
       try {
@@ -154,6 +179,40 @@ export const exportSplitAnimations = async (
         if (result.isOk()) {
           exportedStandard.push(anim.value);
         }
+
+        if (shouldExportTweenedSheets) {
+          try {
+            const extractedFrames = extractFramesFromAnimationFn(
+              animCanvas,
+              anim.value,
+              DIRECTIONS,
+            );
+            const tweenedFrames = expandExtractedFramesWithTweensFn(
+              extractedFrames,
+              tweenSettings,
+            );
+            const tweenedCanvas = composeFrameRowsToSpritesheetFn(
+              tweenedFrames,
+              DIRECTIONS,
+            );
+            if (tweenedCanvas) {
+              const tweenedResult = await addCanvas(
+                tweenedStandardFolder,
+                `${anim.value}.png`,
+                tweenedCanvas,
+              );
+              if (tweenedResult.isOk()) {
+                exportedTweenedStandard.push(anim.value);
+              }
+            }
+          } catch (err) {
+            console.error(
+              `Failed to export tweened animation ${anim.value}:`,
+              err,
+            );
+            failedTweenedStandard.push(anim.value);
+          }
+        }
       } catch (err) {
         console.error(`Failed to export animation ${anim.value}:`, err);
         failedStandard.push(anim.value);
@@ -163,6 +222,8 @@ export const exportSplitAnimations = async (
     // Handle custom animations
     const exportedCustom: string[] = [];
     const failedCustom: string[] = [];
+    const exportedTweenedCustom: string[] = [];
+    const failedTweenedCustom: string[] = [];
     let y = SHEET_HEIGHT;
 
     for (const animName of addedCustomAnimations) {
@@ -187,6 +248,43 @@ export const exportSplitAnimations = async (
           exportedCustom.push(animName);
         }
 
+        if (shouldExportTweenedSheets) {
+          try {
+            const customAnimCanvas = result.isOk() ? result.value : null;
+            if (customAnimCanvas) {
+              const extractedFrames = extractFramesFromCustomAnimationFn(
+                customAnimCanvas,
+                anim,
+                DIRECTIONS,
+              );
+              const tweenedFrames = expandExtractedFramesWithTweensFn(
+                extractedFrames,
+                tweenSettings,
+              );
+              const tweenedCanvas = composeFrameRowsToSpritesheetFn(
+                tweenedFrames,
+                DIRECTIONS,
+              );
+              if (tweenedCanvas) {
+                const tweenedResult = await addCanvas(
+                  tweenedCustomFolder,
+                  `${animName}.png`,
+                  tweenedCanvas,
+                );
+                if (tweenedResult.isOk()) {
+                  exportedTweenedCustom.push(animName);
+                }
+              }
+            }
+          } catch (err) {
+            console.error(
+              `Failed to export tweened custom animation ${animName}:`,
+              err,
+            );
+            failedTweenedCustom.push(animName);
+          }
+        }
+
         y += srcRect.height;
       } catch (err) {
         console.error(`Failed to export custom animation ${animName}:`, err);
@@ -208,6 +306,17 @@ export const exportSplitAnimations = async (
       customAnimations: {
         exported: exportedCustom,
         failed: failedCustom,
+      },
+      tweenedAnimations: {
+        settings: tweenSettings,
+        standard: {
+          exported: exportedTweenedStandard,
+          failed: failedTweenedStandard,
+        },
+        custom: {
+          exported: exportedTweenedCustom,
+          failed: failedTweenedCustom,
+        },
       },
       frameSize: FRAME_SIZE,
       frameCounts: {}, // Would need to map animation frame counts
@@ -635,6 +744,7 @@ export const exportSplitItemAnimations = async (
 type ExportIndividualFramesDeps = {
   extractAnimationFromCanvas: typeof extractAnimationFromCanvas;
   extractFramesFromAnimation: typeof extractFramesFromAnimation;
+  expandExtractedFramesWithTweens: typeof expandExtractedFramesWithTweens;
   canvasToBlob: typeof canvasToBlob;
   newAnimationFromSheet: typeof newAnimationFromSheet;
   extractFramesFromCustomAnimation: typeof extractFramesFromCustomAnimation;
@@ -660,6 +770,8 @@ export const exportIndividualFrames = async (
     deps.extractAnimationFromCanvas ?? extractAnimationFromCanvas;
   const extractFramesFromAnimationFn =
     deps.extractFramesFromAnimation ?? extractFramesFromAnimation;
+  const expandExtractedFramesWithTweensFn =
+    deps.expandExtractedFramesWithTweens ?? expandExtractedFramesWithTweens;
   const canvasToBlobFn = deps.canvasToBlob ?? canvasToBlob;
   const extractFramesFromCustomAnimationFn =
     deps.extractFramesFromCustomAnimation ?? extractFramesFromCustomAnimation;
@@ -705,6 +817,11 @@ export const exportIndividualFrames = async (
     const exportedCustom: string[] = [];
     const failedCustom: string[] = [];
     let y = SHEET_HEIGHT;
+    const tweenSettings = {
+      mode: state.previewTweenMode,
+      inbetweens: state.previewTweenInbetweens,
+      fps: state.previewTweenFps,
+    };
 
     for (const anim of ANIMATIONS) {
       try {
@@ -735,10 +852,14 @@ export const exportIndividualFrames = async (
             "render_composite_extractFramesFromAnimation",
             async () => {
               const animFolder = standardFolder.folder(animationName);
-              const frames = extractFramesFromAnimationFn(
+              const extractedFrames = extractFramesFromAnimationFn(
                 animCanvas,
                 animationName,
                 directions,
+              );
+              const frames = expandExtractedFramesWithTweensFn(
+                extractedFrames,
+                tweenSettings,
               );
 
               for (const [direction, frameList] of Object.entries(frames)) {
@@ -804,10 +925,14 @@ export const exportIndividualFrames = async (
             "render_composite_extractFramesFromCustomAnimation",
             () => {
               const animFolder = customFolder.folder(animName);
-              const frames = extractFramesFromCustomAnimationFn(
+              const extractedFrames = extractFramesFromCustomAnimationFn(
                 custAnimCanvas!,
                 customAnimDef,
                 directions,
+              );
+              const frames = expandExtractedFramesWithTweensFn(
+                extractedFrames,
+                tweenSettings,
               );
 
               debugLog(`Extracted frames for ${animName}:`, frames);
@@ -903,6 +1028,7 @@ export const exportIndividualFrames = async (
       },
       animationConfigs: ANIMATION_CONFIGS,
       directions: directions,
+      tweening: tweenSettings,
       note: "Individual animation frames organized by standard/custom > animation > direction > frame number",
       performance: profiler.toMetadata(),
     };

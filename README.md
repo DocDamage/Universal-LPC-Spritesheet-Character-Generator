@@ -27,6 +27,7 @@ Highlights:
 - Open a fullscreen pro editor with selection tools, shape drawing, flood fill, color replacement, transform tools, symmetry toggles, layers, and an animation-frame tab.
 - **Selection upgrades:** copy/paste across directions (with auto-mirror), arrow-key nudging (1px / 10px with Shift), and transform-only-on-selection.
 - **Animation polish:** live playback, scrubbable timeline thumbnails, per-frame dirty indicators, and "Apply Global to Frame".
+- **Tweened animation preview:** smooth generated playback with Off, Hold, Crossfade, and Pixel Motion modes plus configurable in-between frames and FPS.
 - Add as many editor layers as needed, with visibility, opacity, rename, duplicate, merge, flatten, pixel lock, and alpha lock controls.
 - Edit animation frames in a dedicated Animation tab with timeline controls and onion-skin previews.
 - **Mobile / touch editing:** two-finger pan & pinch-zoom, larger touch targets, and a stacked layout for narrow viewports.
@@ -34,7 +35,7 @@ Highlights:
 - **Custom asset library management:** tag assets, filter by tag, duplicate, rename, delete, and export/import backup ZIPs.
 - **Customizable shortcuts:** rebind any shortcut from the help modal; conflicts are highlighted and preferences persist in localStorage.
 - Use `Ctrl+K` for the command palette and `Ctrl+/` for shortcut help.
-- Export PNG spritesheets, character JSON, credits, and ZIP packs with shared toast notifications and confirmation dialogs.
+- Export PNG spritesheets, character JSON, credits, ZIP packs, tweened individual-frame PNGs, and tweened per-animation spritesheets with shared toast notifications and confirmation dialogs.
 
 ### History
 
@@ -103,6 +104,16 @@ If you don't want to _show_ the entire credits file directly, should include a s
 You can look at [the Animation Guide in Eliza's repository](https://github.com/ElizaWy/LPC/blob/f07f7f5892e67c932c68f70bb04472f2c64e46bc/Characters/_%20Guides%20%26%20Palettes/Animation%20Guides) for a detailed suggested guide to how she recommends you display your animations.
 
 Also, each animation has a frame cycle documented which you can see next to the animation preview.
+
+The animation preview also includes tween controls. **Off** preserves the
+original LPC frame timing, **Hold** repeats each source frame, **Crossfade**
+blends between neighboring frames, and **Pixel Motion** shifts opaque pixels for
+pixel-art-friendly motion without soft blending. When tweening is enabled,
+individual-frame ZIP exports add tween PNGs beside the original frames, and
+split-by-animation ZIP exports keep the original `standard/` and `custom/`
+sheets while adding expanded sheets under `tweened/standard/` and
+`tweened/custom/`. Export metadata records the selected tween mode, in-between
+count, and FPS.
 
 ### Sprite Editing and Custom Imports
 

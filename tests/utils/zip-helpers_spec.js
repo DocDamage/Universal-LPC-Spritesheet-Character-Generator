@@ -11,6 +11,7 @@ import {
   addCharacterJsonAndCredits,
   addStandardAnimationToZipCustomFolder,
   checkFrameContentFromImageData,
+  composeFrameRowsToSpritesheet,
   CUSTOM_ANIM_DIRECTION_TO_ROW,
   downloadZipBlob,
   extractFramesFromAnimation,
@@ -558,6 +559,45 @@ describe("utils/zip-helpers.ts", () => {
       expect(out.left.length).to.be.greaterThan(0);
       expect(out.down).to.deep.equal([]);
       expect(out.right).to.deep.equal([]);
+    });
+  });
+
+  describe("composeFrameRowsToSpritesheet", () => {
+    it("returns a row-based spritesheet from extracted direction frames", () => {
+      const upFrame = createCanvas(4, 4);
+      upFrame.getContext("2d").fillStyle = "#ff0000";
+      upFrame.getContext("2d").fillRect(0, 0, 4, 4);
+      const downFrame = createCanvas(4, 4);
+      downFrame.getContext("2d").fillStyle = "#0000ff";
+      downFrame.getContext("2d").fillRect(0, 0, 4, 4);
+
+      const spritesheet = composeFrameRowsToSpritesheet(
+        {
+          up: [{ canvas: upFrame, frameNumber: 1 }],
+          down: [{ canvas: downFrame, frameNumber: 1 }],
+        },
+        ["up", "down"],
+      );
+
+      expect(spritesheet).to.not.equal(null);
+      expect(spritesheet.width).to.equal(4);
+      expect(spritesheet.height).to.equal(8);
+      const ctx = spritesheet.getContext("2d");
+      const upPixel = ctx.getImageData(0, 0, 1, 1).data;
+      const downPixel = ctx.getImageData(0, 4, 1, 1).data;
+      expect([upPixel[0], upPixel[1], upPixel[2], upPixel[3]]).to.deep.equal([
+        255, 0, 0, 255,
+      ]);
+      expect([
+        downPixel[0],
+        downPixel[1],
+        downPixel[2],
+        downPixel[3],
+      ]).to.deep.equal([0, 0, 255, 255]);
+    });
+
+    it("returns null when there are no populated directions", () => {
+      expect(composeFrameRowsToSpritesheet({ up: [] }, ["up"])).to.equal(null);
     });
   });
 

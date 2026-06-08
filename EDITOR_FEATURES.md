@@ -19,19 +19,19 @@ asset remains untouched.
 ## Editing Workspace
 
 - **Canvas zoom:** use the zoom slider, `Ctrl++`, `Ctrl+-`, `Ctrl+0`, or scroll
-the mouse wheel over the editor canvas. Editor zoom currently ranges from `2x` to
-`16x`.
+  the mouse wheel over the editor canvas. Editor zoom currently ranges from `2x` to
+  `16x`.
 - **Fullscreen editor:** press `F` or use the fullscreen control. Fullscreen
-expands the editing surface and enables the pro editor tabs.
+  expands the editing surface and enables the pro editor tabs.
 - **Direction views:** edit front, back, left, and right views from the direction
-thumbnails. When auto-propagation is enabled, front-view edits copy to the rear
-and side views; left and right side changes are mirrored rather than placed at
-the same x-position.
+  thumbnails. When auto-propagation is enabled, front-view edits copy to the rear
+  and side views; left and right side changes are mirrored rather than placed at
+  the same x-position.
 - **Tooltips:** buttons, sliders, import controls, and editor tabs include hover
-titles with their purpose and shortcut where applicable.
+  titles with their purpose and shortcut where applicable.
 - **Status bar:** a bottom bar shows the current cursor pixel position `(x,y)`,
-active direction, zoom level, active layer name, brush size, and frame number
-(when in frame mode).
+  active direction, zoom level, active layer name, brush size, and frame number
+  (when in frame mode).
 
 ## Base Tools
 
@@ -84,6 +84,29 @@ The **Animation** tab adds:
 - Animation selection and frame navigation.
 - Onion-skin previews of neighboring frames with adjustable ghost opacity.
 - `,` and `.` shortcuts for previous and next animation frame.
+
+## Animation Tweening and Export Progress
+
+This session added generated tweening for sprite animation previews and ZIP
+exports:
+
+- **Preview controls:** the animation preview now supports Off, Hold,
+  Crossfade, and Pixel Motion tween modes, with configurable in-between frames
+  and FPS.
+- **Pixel-art-friendly motion:** Pixel Motion estimates opaque-pixel movement
+  between neighboring frames and shifts silhouettes instead of blending colors.
+- **State persistence:** tween mode, in-between count, and playback FPS live in
+  app state and are reset with the rest of the character state.
+- **Individual-frame ZIPs:** when tweening is enabled, exports include tween
+  PNGs beside the original source frames and record the tween settings in
+  metadata.
+- **Split-by-animation ZIPs:** original `standard/` and `custom/` spritesheets
+  remain unchanged, while generated tweened sheets are added under
+  `tweened/standard/` and `tweened/custom/`.
+- **Download hint:** export controls surface a short "Tween frames enabled"
+  notice so users know ZIP exports will include generated frames.
+- **Coverage:** tween helpers, ZIP metadata/paths, recomposed tweened sheets,
+  and the download hint are covered by focused tests.
 
 ## Autosave & Recovery
 

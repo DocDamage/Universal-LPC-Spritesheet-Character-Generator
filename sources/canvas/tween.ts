@@ -7,12 +7,17 @@ export const TWEEN_MODES = [
 
 export type TweenMode = (typeof TWEEN_MODES)[number];
 
+export type TweenEasing = "linear" | "ease-in" | "ease-out" | "ease-in-out" | "bounce" | "elastic";
+
+export const TWEEN_EASINGS: TweenEasing[] = ["linear", "ease-in", "ease-out", "ease-in-out", "bounce", "elastic"];
+
 export type TweenSettings = {
   mode: TweenMode;
   inbetweens: number;
   fps: number;
   motionStrength: number;
   alphaThreshold: number;
+  easing: TweenEasing;
 };
 
 export type TweenPreset = "original" | "smooth" | "pixel-art" | "presentation";
@@ -31,6 +36,7 @@ export const DEFAULT_TWEEN_SETTINGS: TweenSettings = {
   fps: 8,
   motionStrength: 1,
   alphaThreshold: 1,
+  easing: "linear",
 };
 
 export const TWEEN_PRESETS: Record<TweenPreset, TweenSettings> = {
@@ -38,6 +44,28 @@ export const TWEEN_PRESETS: Record<TweenPreset, TweenSettings> = {
   smooth: {
     mode: "crossfade",
     inbetweens: 2,
+    fps: 12,
+    motionStrength: 1,
+    alphaThreshold: 1,
+    easing: "linear",
+  },
+  "pixel-art": {
+    mode: "pixel-motion",
+    inbetweens: 2,
+    fps: 12,
+    motionStrength: 1,
+    alphaThreshold: 16,
+    easing: "linear",
+  },
+  presentation: {
+    mode: "crossfade",
+    inbetweens: 4,
+    fps: 18,
+    motionStrength: 1,
+    alphaThreshold: 1,
+    easing: "linear",
+  },
+};
     fps: 12,
     motionStrength: 1,
     alphaThreshold: 1,
@@ -101,6 +129,7 @@ export function normalizeTweenSettings(
     alphaThreshold: normalizeTweenAlphaThreshold(
       settings.alphaThreshold ?? DEFAULT_TWEEN_SETTINGS.alphaThreshold,
     ),
+    easing: settings.easing || "linear",
   };
 }
 
@@ -108,9 +137,36 @@ export function isTweenMode(value: string): value is TweenMode {
   return TWEEN_MODES.includes(value as TweenMode);
 }
 
+function applyEasing(t: number, easing: TweenEasing): number {
+  if (easing === "linear") return t;
+  if (easing === "ease-in") return t * t;
+  if (easing === "ease-out") return t * (2 - t);
+  if (easing === "ease-in-out") {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+  if (easing === "bounce") {
+    let tempT = t;
+    if (tempT < 1 / 2.75) {
+      return 7.5625 * tempT * tempT;
+    } else if (tempT < 2 / 2.75) {
+      return 7.5625 * (tempT -= 1.5 / 2.75) * tempT + 0.75;
+    } else if (tempT < 2.5 / 2.75) {
+      return 7.5625 * (tempT -= 2.25 / 2.75) * tempT + 0.9375;
+    } else {
+      return 7.5625 * (tempT -= 2.625 / 2.75) * tempT + 0.984375;
+    }
+  }
+  if (easing === "elastic") {
+    if (t === 0 || t === 1) return t;
+    const p = 0.3;
+    return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+  }
+  return t;
+}
+
 export function buildTweenSteps<T>(
   frames: readonly T[],
-  settings: Pick<TweenSettings, "mode" | "inbetweens">,
+  settings: Pick<TweenSettings, "mode" | "inbetweens" | "easing">,
 ): TweenStep<T>[] {
   if (frames.length === 0) {
     return [];
@@ -131,11 +187,13 @@ export function buildTweenSteps<T>(
     });
 
     for (let tweenIndex = 1; tweenIndex <= inbetweens; tweenIndex += 1) {
+      const rawT = tweenIndex / (inbetweens + 1);
+      const easedT = applyEasing(rawT, settings.easing || "linear");
       steps.push({
         from: frame,
         to: nextFrame,
         sourceIndex: index,
-        t: tweenIndex / (inbetweens + 1),
+        t: Math.max(0, Math.min(1, easedT)),
         isTween: true,
       });
     }

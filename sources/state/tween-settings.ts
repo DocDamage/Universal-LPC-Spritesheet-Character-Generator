@@ -46,6 +46,7 @@ export function getGlobalTweenSettings(): TweenSettings {
     fps: state.previewTweenFps,
     motionStrength: state.previewTweenMotionStrength,
     alphaThreshold: state.previewTweenAlphaThreshold,
+    easing: state.previewTweenEasing,
   });
 }
 
@@ -67,6 +68,7 @@ export function setGlobalTweenSettings(settings: Partial<TweenSettings>): void {
   state.previewTweenFps = normalized.fps;
   state.previewTweenMotionStrength = normalized.motionStrength;
   state.previewTweenAlphaThreshold = normalized.alphaThreshold;
+  state.previewTweenEasing = normalized.easing;
 }
 
 export function applyTweenPreset(preset: TweenPreset): TweenSettings {
@@ -120,6 +122,7 @@ export function resetAllTweenSettings(): void {
   state.previewTweenFps = 8;
   state.previewTweenMotionStrength = 1;
   state.previewTweenAlphaThreshold = 1;
+  state.previewTweenEasing = "linear";
   state.previewTweenPreset = "original";
 }
 

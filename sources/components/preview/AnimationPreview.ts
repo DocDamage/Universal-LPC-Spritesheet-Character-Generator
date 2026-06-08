@@ -17,6 +17,7 @@ import type {
   TweenMode,
   TweenPreset,
   TweenSettings,
+  TweenEasing,
 } from "../../canvas/tween.ts";
 import {
   applyTweenPreset,
@@ -43,6 +44,7 @@ type PreviewCanvasAttrs = {
   tweenFps: number;
   tweenMotionStrength: number;
   tweenAlphaThreshold: number;
+  tweenEasing: TweenEasing;
   onFrameCycleUpdate: (frameCycle: string) => void;
 };
 
@@ -54,6 +56,7 @@ type PreviewCanvasState = {
   lastTweenFps: number;
   lastTweenMotionStrength: number;
   lastTweenAlphaThreshold: number;
+  lastTweenEasing: TweenEasing;
   _pinchUnmounted: boolean;
   pinch: PinchToZoom | null;
 };
@@ -68,6 +71,7 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       tweenFps,
       tweenMotionStrength,
       tweenAlphaThreshold,
+      tweenEasing,
       onFrameCycleUpdate,
     } = vnode.attrs;
     const zoomLevel = vnode.attrs.zoomLevel || 1;
@@ -85,6 +89,7 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       fps: tweenFps,
       motionStrength: tweenMotionStrength,
       alphaThreshold: tweenAlphaThreshold,
+      easing: tweenEasing,
     });
     startPreviewAnimation();
 
@@ -99,6 +104,7 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
     vnode.state.lastTweenFps = tweenFps;
     vnode.state.lastTweenMotionStrength = tweenMotionStrength;
     vnode.state.lastTweenAlphaThreshold = tweenAlphaThreshold;
+    vnode.state.lastTweenEasing = tweenEasing || "linear";
     vnode.state._pinchUnmounted = false;
     vnode.state.pinch = null;
     PinchToZoom.create(
@@ -123,7 +129,7 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
     });
   },
   onupdate(vnode) {
-    const { selectedAnimation, tweenMode, tweenInbetweens, tweenFps } =
+    const { selectedAnimation, tweenMode, tweenInbetweens, tweenFps, tweenEasing } =
       vnode.attrs;
     const { tweenMotionStrength, tweenAlphaThreshold } = vnode.attrs;
     const didTweenSettingsChange =
@@ -131,7 +137,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       vnode.state.lastTweenInbetweens !== tweenInbetweens ||
       vnode.state.lastTweenFps !== tweenFps ||
       vnode.state.lastTweenMotionStrength !== tweenMotionStrength ||
-      vnode.state.lastTweenAlphaThreshold !== tweenAlphaThreshold;
+      vnode.state.lastTweenAlphaThreshold !== tweenAlphaThreshold ||
+      vnode.state.lastTweenEasing !== tweenEasing;
 
     if (
       vnode.state.lastAnimation !== selectedAnimation ||
@@ -146,6 +153,7 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
           fps: tweenFps,
           motionStrength: tweenMotionStrength,
           alphaThreshold: tweenAlphaThreshold,
+          easing: tweenEasing,
         });
         initPreviewCanvas(vnode.dom as HTMLCanvasElement);
         startPreviewAnimation();
@@ -156,6 +164,7 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
       vnode.state.lastTweenFps = tweenFps;
       vnode.state.lastTweenMotionStrength = tweenMotionStrength;
       vnode.state.lastTweenAlphaThreshold = tweenAlphaThreshold;
+      vnode.state.lastTweenEasing = tweenEasing || "linear";
     }
 
     vnode.state.zoomLevel = state.previewCanvasZoomLevel || 1;
@@ -185,6 +194,7 @@ type AnimationPreviewState = {
   tweenFps: number;
   tweenMotionStrength: number;
   tweenAlphaThreshold: number;
+  tweenEasing: TweenEasing;
   tweenPreset: TweenPreset;
   useAnimationOverride: boolean;
   compareOriginal: boolean;
@@ -213,6 +223,7 @@ function assignTweenState(
   vnode.state.tweenFps = settings.fps;
   vnode.state.tweenMotionStrength = settings.motionStrength;
   vnode.state.tweenAlphaThreshold = settings.alphaThreshold;
+  vnode.state.tweenEasing = settings.easing || "linear";
 }
 
 function persistTweenSettings(
@@ -224,6 +235,7 @@ function persistTweenSettings(
     fps: vnode.state.tweenFps,
     motionStrength: vnode.state.tweenMotionStrength,
     alphaThreshold: vnode.state.tweenAlphaThreshold,
+    easing: vnode.state.tweenEasing || "linear",
   };
   if (vnode.state.useAnimationOverride) {
     setTweenOverrideForAnimation(vnode.state.selectedAnimation, settings);
@@ -507,6 +519,30 @@ export const AnimationPreview: m.Component<
                       },
                     }),
                   ]),
+                  m("div.control.is-expanded.mt-2", [
+                    m("label.label.is-small.mb-1", "Motion Easing"),
+                    m("div.select.is-small.is-fullwidth", {
+                      style: { width: "100%", display: "block" }
+                    }, [
+                      m("select", {
+                        value: vnode.state.tweenEasing || "linear",
+                        disabled: vnode.state.tweenMode === "off",
+                        onchange: (e: Event) => {
+                          const target = e.target as HTMLSelectElement;
+                          vnode.state.tweenEasing = target.value as any;
+                          persistTweenSettings(vnode);
+                        },
+                        style: { width: "100%" }
+                      }, [
+                        m("option", { value: "linear" }, "Linear (Fixed Speed)"),
+                        m("option", { value: "ease-in" }, "Ease-In (Accelerate)"),
+                        m("option", { value: "ease-out" }, "Ease-Out (Decelerate)"),
+                        m("option", { value: "ease-in-out" }, "Ease-In-Out (Smooth)"),
+                        m("option", { value: "bounce" }, "Bounce"),
+                        m("option", { value: "elastic" }, "Elastic (Snap)"),
+                      ]),
+                    ]),
+                  ]),
                   vnode.state.tweenMode === "pixel-motion"
                     ? [
                         m("div.control.is-expanded.mt-2", [
@@ -569,6 +605,9 @@ export const AnimationPreview: m.Component<
                     : vnode.state.tweenFps,
                   tweenMotionStrength: vnode.state.tweenMotionStrength,
                   tweenAlphaThreshold: vnode.state.tweenAlphaThreshold,
+                  tweenEasing: vnode.state.compareOriginal
+                    ? "linear"
+                    : vnode.state.tweenEasing || "linear",
                   onFrameCycleUpdate: (frameCycle) => {
                     vnode.state.frameCycle = frameCycle;
                   },

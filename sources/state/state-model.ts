@@ -1,5 +1,5 @@
 import { LICENSE_CONFIG, ANIMATIONS, BODY_TYPES } from "./constants.ts";
-import type { TweenMode, TweenPreset } from "../canvas/tween.ts";
+import type { TweenMode, TweenPreset, TweenEasing } from "../canvas/tween.ts";
 
 /** A single item selection within a selection group (e.g. body, head, ears). */
 export type Selection = {
@@ -40,6 +40,7 @@ export type State = {
   previewTweenFps: number;
   previewTweenMotionStrength: number;
   previewTweenAlphaThreshold: number;
+  previewTweenEasing: TweenEasing;
   previewTweenPreset: TweenPreset;
   previewTweenOverrides: Record<
     string,
@@ -49,6 +50,7 @@ export type State = {
       fps: number;
       motionStrength: number;
       alphaThreshold: number;
+      easing: TweenEasing;
     }
   >;
   fullSpritesheetCanvasZoomLevel: number;
@@ -95,6 +97,7 @@ export const state: State = {
   previewTweenFps: 8,
   previewTweenMotionStrength: 1,
   previewTweenAlphaThreshold: 1,
+  previewTweenEasing: "linear",
   previewTweenPreset: "original",
   previewTweenOverrides: {},
   fullSpritesheetCanvasZoomLevel: 1,

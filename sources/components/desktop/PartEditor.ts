@@ -63,6 +63,8 @@ export type PartEditorState = PixelEditorToolState & {
   onionSkin: boolean;
   onionOpacity: number;
   onionCanvases: OnionCanvases | null;
+  referenceImageUrl: string | null;
+  referenceOpacity: number;
   replaceFromColor: string;
   replaceToColor: string;
   replaceTolerance: number;
@@ -119,6 +121,7 @@ export type EditorLayer = {
   opacity: number;
   locked: boolean;
   alphaLocked: boolean;
+  blendMode?: GlobalCompositeOperation;
 };
 
 export type EditorLayerSnapshot = {
@@ -128,6 +131,7 @@ export type EditorLayerSnapshot = {
   opacity: number;
   locked?: boolean;
   alphaLocked?: boolean;
+  blendMode?: string;
   canvases: Record<Direction, string>;
 };
 
@@ -339,6 +343,8 @@ export function createPartEditorStateForTests(
     onionSkin: false,
     onionOpacity: 0.28,
     onionCanvases: null,
+    referenceImageUrl: null,
+    referenceOpacity: 0.3,
     replaceFromColor: "#000000",
     replaceToColor: "#ff0000",
     replaceTolerance: 0,
@@ -422,6 +428,8 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
     vnode.state.onionSkin = false;
     vnode.state.onionOpacity = 0.28;
     vnode.state.onionCanvases = null;
+    vnode.state.referenceImageUrl = null;
+    vnode.state.referenceOpacity = 0.3;
     vnode.state.replaceFromColor = "#000000";
     vnode.state.replaceToColor = "#ff0000";
     vnode.state.replaceTolerance = 0;
@@ -1196,56 +1204,86 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
                   },
                 },
                 [
-                  m("canvas.editor-pixel-canvas", {
-                    width: 64,
-                    height: 64,
+                  m("div", {
                     style: {
+                      position: "relative",
                       width: canvasDisplaySize,
                       height: canvasDisplaySize,
-                      imageRendering: "pixelated",
-                      backgroundImage: vnode.state.showGrid
-                        ? undefined
-                        : "none",
-                      cursor:
-                        vnode.state.tool === "picker"
-                          ? "crosshair"
-                          : vnode.state.tool === "select"
+                      margin: "0 auto",
+                    }
+                  }, [
+                    vnode.state.referenceImageUrl
+                      ? m("img", {
+                          src: vnode.state.referenceImageUrl,
+                          style: {
+                            position: "absolute",
+                            top: "0",
+                            left: "0",
+                            width: "100%",
+                            height: "100%",
+                            opacity: String(vnode.state.referenceOpacity),
+                            pointerEvents: "none",
+                            imageRendering: "pixelated",
+                          }
+                        })
+                      : null,
+                    m("canvas.editor-pixel-canvas", {
+                      width: 64,
+                      height: 64,
+                      style: {
+                        position: "absolute",
+                        top: "0",
+                        left: "0",
+                        width: "100%",
+                        height: "100%",
+                        imageRendering: "pixelated",
+                        backgroundImage: vnode.state.showGrid
+                          ? undefined
+                          : "none",
+                        backgroundColor: vnode.state.referenceImageUrl
+                          ? "transparent"
+                          : undefined,
+                        cursor:
+                          vnode.state.tool === "picker"
                             ? "crosshair"
-                            : isShapeTool(vnode.state.tool)
+                            : vnode.state.tool === "select"
                               ? "crosshair"
-                              : vnode.state.tool === "eraser"
-                                ? "cell"
-                                : "crosshair",
-                    },
-                    oncreate: (vnodeDOM) => {
-                      const el = vnodeDOM.dom as HTMLCanvasElement;
-                      const ctx = get2DContext(el);
-                      ctx.imageSmoothingEnabled = false;
-                      drawMainGrid(ctx, activeCanvas, vnode.state);
-                    },
-                    onupdate: (vnodeDOM) => {
-                      const el = vnodeDOM.dom as HTMLCanvasElement;
-                      const ctx = get2DContext(el);
-                      ctx.imageSmoothingEnabled = false;
-                      drawMainGrid(ctx, activeCanvas, vnode.state);
-                    },
-                    onmousedown: (e: MouseEvent) => {
-                      handleCanvasDown(e, e.target as HTMLCanvasElement);
-                    },
-                    onmousemove: (e: MouseEvent) => {
-                      const canvasEl = e.target as HTMLCanvasElement;
-                      const point = getCanvasPoint(e, canvasEl);
-                      vnode.state.cursorPosition = point;
-                      handleCanvasMove(e, canvasEl);
-                    },
-                    onmouseup: (e: MouseEvent) => {
-                      handleCanvasUp(e.target as HTMLCanvasElement);
-                    },
-                    onmouseleave: (e: MouseEvent) => {
-                      vnode.state.cursorPosition = null;
-                      handleCanvasLeave(e.target as HTMLCanvasElement);
-                    },
-                  }),
+                              : isShapeTool(vnode.state.tool)
+                                ? "crosshair"
+                                : vnode.state.tool === "eraser"
+                                  ? "cell"
+                                  : "crosshair",
+                      },
+                      oncreate: (vnodeDOM) => {
+                        const el = vnodeDOM.dom as HTMLCanvasElement;
+                        const ctx = get2DContext(el);
+                        ctx.imageSmoothingEnabled = false;
+                        drawMainGrid(ctx, activeCanvas, vnode.state);
+                      },
+                      onupdate: (vnodeDOM) => {
+                        const el = vnodeDOM.dom as HTMLCanvasElement;
+                        const ctx = get2DContext(el);
+                        ctx.imageSmoothingEnabled = false;
+                        drawMainGrid(ctx, activeCanvas, vnode.state);
+                      },
+                      onmousedown: (e: MouseEvent) => {
+                        handleCanvasDown(e, e.target as HTMLCanvasElement);
+                      },
+                      onmousemove: (e: MouseEvent) => {
+                        const canvasEl = e.target as HTMLCanvasElement;
+                        const point = getCanvasPoint(e, canvasEl);
+                        vnode.state.cursorPosition = point;
+                        handleCanvasMove(e, canvasEl);
+                      },
+                      onmouseup: (e: MouseEvent) => {
+                        handleCanvasUp(e.target as HTMLCanvasElement);
+                      },
+                      onmouseleave: (e: MouseEvent) => {
+                        vnode.state.cursorPosition = null;
+                        handleCanvasLeave(e.target as HTMLCanvasElement);
+                      },
+                    }),
+                  ]),
                 ],
               ),
             ]),
@@ -1749,21 +1787,58 @@ function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
                     `${Math.round(layer.opacity * 100)}%`,
                   ),
                 ]),
-                m("input.part-editor-layer-opacity", {
-                  type: "range",
-                  min: "0",
-                  max: "100",
-                  step: "1",
-                  value: String(Math.round(layer.opacity * 100)),
-                  title: "Layer opacity",
-                  onclick: (e: MouseEvent) => e.stopPropagation(),
-                  oninput: (e: Event) => {
-                    layer.opacity =
-                      Number((e.target as HTMLInputElement).value) / 100;
-                    debouncedRecomposeCanvases(stateObj);
-                  },
-                  onchange: () => saveHistory(stateObj),
-                }),
+                m("div.part-editor-layer-sub", { style: { display: "flex", gap: "8px", alignItems: "center" } }, [
+                  m("select.part-editor-layer-blend", {
+                    style: {
+                      flex: "0 0 100px",
+                      background: "var(--bg-darkest)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-sm)",
+                      color: "var(--text-primary)",
+                      fontSize: "10px",
+                      padding: "2px 4px",
+                      height: "22px",
+                      cursor: "pointer",
+                    },
+                    value: layer.blendMode || "source-over",
+                    title: "Layer blend mode",
+                    onclick: (e: MouseEvent) => e.stopPropagation(),
+                    onchange: (e: Event) => {
+                      layer.blendMode = (e.target as HTMLSelectElement).value as GlobalCompositeOperation;
+                      recomposeCanvases(stateObj);
+                      saveHistory(stateObj);
+                    }
+                  }, [
+                    m("option", { value: "source-over" }, "Normal"),
+                    m("option", { value: "multiply" }, "Multiply"),
+                    m("option", { value: "screen" }, "Screen"),
+                    m("option", { value: "overlay" }, "Overlay"),
+                    m("option", { value: "darken" }, "Darken"),
+                    m("option", { value: "lighten" }, "Lighten"),
+                    m("option", { value: "color-dodge" }, "Dodge"),
+                    m("option", { value: "color-burn" }, "Burn"),
+                    m("option", { value: "hard-light" }, "Hard Light"),
+                    m("option", { value: "soft-light" }, "Soft Light"),
+                    m("option", { value: "difference" }, "Difference"),
+                    m("option", { value: "exclusion" }, "Exclusion"),
+                  ]),
+                  m("input.part-editor-layer-opacity", {
+                    style: { flex: "1", margin: "0" },
+                    type: "range",
+                    min: "0",
+                    max: "100",
+                    step: "1",
+                    value: String(Math.round(layer.opacity * 100)),
+                    title: "Layer opacity",
+                    onclick: (e: MouseEvent) => e.stopPropagation(),
+                    oninput: (e: Event) => {
+                      layer.opacity =
+                        Number((e.target as HTMLInputElement).value) / 100;
+                      debouncedRecomposeCanvases(stateObj);
+                    },
+                    onchange: () => saveHistory(stateObj),
+                  }),
+                ]),
               ],
             ),
           ),
@@ -1833,6 +1908,71 @@ function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
         },
         "Reset Zoom",
       ),
+    ]),
+    m("div.part-editor-pro-section", [
+      m("h4", "Reference Underlay"),
+      m("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } }, [
+        m("label", { style: { display: "flex", gap: "8px", alignItems: "center" } }, [
+          m("span", { style: { fontSize: "11px", color: "var(--text-muted)" } }, "Opacity"),
+          m("input", {
+            style: { flex: "1" },
+            type: "range",
+            min: "0",
+            max: "100",
+            step: "5",
+            value: String(Math.round(stateObj.referenceOpacity * 100)),
+            oninput: (e: Event) => {
+              stateObj.referenceOpacity = Number((e.target as HTMLInputElement).value) / 100;
+            }
+          }),
+          m("span", { style: { fontSize: "11px", color: "var(--text-muted)", width: "30px", textAlign: "right" } }, `${Math.round(stateObj.referenceOpacity * 100)}%`)
+        ]),
+        m("div", { style: { display: "flex", gap: "8px" } }, [
+          m("label.part-editor-pro-button", {
+            style: {
+              flex: "1",
+              textAlign: "center",
+              lineHeight: "22px",
+              cursor: "pointer",
+              display: "block",
+              background: "var(--bg-darkest)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "11px",
+              padding: "0 6px",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              overflow: "hidden"
+            }
+          }, [
+            "Upload Image",
+            m("input", {
+              type: "file",
+              accept: "image/*",
+              style: { display: "none" },
+              onchange: (e: Event) => {
+                const target = e.target as HTMLInputElement;
+                if (target.files && target.files[0]) {
+                  const file = target.files[0];
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    stateObj.referenceImageUrl = reader.result as string;
+                    m.redraw();
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }
+            })
+          ]),
+          stateObj.referenceImageUrl ? m("button.part-editor-pro-button", {
+            type: "button",
+            style: { padding: "0 10px" },
+            onclick: () => {
+              stateObj.referenceImageUrl = null;
+            }
+          }, "Clear") : null
+        ])
+      ])
     ]),
   ];
 }
@@ -3418,13 +3558,16 @@ function composeLayersIntoCanvases(
     const ctx = get2DContext(targetCanvases[direction]);
     ctx.clearRect(0, 0, FRAME_SIZE, FRAME_SIZE);
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
 
     for (const layer of layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
       ctx.globalAlpha = Math.min(1, Math.max(0, layer.opacity));
+      ctx.globalCompositeOperation = layer.blendMode || "source-over";
       ctx.drawImage(layer.canvases[direction], 0, 0);
     }
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
   }
 }
 
@@ -3798,6 +3941,7 @@ function createHistorySnapshot(stateObj: PartEditorState): EditorSnapshot {
       opacity: layer.opacity,
       locked: layer.locked,
       alphaLocked: layer.alphaLocked,
+      blendMode: layer.blendMode || "source-over",
       canvases: {
         front: layer.canvases.front.toDataURL(),
         back: layer.canvases.back.toDataURL(),
@@ -3900,6 +4044,7 @@ async function createLayerFromSnapshot(
     opacity: Math.min(1, Math.max(0, snapshot.opacity)),
     locked: snapshot.locked ?? false,
     alphaLocked: snapshot.alphaLocked ?? false,
+    blendMode: snapshot.blendMode as GlobalCompositeOperation || "source-over",
     canvases,
   };
 }

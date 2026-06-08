@@ -23,6 +23,12 @@ import {
   ANIMATIONS,
   FRAME_SIZE,
 } from "../../state/constants.ts";
+import {
+  clearDraft,
+  hasUnsavedDraft,
+  loadDraft,
+  saveDraft,
+} from "../../state/editor-autosave.ts";
 import type { ItemMerged } from "../../state/catalog.ts";
 import {
   applyBrush,
@@ -79,6 +85,29 @@ export type PartEditorState = PixelEditorToolState & {
   // Undo history
   history: string[]; // Store JSON snapshots of edit layers
   historyIndex: number;
+
+  // Task 1: Autosave
+  showRecoveryPrompt: boolean;
+  autosaveDebounceTimer: number | null;
+  unsavedChanges: boolean;
+  beforeunloadHandler: ((e: BeforeUnloadEvent) => void) | null;
+
+  // Task 2: Status bar
+  cursorPosition: Point | null;
+
+  // Task 6: Animation playback
+  isPlaying: boolean;
+  playbackTimer: number | null;
+
+  // Task 8: Mobile/touch
+  isTouchDevice: boolean;
+  touchStartDist: number;
+  touchStartZoom: number;
+  lastTouchCenter: { x: number; y: number } | null;
+
+  // Task 9: Performance
+  thumbnailCache: Record<Direction, HTMLCanvasElement> | null;
+  recomposeDebounceTimer: number | null;
 };
 
 export type EditorLayer = {
@@ -144,6 +173,7 @@ export type SelectionClipboard = {
   width: number;
   height: number;
   imageData: ImageData;
+  sourceDirection?: Direction;
 };
 
 type ShapeTool = "line" | "rect" | "ellipse";
@@ -314,6 +344,19 @@ export function createPartEditorStateForTests(
     replaceAllDirections: false,
     transformAllDirections: false,
     alphaLocked: false,
+    showRecoveryPrompt: false,
+    autosaveDebounceTimer: null,
+    unsavedChanges: false,
+    beforeunloadHandler: null,
+    cursorPosition: null,
+    isPlaying: false,
+    playbackTimer: null,
+    isTouchDevice: false,
+    touchStartDist: 0,
+    touchStartZoom: DEFAULT_EDITOR_ZOOM,
+    lastTouchCenter: null,
+    thumbnailCache: null,
+    recomposeDebounceTimer: null,
   } as PartEditorState;
 
   Object.assign(stateObj, overrides);
@@ -384,6 +427,33 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     vnode.state.replaceAllDirections = false;
     vnode.state.transformAllDirections = false;
     vnode.state.alphaLocked = false;
+
+    // Task 1: Autosave
+    vnode.state.showRecoveryPrompt = false;
+    vnode.state.autosaveDebounceTimer = null;
+    vnode.state.unsavedChanges = false;
+    vnode.state.beforeunloadHandler = null;
+
+    // Task 2: Status bar
+    vnode.state.cursorPosition = null;
+
+    // Task 6: Animation playback
+    vnode.state.isPlaying = false;
+    vnode.state.playbackTimer = null;
+
+    // Task 8: Mobile/touch
+    vnode.state.isTouchDevice =
+      window.matchMedia("(hover: none)").matches ||
+      window.matchMedia("(max-width: 768px)").matches ||
+      "ontouchstart" in window;
+    vnode.state.touchStartDist = 0;
+    vnode.state.touchStartZoom = DEFAULT_EDITOR_ZOOM;
+    vnode.state.lastTouchCenter = null;
+
+    // Task 9: Performance
+    vnode.state.thumbnailCache = null;
+    vnode.state.recomposeDebounceTimer = null;
+
     resetEditLayers(vnode.state);
   },
 
@@ -393,12 +463,33 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
       handleEditorShortcut(e, vnode.state);
     };
     window.addEventListener("keydown", vnode.state.keyboardHandler);
+
+    // Task 1: beforeunload warning
+    vnode.state.beforeunloadHandler = (e: BeforeUnloadEvent) => {
+      if (vnode.state.unsavedChanges && vnode.state.baseItemId) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", vnode.state.beforeunloadHandler);
   },
 
   onremove(vnode) {
     unregisterEditorContext();
     if (vnode.state.keyboardHandler) {
       window.removeEventListener("keydown", vnode.state.keyboardHandler);
+    }
+    if (vnode.state.beforeunloadHandler) {
+      window.removeEventListener("beforeunload", vnode.state.beforeunloadHandler);
+    }
+    // Task 6: stop playback
+    stopPlayback(vnode.state);
+    // Task 1 & 9: clear timers
+    if (vnode.state.autosaveDebounceTimer) {
+      window.clearTimeout(vnode.state.autosaveDebounceTimer);
+    }
+    if (vnode.state.recomposeDebounceTimer) {
+      window.clearTimeout(vnode.state.recomposeDebounceTimer);
     }
   },
 
@@ -498,6 +589,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               vnode.state.globalEditorContext = createEditorContextSnapshot(
                 vnode.state,
               );
+              void checkForDraftRecovery(vnode.state, editing.itemId);
               m.redraw();
             })
             .catch((err) => {
@@ -521,6 +613,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               vnode.state.globalEditorContext = createEditorContextSnapshot(
                 vnode.state,
               );
+              void checkForDraftRecovery(vnode.state, editing.itemId);
               m.redraw();
             });
         } else {
@@ -540,6 +633,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
           vnode.state.globalEditorContext = createEditorContextSnapshot(
             vnode.state,
           );
+          void checkForDraftRecovery(vnode.state, editing.itemId);
         }
       } else {
         vnode.state.loading = false;
@@ -765,6 +859,10 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
 
         state.editingPart = null; // Close editor
         vnode.state.baseItemId = null;
+        vnode.state.unsavedChanges = false;
+        if (baseId) {
+          void clearDraft(baseId);
+        }
 
         // Force character redraw
         m.redraw();
@@ -778,9 +876,17 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
     return m(
       "div.part-editor",
       {
-        class: vnode.state.isFullscreen ? "part-editor-fullscreen" : "",
+        class: [
+          vnode.state.isFullscreen ? "part-editor-fullscreen" : "",
+          vnode.state.isTouchDevice ? "part-editor-mobile" : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
       },
       [
+        vnode.state.showRecoveryPrompt
+          ? renderRecoveryPrompt(vnode.state)
+          : null,
         m("div.part-editor-header", [
           m("h3", `Sprite Part Editor`),
           m("div.part-editor-header-actions", [
@@ -803,6 +909,12 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                 type: "button",
                 title: "Close editor",
                 onclick: () => {
+                  if (vnode.state.unsavedChanges && vnode.state.baseItemId) {
+                    const confirmed = window.confirm(
+                      "You have unsaved changes. Discard them?",
+                    );
+                    if (!confirmed) return;
+                  }
                   state.editingPart = null;
                 },
               },
@@ -1052,8 +1164,29 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
               m(
                 "div.part-editor-canvas-stage",
                 {
-                  title: "Scroll over the canvas to zoom",
+                  title: "Scroll over the canvas to zoom. Two-finger drag to pan, pinch to zoom.",
                   onwheel: handleCanvasWheel,
+                  ontouchstart: (e: TouchEvent) => {
+                    handleTouchStart(e, vnode.state);
+                  },
+                  ontouchmove: (e: TouchEvent) => {
+                    handleTouchMove(e, vnode.state);
+                    if (e.touches.length === 2 && vnode.state.lastTouchCenter) {
+                      const currentCenter = {
+                        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                      };
+                      const dx = currentCenter.x - vnode.state.lastTouchCenter.x;
+                      const dy = currentCenter.y - vnode.state.lastTouchCenter.y;
+                      const stage = e.currentTarget as HTMLElement;
+                      stage.scrollLeft -= dx;
+                      stage.scrollTop -= dy;
+                      vnode.state.lastTouchCenter = currentCenter;
+                    }
+                  },
+                  ontouchend: () => {
+                    handleTouchEnd(vnode.state);
+                  },
                 },
                 [
                   m("canvas.editor-pixel-canvas", {
@@ -1093,12 +1226,16 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                       handleCanvasDown(e, e.target as HTMLCanvasElement);
                     },
                     onmousemove: (e: MouseEvent) => {
-                      handleCanvasMove(e, e.target as HTMLCanvasElement);
+                      const canvasEl = e.target as HTMLCanvasElement;
+                      const point = getCanvasPoint(e, canvasEl);
+                      vnode.state.cursorPosition = point;
+                      handleCanvasMove(e, canvasEl);
                     },
                     onmouseup: (e: MouseEvent) => {
                       handleCanvasUp(e.target as HTMLCanvasElement);
                     },
                     onmouseleave: (e: MouseEvent) => {
+                      vnode.state.cursorPosition = null;
                       handleCanvasLeave(e.target as HTMLCanvasElement);
                     },
                   }),
@@ -1137,8 +1274,14 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
                       onupdate: (vnodeDOM) => {
                         const el = vnodeDOM.dom as HTMLCanvasElement;
                         const ctx = get2DContext(el);
-                        ctx.clearRect(0, 0, 64, 64);
-                        ctx.drawImage(vnode.state.canvases[dir], 0, 0);
+                        const cache = vnode.state.thumbnailCache?.[dir];
+                        if (cache) {
+                          ctx.clearRect(0, 0, 64, 64);
+                          ctx.drawImage(cache, 0, 0);
+                        } else {
+                          ctx.clearRect(0, 0, 64, 64);
+                          ctx.drawImage(vnode.state.canvases[dir], 0, 0);
+                        }
                       },
                     }),
                     m("span.part-editor-dir-label", dir.toUpperCase()),
@@ -1159,6 +1302,7 @@ export const PartEditor: m.Component<{}, PartEditorState> = {
             ),
           ]),
           vnode.state.isFullscreen ? renderProPanel(vnode.state) : null,
+          renderStatusBar(vnode.state),
         ]),
       ],
     );
@@ -1609,7 +1753,7 @@ function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
                   oninput: (e: Event) => {
                     layer.opacity =
                       Number((e.target as HTMLInputElement).value) / 100;
-                    recomposeCanvases(stateObj);
+                    debouncedRecomposeCanvases(stateObj);
                   },
                   onchange: () => saveHistory(stateObj),
                 }),
@@ -1739,6 +1883,25 @@ function renderAnimationEditorPanel(stateObj: PartEditorState): m.Children {
         ),
         m("b", stateObj.frameMode ? "On" : "Off"),
       ]),
+      // Task 6: Play/pause
+      m("div.part-editor-playback-controls", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            title: stateObj.isPlaying ? "Pause playback" : "Play animation",
+            disabled: !stateObj.frameMode,
+            onclick: () => {
+              if (stateObj.isPlaying) {
+                stopPlayback(stateObj);
+              } else {
+                startPlayback(stateObj);
+              }
+            },
+          },
+          stateObj.isPlaying ? "⏸ Pause" : "▶ Play",
+        ),
+      ]),
       m("div.part-editor-frame-controls", [
         m(
           "button.part-editor-pro-button",
@@ -1797,6 +1960,19 @@ function renderAnimationEditorPanel(stateObj: PartEditorState): m.Children {
           `${stateObj.frameIndex + 1}/${frameCount}`,
         ),
       ]),
+      // Task 6: Scrubbable timeline thumbnails
+      renderTimelineThumbnails(stateObj, frameCount),
+      // Task 6: Apply Global to Frame
+      m(
+        "button.part-editor-pro-button",
+        {
+          type: "button",
+          title: "Copy global edits into the current frame",
+          disabled: !stateObj.frameMode || !stateObj.globalEditorContext,
+          onclick: () => applyGlobalToFrame(stateObj),
+        },
+        "Apply Global to Frame",
+      ),
       m(
         "label.part-editor-pro-toggle",
         {
@@ -1938,7 +2114,7 @@ function handleEditorShortcut(
 
   if (isSelectionNudgeKey(key) && stateObj.selectionRect) {
     e.preventDefault();
-    nudgeSelection(stateObj, key, e.shiftKey ? 4 : 1);
+    nudgeSelection(stateObj, key, e.shiftKey ? 10 : 1);
   } else if (
     (key === "backspace" || key === "delete") &&
     stateObj.selectionRect
@@ -2247,6 +2423,7 @@ function copySelection(stateObj: PartEditorState): boolean {
     imageData: cloneImageData(
       ctx.getImageData(rect.x, rect.y, rect.width, rect.height),
     ),
+    sourceDirection: stateObj.activeDirection,
   };
   return true;
 }
@@ -2268,7 +2445,20 @@ function pasteClipboard(stateObj: PartEditorState): boolean {
   };
   const target = clampSelectionPosition(rect, rect.x, rect.y);
   const ctx = get2DContext(activeLayer.canvases[stateObj.activeDirection]);
-  ctx.putImageData(cloneImageData(clipboard.imageData), target.x, target.y);
+
+  let imageData = clipboard.imageData;
+  const sourceDir = clipboard.sourceDirection;
+  const targetDir = stateObj.activeDirection;
+  if (
+    sourceDir &&
+    targetDir &&
+    ((sourceDir === "left" && targetDir === "right") ||
+      (sourceDir === "right" && targetDir === "left"))
+  ) {
+    imageData = flipImageDataHorizontal(imageData);
+  }
+
+  ctx.putImageData(cloneImageData(imageData), target.x, target.y);
   stateObj.selectionRect = {
     x: target.x,
     y: target.y,
@@ -3192,6 +3382,25 @@ function getActiveLayerToolState(
 
 function recomposeCanvases(stateObj: PartEditorState): void {
   composeLayersIntoCanvases(stateObj.editLayers, stateObj.canvases);
+  // Populate or update thumbnail cache after recomposing
+  if (!stateObj.thumbnailCache) {
+    stateObj.thumbnailCache = {
+      front: document.createElement("canvas"),
+      back: document.createElement("canvas"),
+      left: document.createElement("canvas"),
+      right: document.createElement("canvas"),
+    };
+    for (const direction of DIRECTIONS) {
+      stateObj.thumbnailCache[direction].width = 64;
+      stateObj.thumbnailCache[direction].height = 64;
+    }
+  }
+  for (const direction of DIRECTIONS) {
+    const thumb = stateObj.thumbnailCache[direction];
+    const ctx = get2DContext(thumb);
+    ctx.clearRect(0, 0, 64, 64);
+    ctx.drawImage(stateObj.canvases[direction], 0, 0);
+  }
 }
 
 function composeLayersIntoCanvases(
@@ -3567,6 +3776,8 @@ function saveHistory(stateObj: PartEditorState): void {
   stateObj.history = stateObj.history.slice(0, stateObj.historyIndex + 1);
   stateObj.history.push(JSON.stringify(createHistorySnapshot(stateObj)));
   stateObj.historyIndex = stateObj.history.length - 1;
+  stateObj.unsavedChanges = true;
+  debouncedAutosave(stateObj);
 }
 
 function createHistorySnapshot(stateObj: PartEditorState): EditorSnapshot {
@@ -3701,6 +3912,228 @@ async function loadLegacyCanvasSnapshot(
   stateObj.activeLayerId = layer.id;
 }
 
+function debouncedRecomposeCanvases(stateObj: PartEditorState): void {
+  if (stateObj.recomposeDebounceTimer) {
+    window.clearTimeout(stateObj.recomposeDebounceTimer);
+  }
+  stateObj.recomposeDebounceTimer = window.setTimeout(() => {
+    recomposeCanvases(stateObj);
+    m.redraw();
+  }, 100);
+}
+
+function debouncedAutosave(stateObj: PartEditorState): void {
+  if (!stateObj.baseItemId) return;
+  if (stateObj.autosaveDebounceTimer) {
+    window.clearTimeout(stateObj.autosaveDebounceTimer);
+  }
+  stateObj.autosaveDebounceTimer = window.setTimeout(() => {
+    const snapshot = JSON.stringify(createEditorContextSnapshot(stateObj));
+    void saveDraft(stateObj.baseItemId!, snapshot);
+  }, 500);
+}
+
+function flipImageDataHorizontal(sourceData: ImageData): ImageData {
+  const output = new ImageData(sourceData.width, sourceData.height);
+  for (let y = 0; y < sourceData.height; y++) {
+    for (let x = 0; x < sourceData.width; x++) {
+      const sourceX = sourceData.width - 1 - x;
+      const sourceY = y;
+      copyImagePixel(sourceData, output, sourceX, sourceY, x, y);
+    }
+  }
+  return output;
+}
+
+function renderStatusBar(stateObj: PartEditorState): m.Children {
+  const cursor = stateObj.cursorPosition;
+  const cursorText = cursor ? `${cursor.x},${cursor.y}` : "—";
+  const activeLayer = getActiveLayer(stateObj);
+  const layerName = activeLayer?.name ?? "—";
+  const frameText = stateObj.frameMode
+    ? `F${stateObj.frameIndex + 1}`
+    : "Global";
+
+  return m("div.part-editor-status-bar", [
+    m("span.part-editor-status-item", `Pos: ${cursorText}`),
+    m("span.part-editor-status-item", `Dir: ${stateObj.activeDirection.toUpperCase()}`),
+    m("span.part-editor-status-item", `Zoom: ${stateObj.zoom}x`),
+    m("span.part-editor-status-item", `Layer: ${layerName}`),
+    m("span.part-editor-status-item", `Brush: ${stateObj.brushSize}px`),
+    m("span.part-editor-status-item", frameText),
+  ]);
+}
+
+function renderRecoveryPrompt(stateObj: PartEditorState): m.Children {
+  return m("div.part-editor-recovery-overlay", [
+    m("div.part-editor-recovery-dialog", [
+      m("h4", "Recover Unsaved Draft?"),
+      m("p", "You have unsaved edits from a previous session."),
+      m("div.part-editor-recovery-actions", [
+        m(
+          "button.part-editor-pro-button",
+          {
+            type: "button",
+            onclick: async () => {
+              const draft = await loadDraft(stateObj.baseItemId!);
+              if (draft) {
+                try {
+                  const context = JSON.parse(draft) as EditorContextSnapshot;
+                  await restoreEditorContext(stateObj, context);
+                  stateObj.globalEditorContext = context;
+                  stateObj.unsavedChanges = true;
+                } catch (err) {
+                  console.warn("Failed to restore draft:", err);
+                }
+              }
+              stateObj.showRecoveryPrompt = false;
+              m.redraw();
+            },
+          },
+          "Restore Draft",
+        ),
+        m(
+          "button.part-editor-pro-button.part-editor-transform-clear",
+          {
+            type: "button",
+            onclick: () => {
+              stateObj.showRecoveryPrompt = false;
+              if (stateObj.baseItemId) {
+                void clearDraft(stateObj.baseItemId);
+              }
+              m.redraw();
+            },
+          },
+          "Discard",
+        ),
+      ]),
+    ]),
+  ]);
+}
+
+function renderTimelineThumbnails(
+  stateObj: PartEditorState,
+  frameCount: number,
+): m.Children {
+  if (!stateObj.frameMode || frameCount <= 1) return null;
+
+  return m("div.part-editor-timeline-strip", [
+    Array.from({ length: frameCount }, (_, i) => {
+      const isActive = i === stateObj.frameIndex;
+      const dirty = isFrameDirty(stateObj, i);
+      return m(
+        "div.part-editor-timeline-thumb",
+        {
+          key: i,
+          class: isActive ? "active" : "",
+          title: `Frame ${i + 1}${dirty ? " (edited)" : ""}`,
+          onclick: () => {
+            void switchEditorContext(stateObj, true, stateObj.frameAnimation, i);
+          },
+        },
+        [
+          m("span.part-editor-timeline-label", String(i + 1)),
+          dirty ? m("span.part-editor-timeline-dot") : null,
+        ],
+      );
+    }),
+  ]);
+}
+
+function isFrameDirty(
+  stateObj: PartEditorState,
+  frameIndex: number,
+): boolean {
+  const key = getFrameContextKey(stateObj.frameAnimation, frameIndex);
+  const frameContext = stateObj.frameEditorContexts[key];
+  if (!frameContext) return false;
+  if (!stateObj.globalEditorContext) return true;
+  return (
+    JSON.stringify(frameContext) !==
+    JSON.stringify(stateObj.globalEditorContext)
+  );
+}
+
+async function applyGlobalToFrame(stateObj: PartEditorState): Promise<void> {
+  if (!stateObj.frameMode || !stateObj.globalEditorContext) return;
+  const globalContext = stateObj.globalEditorContext;
+  await restoreEditorContext(stateObj, globalContext);
+  saveActiveEditorContext(stateObj);
+  stateObj.frameEditorContexts[
+    getFrameContextKey(stateObj.frameAnimation, stateObj.frameIndex)
+  ] = createEditorContextSnapshot(stateObj);
+  recomposeCanvases(stateObj);
+  m.redraw();
+}
+
+function startPlayback(stateObj: PartEditorState): void {
+  stateObj.isPlaying = true;
+  stateObj.playbackTimer = window.setInterval(() => {
+    advancePlayback(stateObj);
+  }, 200);
+  m.redraw();
+}
+
+function stopPlayback(stateObj: PartEditorState): void {
+  stateObj.isPlaying = false;
+  if (stateObj.playbackTimer) {
+    window.clearInterval(stateObj.playbackTimer);
+    stateObj.playbackTimer = null;
+  }
+  m.redraw();
+}
+
+function advancePlayback(stateObj: PartEditorState): void {
+  const frameCount = getAnimationFrameCount(stateObj.frameAnimation);
+  const nextIndex =
+    stateObj.frameIndex + 1 >= frameCount ? 0 : stateObj.frameIndex + 1;
+  void switchEditorContext(stateObj, true, stateObj.frameAnimation, nextIndex);
+}
+
+function handleTouchStart(e: TouchEvent, stateObj: PartEditorState): void {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    stateObj.touchStartDist = Math.hypot(dx, dy);
+    stateObj.touchStartZoom = stateObj.zoom;
+    stateObj.lastTouchCenter = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+    };
+  }
+}
+
+function handleTouchMove(e: TouchEvent, stateObj: PartEditorState): void {
+  if (e.touches.length === 2 && stateObj.touchStartDist > 0) {
+    e.preventDefault();
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const scale = dist / stateObj.touchStartDist;
+    const nextZoom = clampEditorZoom(
+      Math.round(stateObj.touchStartZoom * scale),
+    );
+    if (nextZoom !== stateObj.zoom) {
+      stateObj.zoom = nextZoom;
+    }
+  }
+}
+
+function handleTouchEnd(stateObj: PartEditorState): void {
+  stateObj.touchStartDist = 0;
+  stateObj.lastTouchCenter = null;
+}
+
+async function checkForDraftRecovery(
+  stateObj: PartEditorState,
+  itemId: string,
+): Promise<void> {
+  if (await hasUnsavedDraft(itemId)) {
+    stateObj.showRecoveryPrompt = true;
+    m.redraw();
+  }
+}
+
 function loadDataUrlIntoCanvas(
   dataUrl: string | undefined,
   canvas: HTMLCanvasElement,
@@ -3735,8 +4168,10 @@ function resetCanvases(stateObj: PartEditorState): void {
 
 export const partEditorTestApi = {
   addEditLayer,
+  applyGlobalToFrame,
   cloneDirectionCanvases,
   composeLayersIntoCanvases,
+  copySelection,
   createDirectionCanvases,
   createEditorContextSnapshot,
   deleteActiveLayer,
@@ -3745,9 +4180,13 @@ export const partEditorTestApi = {
   getActiveLayer,
   getActiveLayerIndex,
   getFrameContextKey,
+  isFrameDirty,
   mergeActiveLayerDown,
   moveActiveLayer,
+  nudgeSelection,
+  pasteClipboard,
   recomposeCanvases,
   resetEditLayers,
   switchEditorContext,
+  transformActivePixels,
 };

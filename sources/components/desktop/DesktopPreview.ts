@@ -20,6 +20,8 @@ import {
   syncPreviewTweenSettingsForAnimation,
 } from "../../canvas/preview-animation.ts";
 import type { PreviewAnimationStatus } from "../../canvas/preview-animation.ts";
+import { requireFeature } from "../../state/feature-gates.ts";
+import { showToast } from "../../state/notifications.ts";
 
 type DesktopPreviewState = {
   zoomLevel: number;
@@ -29,6 +31,7 @@ type DesktopPreviewState = {
   statusRefreshTimer: number | null;
   isPlaying: boolean;
   animationStatus: PreviewAnimationStatus | null;
+  exportBusy: "gif" | "webp" | null;
 };
 
 function refreshDirectionalFrames(
@@ -110,6 +113,7 @@ export const DesktopPreview: m.Component<
     vnode.state.statusRefreshTimer = null;
     vnode.state.isPlaying = true;
     vnode.state.animationStatus = null;
+    vnode.state.exportBusy = null;
   },
 
   oncreate(vnode) {
@@ -274,6 +278,68 @@ export const DesktopPreview: m.Component<
               },
             },
             "Next",
+          ),
+        ]),
+        m("div.desktop-preview-exports", [
+          m(
+            "button.desktop-preview-export-btn",
+            {
+              type: "button",
+              disabled: vnode.state.exportBusy !== null,
+              title: "Export the current animation as GIF",
+              onclick: async () => {
+                if (!requireFeature("animation-export")) return;
+                vnode.state.exportBusy = "gif";
+                try {
+                  const { downloadPreviewAnimationGif } =
+                    await import("../../canvas/preview-gif.ts");
+                  await downloadPreviewAnimationGif(
+                    vnode.state.selectedAnimation,
+                    state.bodyType,
+                  );
+                  showToast("Animated GIF exported.", { kind: "success" });
+                } catch (err) {
+                  console.error(err);
+                  showToast("Failed to export animated GIF.", {
+                    kind: "error",
+                  });
+                } finally {
+                  vnode.state.exportBusy = null;
+                  m.redraw();
+                }
+              },
+            },
+            vnode.state.exportBusy === "gif" ? "GIF..." : "GIF",
+          ),
+          m(
+            "button.desktop-preview-export-btn",
+            {
+              type: "button",
+              disabled: vnode.state.exportBusy !== null,
+              title: "Export the current animation as WebP",
+              onclick: async () => {
+                if (!requireFeature("animation-export")) return;
+                vnode.state.exportBusy = "webp";
+                try {
+                  const { downloadPreviewAnimationWebp } =
+                    await import("../../canvas/preview-webp.ts");
+                  await downloadPreviewAnimationWebp(
+                    vnode.state.selectedAnimation,
+                    state.bodyType,
+                  );
+                  showToast("Animated WebP exported.", { kind: "success" });
+                } catch (err) {
+                  console.error(err);
+                  showToast("Failed to export animated WebP.", {
+                    kind: "error",
+                  });
+                } finally {
+                  vnode.state.exportBusy = null;
+                  m.redraw();
+                }
+              },
+            },
+            vnode.state.exportBusy === "webp" ? "WebP..." : "WebP",
           ),
         ]),
       ]),

@@ -1058,7 +1058,15 @@
   flex-shrink: 0;
 }
 
-.desktop-preview-playback-btn {
+.desktop-preview-exports {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.desktop-preview-playback-btn,
+.desktop-preview-export-btn {
   height: 24px;
   min-width: 42px;
   border: 1px solid var(--border-subtle);
@@ -1075,12 +1083,22 @@
     color var(--transition-fast),
     background var(--transition-fast);
 
-  &:hover,
-  &:focus {
+  &:hover:not(:disabled),
+  &:focus:not(:disabled) {
     border-color: var(--accent-primary);
     color: var(--text-primary);
     outline: none;
   }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+}
+
+.desktop-preview-export-btn {
+  border-color: rgba(72, 199, 142, 0.28);
+  color: #9ee8c4;
 }
 
 .desktop-preview-hint {

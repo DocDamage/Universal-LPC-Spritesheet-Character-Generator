@@ -68,11 +68,16 @@ const featureRules: Record<PaidFeature, FeatureRule> = {
   },
 };
 
+import { isLicenseValid } from "./license-state.ts";
+
 export function getFeatureRule(feature: PaidFeature): FeatureRule {
   return featureRules[feature];
 }
 
 export function hasPlanAccess(requiredPlan: AppPlan): boolean {
+  if (requiredPlan !== "free" && !isLicenseValid()) {
+    return false;
+  }
   return planRank[state.appPlan] >= planRank[requiredPlan];
 }
 

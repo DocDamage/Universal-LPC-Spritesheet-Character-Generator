@@ -1,4 +1,5 @@
 import { LICENSE_CONFIG, ANIMATIONS, BODY_TYPES } from "./constants.ts";
+import { BUILD_TIER, BUILD_CHANNEL } from "./build-config.ts";
 import type { TweenMode, TweenPreset, TweenEasing } from "../canvas/tween.ts";
 
 /** A single item selection within a selection group (e.g. body, head, ears). */
@@ -113,7 +114,7 @@ export const state: State = {
   ),
   activeTab: "character",
   editingPart: null,
-  appPlan: "free",
+  appPlan: BUILD_TIER,
 
   // Following transient state should never be saved
   showCommandPalette: false,
@@ -125,3 +126,18 @@ export const state: State = {
   zipByAnimationAndItem: { isRunning: false },
   zipIndividualFrames: { isRunning: false },
 };
+
+let appPlanVal = BUILD_TIER;
+Object.defineProperty(state, "appPlan", {
+  get() {
+    return appPlanVal;
+  },
+  set(val: AppPlan) {
+    if (BUILD_CHANNEL !== "dev") {
+      return;
+    }
+    appPlanVal = val;
+  },
+  configurable: true,
+  enumerable: true,
+});

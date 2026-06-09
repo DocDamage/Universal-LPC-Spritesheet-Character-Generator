@@ -7,6 +7,8 @@ import {
   APP_PACKAGING_NOTES,
   APP_VERSION,
 } from "../../state/app-metadata.ts";
+import { BUILD_REQUIRES_LICENSE } from "../../state/build-config.ts";
+import { getLicenseState, clearLicense } from "../../state/license-state.ts";
 
 export const AboutModal: m.Component = {
   view() {
@@ -54,6 +56,7 @@ export const AboutModal: m.Component = {
               "Pro: advanced editor, imports, ZIP/batch exports, animation exports, and engine presets.",
               "Studio: project libraries, thumbnails, reports, contact sheets, and production handoff workflows.",
             ]),
+            BUILD_REQUIRES_LICENSE ? renderLicenseSection() : null,
           ]),
           m("div.about-footer", [
             m(
@@ -82,5 +85,63 @@ function renderSection(title: string, items: readonly string[]): m.Children {
       "ul",
       items.map((item) => m("li", item)),
     ),
+  ]);
+}
+
+function renderLicenseSection(): m.Children {
+  const license = getLicenseState();
+  let statusText = "No active license";
+  let details: string[] = [];
+  let showDeactivate = false;
+
+  if (license.kind === "valid") {
+    statusText = "Licensed (Active)";
+    details = [
+      `Edition: ${license.edition.toUpperCase()}`,
+      `Expires: ${new Date(license.expiresAt).toLocaleDateString()}`,
+      `Key Hash: ${license.downloadKeyHash.substring(0, 10)}...`,
+    ];
+    showDeactivate = true;
+  } else if (license.kind === "offline-grace") {
+    statusText = "Offline Grace Period";
+    details = [
+      `Edition: ${license.edition.toUpperCase()}`,
+      `Expires: ${new Date(license.expiresAt).toLocaleDateString()} (Grace active)`,
+    ];
+    showDeactivate = true;
+  } else if (license.kind === "invalid") {
+    statusText = "Invalid License Key";
+    details = [`Reason: ${license.reason}`];
+  } else if (license.kind === "checking") {
+    statusText = "Checking License...";
+  } else if (license.kind === "required") {
+    statusText = "Key Required";
+    details = ["Please enter your itch.io key in the startup gate."];
+  }
+
+  return m("article.about-section", [
+    m("h3", "License Information"),
+    m("p", [
+      m("strong", "Status: "),
+      m("span.tag.is-info.is-small", statusText),
+    ]),
+    details.length > 0
+      ? m(
+          "ul.mt-2",
+          details.map((item) => m("li", item)),
+        )
+      : null,
+    showDeactivate
+      ? m(
+          "button.button.is-danger.is-small.mt-2",
+          {
+            type: "button",
+            onclick: () => {
+              clearLicense();
+            },
+          },
+          "Deactivate License",
+        )
+      : null,
   ]);
 }

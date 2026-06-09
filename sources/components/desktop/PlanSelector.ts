@@ -2,6 +2,7 @@ import m from "mithril";
 import { state } from "../../state/state.ts";
 import { PLAN_LABELS } from "../../state/feature-gates.ts";
 import type { AppPlan } from "../../state/app-state.ts";
+import { BUILD_CHANNEL, BUILD_TIER } from "../../state/build-config.ts";
 
 const plans: AppPlan[] = ["free", "pro", "studio"];
 
@@ -13,6 +14,13 @@ const planDescriptions: Record<AppPlan, string> = {
 
 export const PlanSelector: m.Component = {
   view() {
+    if (BUILD_CHANNEL !== "dev") {
+      return m("div.desktop-plan-selector", [
+        m("span.desktop-palette-label", "Edition"),
+        m("span.tag.is-info", PLAN_LABELS[BUILD_TIER]),
+      ]);
+    }
+
     return m("div.desktop-plan-selector", [
       m("span.desktop-palette-label", "Mode"),
       m(

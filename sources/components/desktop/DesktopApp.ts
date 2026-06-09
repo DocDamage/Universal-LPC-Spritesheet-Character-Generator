@@ -12,6 +12,7 @@ import { StudioPanel } from "./StudioPanel.ts";
 import { WorkflowToolsPanel } from "./WorkflowToolsPanel.ts";
 import { OnboardingModal } from "./OnboardingModal.ts";
 import { AboutModal } from "./AboutModal.ts";
+import { LicenseGateModal } from "./LicenseGateModal.ts";
 import { shouldShowOnboarding } from "../../state/onboarding.ts";
 import {
   executeCommand,
@@ -218,6 +219,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       m(ShortcutHelpModal),
       m(OnboardingModal, { catalog }),
       m(AboutModal),
+      m(LicenseGateModal),
       m(ConfirmDialogModal),
       m(NotificationCenter),
     ]);

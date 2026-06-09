@@ -154,7 +154,10 @@ export function applyMatchBodyColor(
   }
 }
 
+import { checkCachedLicense } from "./license-state.ts";
+
 export async function initState(): Promise<void> {
+  await checkCachedLicense();
   stateDeps.loadSelectionsFromHash();
 
   if (Object.keys(state.selections).length === 0) {

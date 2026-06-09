@@ -1,6 +1,7 @@
 # Task: Resolve WebP Encoder Build Warnings
 
 ## Checklist
+
 - [ ] Investigate current webp-encoder setup and build warnings
 - [ ] Explore vite-plugin-webp-encoder-wasm plugin
 - [ ] Identify browser compatibility warnings

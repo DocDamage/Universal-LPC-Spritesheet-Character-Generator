@@ -40,12 +40,92 @@ export function getEditorWheelZoomUpdate({
   };
 }
 
+export function initializePartEditorState(stateObj: PartEditorState): void {
+  stateObj.loading = false;
+  stateObj.baseItemId = null;
+  stateObj.draftPreviewPartId = null;
+  stateObj.draftPreviewSelectionGroup = null;
+  stateObj.draftPreviewOriginalSelection = null;
+  stateObj.name = "";
+  stateObj.activeEditorTab = "edit";
+  stateObj.activeDirection = "front";
+  stateObj.tool = "pen";
+  stateObj.activeColor = "#ff0000";
+  stateObj.autoPropagate = true;
+  stateObj.isDrawing = false;
+  stateObj.zoom = DEFAULT_EDITOR_ZOOM;
+  stateObj.brushSize = 1;
+  stateObj.mirrorX = false;
+  stateObj.mirrorY = false;
+  stateObj.showGrid = true;
+  stateObj.isFullscreen = false;
+  stateObj.shapeStart = null;
+  stateObj.shapeEnd = null;
+  stateObj.shapeFilled = false;
+  stateObj.lastPoint = null;
+  stateObj.selectionRect = null;
+  stateObj.selectionDraftStart = null;
+  stateObj.selectionMove = null;
+  stateObj.clipboard = null;
+  stateObj.keyboardHandler = null;
+  stateObj.history = [];
+  stateObj.historyIndex = -1;
+
+  stateObj.canvases = createDirectionCanvases();
+  stateObj.originalCanvases = createDirectionCanvases();
+  stateObj.editLayers = [];
+  stateObj.activeLayerId = null;
+  stateObj.nextLayerNumber = 1;
+  stateObj.globalEditorContext = null;
+  stateObj.frameEditorContexts = {};
+  stateObj.availableFrameAnimations = ["walk"];
+  stateObj.frameMode = false;
+  stateObj.frameAnimation = "walk";
+  stateObj.frameIndex = 0;
+  stateObj.onionSkin = false;
+  stateObj.onionOpacity = 0.28;
+  stateObj.onionCanvases = null;
+  stateObj.referenceImageUrl = null;
+  stateObj.referenceOpacity = 0.3;
+  stateObj.replaceFromColor = "#000000";
+  stateObj.replaceToColor = "#ff0000";
+  stateObj.replaceTolerance = 0;
+  stateObj.replaceAllDirections = false;
+  stateObj.transformAllDirections = false;
+  stateObj.alphaLocked = false;
+
+  stateObj.showRecoveryPrompt = false;
+  stateObj.autosaveDebounceTimer = null;
+  stateObj.unsavedChanges = false;
+  stateObj.beforeunloadHandler = null;
+
+  stateObj.cursorPosition = null;
+  stateObj.isPlaying = false;
+  stateObj.playbackTimer = null;
+
+  stateObj.isTouchDevice =
+    window.matchMedia("(hover: none)").matches ||
+    window.matchMedia("(max-width: 768px)").matches ||
+    "ontouchstart" in window;
+  stateObj.touchStartDist = 0;
+  stateObj.touchStartZoom = DEFAULT_EDITOR_ZOOM;
+  stateObj.lastTouchCenter = null;
+
+  stateObj.thumbnailCache = null;
+  stateObj.recomposeDebounceTimer = null;
+
+  resetEditLayers(stateObj);
+}
+
 export function createPartEditorStateForTests(
   overrides: Partial<PartEditorState> = {},
 ): PartEditorState {
   const stateObj = {
     loading: false,
     baseItemId: null,
+    draftPreviewPartId: null,
+    draftPreviewSelectionGroup: null,
+    draftPreviewOriginalSelection: null,
     name: "",
     activeEditorTab: "edit",
     activeDirection: "front",

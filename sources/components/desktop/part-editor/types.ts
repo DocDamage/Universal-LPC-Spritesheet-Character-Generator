@@ -3,12 +3,16 @@ import {
   type PixelEditorToolState,
   type Point,
 } from "../pixel-editor-tools.ts";
+import type { Selection } from "../../../state/app-state.ts";
 
 export { Direction, Point, PixelEditorToolState };
 
 export type PartEditorState = PixelEditorToolState & {
   loading: boolean;
   baseItemId: string | null;
+  draftPreviewPartId: string | null;
+  draftPreviewSelectionGroup: string | null;
+  draftPreviewOriginalSelection: Selection | null;
   name: string;
   activeEditorTab: "edit" | "animation";
   originalCanvases: Record<Direction, HTMLCanvasElement>;

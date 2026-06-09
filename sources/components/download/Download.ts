@@ -31,6 +31,7 @@ import type { CatalogReader } from "../../state/catalog.ts";
 import { requestConfirmation, showToast } from "../../state/notifications.ts";
 import { estimateTweenExportFrames } from "../../state/tween-settings.ts";
 import { ExportWizard } from "./ExportWizard.ts";
+import { paidFeatureTitle, requireFeature } from "../../state/feature-gates.ts";
 
 const zipExportTitle = "Wait for layer data to finish loading";
 
@@ -128,6 +129,7 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
     };
 
     const savePreviewGif = async () => {
+      if (!requireFeature("animation-export")) return;
       if (!window.canvasRenderer) {
         showToast("Canvas renderer is not ready yet.", { kind: "warning" });
         return;
@@ -145,6 +147,7 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
     };
 
     const savePreviewWebp = async () => {
+      if (!requireFeature("animation-export")) return;
       if (!window.canvasRenderer) {
         showToast("Canvas renderer is not ready yet.", { kind: "warning" });
         return;
@@ -162,6 +165,7 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
     };
 
     const saveGameEngineMetadata = () => {
+      if (!requireFeature("engine-presets")) return;
       try {
         downloadGameEngineMetadata();
         showToast("Game engine slicing JSON exported.", { kind: "success" });
@@ -193,20 +197,25 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
           ),
           m(
             "button.button.is-small.is-primary",
-            { onclick: savePreviewGif },
+            {
+              onclick: savePreviewGif,
+              title: paidFeatureTitle("animation-export"),
+            },
             "Animation Preview (GIF)",
           ),
           m(
             "button.button.is-small.is-primary",
-            { onclick: savePreviewWebp },
+            {
+              onclick: savePreviewWebp,
+              title: paidFeatureTitle("animation-export"),
+            },
             "Animation Preview (WebP)",
           ),
           m(
             "button.button.is-small.is-info",
             {
               onclick: saveGameEngineMetadata,
-              title:
-                "Export TexturePacker-style frame-slicing JSON for Godot, Unity, etc.",
+              title: paidFeatureTitle("engine-presets"),
             },
             "Game Engine Metadata (JSON)",
           ),
@@ -242,8 +251,11 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
             "button.button.is-small.is-info",
             {
               disabled: zipDisabled,
-              title: zipDisabled ? zipExportTitle : undefined,
+              title: zipDisabled
+                ? zipExportTitle
+                : paidFeatureTitle("zip-export"),
               onclick: async () => {
+                if (!requireFeature("zip-export")) return;
                 if (await confirmLargeTweenExport()) {
                   await exportSplitAnimations();
                 }
@@ -256,8 +268,13 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
             "button.button.is-small.is-info",
             {
               disabled: zipDisabled,
-              title: zipDisabled ? zipExportTitle : undefined,
-              onclick: exportSplitItemSheets,
+              title: zipDisabled
+                ? zipExportTitle
+                : paidFeatureTitle("zip-export"),
+              onclick: () => {
+                if (!requireFeature("zip-export")) return;
+                void exportSplitItemSheets();
+              },
             },
             "ZIP: Split by item",
           ),
@@ -266,8 +283,13 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
             "button.button.is-small.is-info",
             {
               disabled: zipDisabled,
-              title: zipDisabled ? zipExportTitle : undefined,
-              onclick: exportSplitItemAnimations,
+              title: zipDisabled
+                ? zipExportTitle
+                : paidFeatureTitle("zip-export"),
+              onclick: () => {
+                if (!requireFeature("zip-export")) return;
+                void exportSplitItemAnimations();
+              },
             },
             "ZIP: Split by animation and item",
           ),
@@ -276,8 +298,11 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
             "button.button.is-small.is-info",
             {
               disabled: zipDisabled,
-              title: zipDisabled ? zipExportTitle : undefined,
+              title: zipDisabled
+                ? zipExportTitle
+                : paidFeatureTitle("zip-export"),
               onclick: async () => {
+                if (!requireFeature("zip-export")) return;
                 if (await confirmLargeTweenExport()) {
                   await exportIndividualFrames();
                 }
@@ -313,8 +338,10 @@ export const Download: m.Component<DownloadAttrs, DownloadState> = {
           "button.button.is-medium.is-warning",
           {
             onclick: () => {
+              if (!requireFeature("engine-presets")) return;
               vnode.state.showWizard = true;
             },
+            title: paidFeatureTitle("engine-presets"),
             style: { width: "100%" },
           },
           "Export Wizard",

@@ -20,6 +20,10 @@ The generator now includes a desktop sprite-building workflow with an integrated
 Highlights:
 
 - Compose LPC characters from body, clothing, armor, weapons, tools, and accessory slots with animation-aware previews.
+- Switch between Free, Pro, and Studio modes to model a feature-based product split while keeping every LPC asset available in all modes.
+- **Free mode:** full asset library, basic character creator, credits export, JSON save/load, and single full spritesheet PNG export.
+- **Pro mode:** advanced editor, custom imports, animation GIF/WebP exports, ZIP exports, individual frame exports, and engine preset workflows.
+- **Studio mode:** local project libraries, collections, saved build metadata, lockable approvals, combined credits, QA reports, batch PNG export, and production handoff ZIPs.
 - Edit selected parts directly in the browser and save the result as a new custom part without modifying the original LPC asset.
 - **Autosave & recovery:** drafts are saved to IndexedDB automatically and can be recovered after a refresh or crash.
 - **Status bar:** live cursor position, zoom, active layer, brush size, and frame info at the bottom of the editor.
@@ -40,6 +44,8 @@ Highlights:
 - **Custom asset import validation:** imported images are checked for empty content, missing transparency, dimension correctness, and edge bleeding; errors block saving, warnings show a prompt.
 - **Unified animation settings management:** global tween settings with clear-all-overrides, copy-settings-to-all-animations, and reset-defaults commands; override count badge and per-animation override markers visible in the UI.
 - **Progress reporting & cancellation:** long exports show progress phases (preparing, rendering, tweening, encoding, archiving) and can be cancelled mid-flight with an AbortController-backed signal.
+- **Studio production workflows:** save named character builds into collections with roles, tags, notes, status, locks, export presets, duplicate/rename actions, combined credits export, QA reports, and a handoff ZIP containing project JSON, spritesheet PNGs, credits, manifests, and engine metadata.
+- **Cross-tier workflow tools:** Free starter templates, themed randomizers, build undo/redo, and favorites; Pro palette/naming/alignment presets, layer inspection, animation checks, and style-guide notes; Studio gallery cards, contact sheets, restore points, bulk status updates, and production checklists.
 
 ### History
 
@@ -52,6 +58,8 @@ This was originally based on https://github.com/makrohn/Universal-LPC-spriteshee
 [@jrconway3](https://github.com/jrconway3) and [@bluecarrot16](https://github.com/bluecarrot16) have been the key art focused maintainers of the repository.
 
 [@ElizaWy](https://github.com/ElizaWy) has revised and expanded the LPC paradigm. See https://github.com/ElizaWy/LPC
+
+[@DocDamage](https://github.com/DocDamage) added the desktop app workflow upgrades, including the integrated part editor, custom import/library tools, tweened preview/export workflows, export wizard, progress/cancellation handling, Studio project workflows, module refactors, and the Free/Pro/Studio feature-mode gating.
 
 ### Licensing and Attribution (Credits)
 
@@ -138,6 +146,14 @@ Fullscreen mode adds the pro workspace:
 - **Animation tab:** global vs frame editing, live play/pause playback, a scrubbable timeline with per-frame dirty indicators, "Apply Global to Frame", animation and frame selection, neighboring-frame onion skins, and frame navigation shortcuts.
 
 Weapon and tool slots include an importer for custom PNG assets. Choose a built-in weapon/tool as the alignment reference, import either a single image or compatible sheet, and adjust x-offset, y-offset, and scale after auto-alignment. A side-by-side preview with hand/socket guide crosshairs, reset/center buttons, and 1px nudge arrows makes fine-tuning easy. Imported parts are saved locally and can be renamed, duplicated, tagged, filtered, deleted, exported as a backup ZIP, or selected again from the saved imports list.
+
+### Free, Pro, and Studio Feature Modes
+
+All LPC artwork remains available in every mode. The mode selector only gates workflow features:
+
+- **Free:** browse and use the complete asset library, build characters, export credits, save/load JSON through the clipboard, export a single full spritesheet PNG, use starter templates, themed randomizers, build undo/redo, favorites, and quick preview controls.
+- **Pro:** unlock the production workflow tools: advanced part editing, custom asset imports, GIF/WebP animation exports, ZIP export modes, individual frame exports, engine preset/export wizard workflows, palette and recolor preset notes, layer inspection, animation completeness checks, alignment presets, naming templates, and style-guide export.
+- **Studio:** unlock project collections, saved build metadata, duplicate/rename workflows, approval locks, export presets, combined credits, QA reports, batch PNG rendering, production handoff ZIPs, visual gallery cards, contact-sheet export, restore points, bulk metadata updates, and production checklists.
 
 ### Run This Project Locally for Development
 

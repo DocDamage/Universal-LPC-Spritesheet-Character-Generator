@@ -2,42 +2,54 @@
 // Simplified renderer that draws character sprites based on selections
 
 import { ok, err, type Result } from "neverthrow";
-import { loadImage, loadImagesInParallel } from "./load-image.ts";
-import type { LoadedImage } from "./load-image.ts";
-import { getSpritePath, type PathError } from "../state/path.ts";
-import { getImageToDraw } from "./palette-recolor.ts";
-import { getMultiRecolors } from "../state/palettes.ts";
-import { createCanvas, getZPos } from "./canvas-utils.ts";
-import { variantToFilename } from "../utils/helpers.ts";
-import { drawFramesToCustomAnimation } from "./draw-frames.ts";
-import {
-  FRAME_SIZE,
-  ANIMATION_OFFSETS,
-  ANIMATION_CONFIGS,
-} from "../state/constants.ts";
-import { customAnimations, customAnimationBase } from "../custom-animations.ts";
+import { ANIMATION_CONFIGS } from "../state/constants.ts";
+import { customAnimations } from "../custom-animations.ts";
 import {
   setCurrentCustomAnimations,
   setCustomAnimYPositions,
 } from "./preview-animation.ts";
-import { getSortedLayersByAnim, supportsAnimation } from "../state/meta.ts";
-import type { AnimationLayer } from "../state/meta.ts";
+import { defaultCatalog } from "../state/catalog.ts";
+import { renderState } from "../state/render-state.ts";
 import {
-  catalogReady,
-  defaultCatalog,
-  formatLoadError,
-  getItemMerged,
-  getCustomPart,
-} from "../state/catalog.ts";
-import m from "mithril";
-import { debugWarn } from "../utils/debug.ts";
-import { state as appState, type Selections } from "../state/app-state.ts";
-import type { ZipExportProfiler } from "../performance-profiler.ts";
+  SHEET_HEIGHT,
+  SHEET_WIDTH,
+  canvas,
+  ctx,
+  initCanvas,
+  isOffscreenCanvasInitialized,
+  resetOffscreenCanvasStateForTests,
+  setOffscreenCanvasInitializedForTests,
+} from "./renderer-internals.ts";
+import { drawStandardDrawCalls } from "./renderer-draw.ts";
+import { extractAnimationFromSheet } from "./animation-extract.ts";
+import { calculateCustomAnimationLayout } from "./renderer-custom-animation-layout.ts";
 import {
-  type CustomAreaItem,
-  type LayerSource,
-  renderState,
-} from "../state/render-state.ts";
+  drawCustomAnimationAreas,
+  type CustomAnimationItem,
+} from "./renderer-custom-areas.ts";
+import {
+  beginRenderCharacter,
+  finishRenderCharacter,
+} from "./renderer-lifecycle.ts";
+import { addCustomUploadDrawCalls } from "./renderer-upload.ts";
+import { populateRenderPlan } from "./renderer-plan.ts";
+import type { Selections } from "../state/app-state.ts";
+
+export {
+  renderSingleItem,
+  renderSingleItemAnimation,
+} from "./renderer-single-item.ts";
+
+export {
+  SHEET_HEIGHT,
+  SHEET_WIDTH,
+  canvas,
+  ctx,
+  initCanvas,
+  isOffscreenCanvasInitialized,
+  resetOffscreenCanvasStateForTests,
+  setOffscreenCanvasInitializedForTests,
+};
 
 export const { drawCalls, addedCustomAnimations, customAreaItems } =
   renderState;
@@ -54,134 +66,11 @@ declare global {
   }
 }
 
-type Recolors = ReturnType<typeof getMultiRecolors>;
-
 type AnimationConfig = { row: number; num: number; cycle: number[] };
 const animationConfigByName = ANIMATION_CONFIGS as Record<
   string,
   AnimationConfig | undefined
 >;
-const animationOffsetByName = ANIMATION_OFFSETS as Record<string, number>;
-
-function formatPathError(itemId: string, e: PathError): string {
-  switch (e.kind) {
-    case "loading":
-    case "not-found":
-      return `getSpritePath: ${formatLoadError(e)} (item ${itemId})`;
-    case "missing-layer":
-      return `getSpritePath: item ${itemId} has no layer ${e.layerNum}`;
-    case "missing-bodytype-path":
-      return `getSpritePath: item ${itemId} has no path for bodyType ${e.bodyType}`;
-  }
-}
-
-function getRuntimeCustomPart(itemId: string) {
-  return (
-    getCustomPart(itemId) ??
-    (
-      globalThis as typeof globalThis & {
-        __LPC_customParts?: Record<string, ReturnType<typeof getCustomPart>>;
-      }
-    ).__LPC_customParts?.[itemId]
-  );
-}
-
-/**
- * Where the bytes for a drawable layer come from. The two cases converge on
- * `HTMLImageElement`: `catalog` items resolve a URL via `getSpritePath` and
- * fetch through `loadImage`; `custom` items carry the already-decoded image
- * from the user's file upload.
- */
-type CustomAnimationItem = {
-  itemId: string;
-  name?: string;
-  variant: string | null;
-  recolors: Recolors;
-  source: LayerSource;
-  zPos: number;
-  layerNum: number;
-  customAnimation: string;
-};
-
-type LoadedCustomAreaImage = {
-  item: CustomAreaItem;
-  img: HTMLImageElement | HTMLCanvasElement | null;
-  success: boolean;
-};
-
-/**
- * When `zipProfiler` is set, records separate load/decode vs compositing phases; otherwise runs load then composite.
- */
-async function zipExportProfiledLoadComposite(
-  zipProfiler: ZipExportProfiler | null | undefined,
-  loadPhaseName: string,
-  compositePhaseName: string,
-  loadFn: () => void | Promise<void>,
-  compositeFn: () => void | Promise<void>,
-): Promise<void> {
-  if (zipProfiler && typeof zipProfiler.phase === "function") {
-    await zipProfiler.phase(loadPhaseName, loadFn);
-    await zipProfiler.phase(compositePhaseName, compositeFn);
-  } else {
-    await loadFn();
-    await compositeFn();
-  }
-}
-
-async function loadCustomAreaImages(
-  items: CustomAreaItem[],
-): Promise<LoadedCustomAreaImage[]> {
-  const promises = items.map(async (item): Promise<LoadedCustomAreaImage> => {
-    const source = item.source;
-    if (source.kind === "custom") {
-      return { item, img: source.image, success: true };
-    }
-
-    return loadImage(source.spritePath)
-      .then((img) => ({ item, img, success: true }))
-      .catch(() => {
-        debugWarn(`Failed to load sprite: ${source.spritePath}`);
-        return { item, img: null, success: false };
-      });
-  });
-
-  return Promise.all(promises);
-}
-
-export const SHEET_HEIGHT = 3456; // Full universal sheet height
-export const SHEET_WIDTH = 832; // 13 frames * 64px
-
-export let canvas: HTMLCanvasElement | null = null;
-export let ctx: CanvasRenderingContext2D | null = null;
-/** True after `initCanvas()` — offscreen buffer exists (main bootstrap runs this after S1∧S2). */
-let offscreenCanvasInitialized = false;
-
-/**
- * Initialize the canvas (creates offscreen canvas)
- */
-export function initCanvas(): void {
-  const created = createCanvas(SHEET_WIDTH, SHEET_HEIGHT);
-  canvas = created.canvas;
-  ctx = created.ctx;
-  offscreenCanvasInitialized = true;
-}
-
-export function isOffscreenCanvasInitialized(): boolean {
-  return offscreenCanvasInitialized;
-}
-
-/** @internal Test helper */
-export function resetOffscreenCanvasStateForTests(): void {
-  offscreenCanvasInitialized = false;
-  canvas = null;
-  ctx = null;
-}
-
-/** @internal Test helper (e.g. Node without a DOM) */
-export function setOffscreenCanvasInitializedForTests(value: boolean): void {
-  offscreenCanvasInitialized = value;
-}
-
 /** Commit 10: one render at a time; new calls wait behind the in-flight one. */
 let renderCharacterSerial: Promise<void> = Promise.resolve();
 
@@ -202,7 +91,7 @@ export async function renderCharacter(
   bodyType: string,
   targetCanvas: HTMLCanvasElement | null = null,
 ): Promise<void> {
-  await catalogReady.onLayersReady;
+  await defaultCatalog.ready.onLayersReady;
 
   const p = renderCharacterSerial.then(() =>
     runRenderCharacter(selections, bodyType, targetCanvas),
@@ -221,16 +110,7 @@ async function runRenderCharacter(
 ): Promise<void> {
   const profiler = window.profiler;
 
-  // Build list of draw calls
-  drawCalls.length = 0;
-  addedCustomAnimations.clear();
-
-  appState.isRenderingCharacter = true;
-  m.redraw();
-
-  if (profiler) {
-    profiler.mark("renderCharacter:start");
-  }
+  beginRenderCharacter(profiler);
 
   try {
     // Use provided canvas or default to main canvas
@@ -247,349 +127,53 @@ async function runRenderCharacter(
     // Build list of items to draw
     const customAnimationItems: CustomAnimationItem[] = []; // Track items with custom animations
 
-    for (const [, selection] of Object.entries(selections)) {
-      const { itemId, subId, variant } = selection;
-      const customPart = getRuntimeCustomPart(itemId);
-      if (customPart) {
-        const layerNum = customPart.drawLayerNum ?? 1;
-        const zPos = customPart.drawZPos ?? 100;
-        const recolors = getMultiRecolors(itemId, selections);
-        for (const [animation, sheet] of Object.entries(customPart.sheets)) {
-          const yPos = animationOffsetByName[animation];
-          if (yPos === undefined) {
-            if (customAnimations[animation]) {
-              addedCustomAnimations.add(animation);
-              customAnimationItems.push({
-                itemId,
-                name: selection.name,
-                variant: null,
-                recolors,
-                source: { kind: "custom", image: sheet },
-                zPos,
-                layerNum,
-                customAnimation: animation,
-              });
-            }
-            continue;
-          }
-          drawCalls.push({
-            itemId,
-            name: selection.name,
-            variant: null,
-            recolors,
-            source: { kind: "custom", image: sheet },
-            zPos,
-            layerNum,
-            animation,
-            yPos,
-            needsRecolor: false,
-          });
-        }
-        continue;
-      }
+    populateRenderPlan({
+      selections,
+      bodyType,
+      drawCalls,
+      addedCustomAnimations,
+      customAnimationItems,
+    });
 
-      const assetItemId = itemId;
-      const metaResult = getItemMerged(assetItemId);
-      if (metaResult.isErr() || subId) continue;
-      const meta = metaResult.value;
-
-      // Check if this body type is supported
-      if (!meta.required.includes(bodyType)) {
-        continue;
-      }
-
-      // Get Multiple Recolors If Available
-      const recolors = getMultiRecolors(itemId, selections);
-
-      // Process all layers for this item
-      for (let layerNum = 1; layerNum < 10; layerNum++) {
-        // Check if this layer exists
-        const layerKey = `layer_${layerNum}`;
-        const layer = meta.layers?.[layerKey];
-        if (!layer) break;
-
-        const zPos = getZPos(defaultCatalog, assetItemId, layerNum);
-
-        // Check if this layer has a custom animation
-        if (layer.custom_animation) {
-          const customAnimName = layer.custom_animation as string;
-          addedCustomAnimations.add(customAnimName);
-
-          // Get base path for this body type
-          const basePath = layer[bodyType] as string | undefined;
-          if (!basePath) {
-            continue;
-          }
-
-          // Custom animations use direct file path
-          const spritePath = `spritesheets/${basePath}${variantToFilename(
-            variant ?? "",
-          )}.png`;
-
-          customAnimationItems.push({
-            itemId,
-            name: selection.name,
-            variant: variant ?? null,
-            recolors,
-            source: { kind: "catalog", spritePath },
-            zPos,
-            layerNum,
-            customAnimation: customAnimName,
-          });
-
-          continue; // Skip standard animation processing for this layer
-        }
-
-        // Process standard animations for this layer
-        for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-          // Skip if item doesn't have animations array (custom animations only)
-          if (!meta.animations || meta.animations.length === 0) {
-            continue;
-          }
-
-          if (!supportsAnimation(meta, animName)) continue;
-
-          const pathResult = getSpritePath(
-            assetItemId,
-            variant ?? null,
-            recolors,
-            bodyType,
-            animName,
-            layerNum,
-            selections,
-            meta,
-          );
-          if (pathResult.isErr()) {
-            debugWarn(formatPathError(itemId, pathResult.error));
-            continue;
-          }
-
-          drawCalls.push({
-            itemId,
-            name: selection.name,
-            variant: variant ?? null,
-            recolors,
-            source: { kind: "catalog", spritePath: pathResult.value },
-            zPos,
-            layerNum,
-            animation: animName,
-            yPos,
-            needsRecolor: itemId === "body-body" && variant !== "light", // Flag body variants for recoloring
-          });
-        }
-      }
-    }
-
-    // Add custom uploaded image as a draw call if present
-    if (appState.customUploadedImage) {
-      const customImage = appState.customUploadedImage;
-      // Add custom image to be drawn at all standard animation positions
-      for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-        drawCalls.push({
-          itemId: "custom-upload",
-          variant: null,
-          source: { kind: "custom", image: customImage },
-          zPos: appState.customImageZPos,
-          layerNum: 0,
-          animation: animName,
-          yPos,
-        });
-      }
-    }
+    addCustomUploadDrawCalls(drawCalls);
 
     // Sort by zPos (lower zPos = drawn first = behind). Shadow (zPos=0) before
     // body (zPos=10), etc.
     drawCalls.sort((a, b) => a.zPos - b.zPos);
 
-    // Calculate total canvas height needed (standard sheet + custom animations)
-    let totalHeight = SHEET_HEIGHT;
-    let totalWidth = SHEET_WIDTH;
-    const currentCustomAnimations: Record<
-      string,
-      (typeof customAnimations)[string]
-    > = {};
-
-    if (addedCustomAnimations.size > 0 && customAnimations) {
-      for (const customAnimName of addedCustomAnimations) {
-        const customAnimDef = customAnimations[customAnimName];
-        if (customAnimDef) {
-          const animHeight =
-            customAnimDef.frameSize * customAnimDef.frames.length;
-          const animWidth =
-            customAnimDef.frameSize * customAnimDef.frames[0]!.length;
-          totalHeight += animHeight;
-          totalWidth = Math.max(totalWidth, animWidth);
-          currentCustomAnimations[customAnimName] = customAnimDef;
-        }
-      }
-    }
+    const customAnimationLayout = calculateCustomAnimationLayout(
+      addedCustomAnimations,
+      customAnimations,
+      SHEET_WIDTH,
+      SHEET_HEIGHT,
+    );
 
     // Resize canvas to fit all content
-    renderCanvas.width = totalWidth;
-    renderCanvas.height = totalHeight;
+    renderCanvas.width = customAnimationLayout.totalWidth;
+    renderCanvas.height = customAnimationLayout.totalHeight;
 
     // Clear canvas (no transparency background on offscreen canvas)
     renderCtx.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
 
     // Store custom animations for animation preview dropdown
-    setCurrentCustomAnimations(currentCustomAnimations);
-
-    // Calculate custom animation Y positions first (needed for drawing standard items into custom areas)
-    const customAnimYPositions: Record<string, number> = {};
-    if (addedCustomAnimations.size > 0 && customAnimations) {
-      let currentY = SHEET_HEIGHT;
-      for (const customAnimName of addedCustomAnimations) {
-        customAnimYPositions[customAnimName] = currentY;
-        const customAnimDef = customAnimations[customAnimName];
-        if (customAnimDef) {
-          const animHeight =
-            customAnimDef.frameSize * customAnimDef.frames.length;
-          currentY += animHeight;
-        }
-      }
-    }
+    setCurrentCustomAnimations(customAnimationLayout.currentCustomAnimations);
 
     // Store Y positions for external access
-    setCustomAnimYPositions(customAnimYPositions);
+    setCustomAnimYPositions(customAnimationLayout.customAnimYPositions);
 
-    // Load all standard animation images in parallel and attach them to their items
-    const loadPromises = drawCalls.map((item) => {
-      if (item.source.kind === "custom") {
-        // Already-decoded user-uploaded image
-        return Promise.resolve({ item, img: item.source.image, success: true });
-      }
-      const { spritePath } = item.source;
-      return loadImage(spritePath)
-        .then((img) => ({ item, img, success: true }))
-        .catch(() => {
-          debugWarn(`Failed to load sprite: ${spritePath}`);
-          return {
-            item,
-            img: null as HTMLImageElement | null,
-            success: false,
-          };
-        });
+    await drawStandardDrawCalls(renderCtx, drawCalls);
+
+    await drawCustomAnimationAreas({
+      renderCtx,
+      addedCustomAnimations,
+      customAnimations,
+      customAnimationItems,
+      drawCalls,
+      customAreaItems,
+      customAnimYPositions: customAnimationLayout.customAnimYPositions,
     });
-
-    const loadedItems = await Promise.all(loadPromises);
-
-    // Draw all items in sorted z-order
-    for (const { item, img, success } of loadedItems) {
-      if (success && img) {
-        const imageToDraw = await getImageToDraw(
-          img,
-          item.itemId,
-          item.recolors,
-          item.source.kind === "catalog" ? item.source.spritePath : null,
-        );
-        renderCtx.drawImage(imageToDraw, 0, item.yPos);
-      }
-    }
-
-    for (const key of Object.keys(customAreaItems)) {
-      delete customAreaItems[key];
-    }
-
-    // Now handle custom animations (wheelchair, etc.)
-    if (addedCustomAnimations.size > 0 && customAnimations) {
-      // For each custom animation area, we need to draw layers in zPos order
-      for (const customAnimName of addedCustomAnimations) {
-        const customAnimDef = customAnimations[customAnimName];
-        if (!customAnimDef) continue;
-
-        const offsetY = customAnimYPositions[customAnimName];
-        const baseAnim = customAnimationBase
-          ? customAnimationBase(customAnimDef)
-          : null;
-
-        // Collect all items that need to be drawn in this custom animation area
-        const areaItems: CustomAreaItem[] = [];
-        customAreaItems[customAnimName] = areaItems;
-
-        // 1. Add custom animation sprite layers (wheelchair background/foreground)
-        for (const item of customAnimationItems) {
-          if (item.customAnimation === customAnimName) {
-            areaItems.push({
-              type: "custom_sprite",
-              zPos: item.zPos,
-              source: item.source,
-              itemId: item.itemId,
-              animation: customAnimName,
-              recolors: item.recolors,
-              variant: item.variant,
-              name: item.name,
-            });
-          }
-        }
-
-        // 2. Add standard items that need to be extracted into this custom animation
-        // (e.g., body "sit" frames go into wheelchair custom animation).
-        // Custom-source items have no spritePath to extract frames from, so skip them.
-        if (baseAnim) {
-          for (const item of drawCalls) {
-            if (item.animation === baseAnim && item.source.kind === "catalog") {
-              areaItems.push({
-                type: "extracted_frames",
-                zPos: item.zPos,
-                source: item.source,
-                itemId: item.itemId,
-                animation: item.animation,
-                needsRecolor: item.needsRecolor,
-                recolors: item.recolors,
-                variant: item.variant,
-                name: item.name,
-              });
-            }
-          }
-        }
-
-        // Sort by zPos to get correct layer order
-        areaItems.sort((a, b) => a.zPos - b.zPos);
-
-        // Load all custom area images in parallel
-        const loadedCustomImages = await loadCustomAreaImages(areaItems);
-
-        // Draw in zPos order
-        for (const { item: areaItem, img, success } of loadedCustomImages) {
-          if (success && img) {
-            const imageToUse = await getImageToDraw(
-              img,
-              areaItem.itemId,
-              areaItem.recolors,
-              areaItem.source.kind === "catalog"
-                ? areaItem.source.spritePath
-                : null,
-            );
-
-            if (areaItem.type === "custom_sprite") {
-              // Draw custom sprite directly (wheelchair background or foreground)
-              renderCtx.drawImage(imageToUse, 0, offsetY!);
-            } else if (areaItem.type === "extracted_frames") {
-              // Extract and draw frames from standard sprite
-              drawFramesToCustomAnimation(
-                renderCtx,
-                customAnimDef,
-                offsetY!,
-                imageToUse,
-              );
-            }
-          }
-        }
-      }
-    }
   } finally {
-    appState.isRenderingCharacter = false;
-    m.redraw();
-
-    // Mark end and measure
-    if (profiler) {
-      profiler.mark("renderCharacter:end");
-      profiler.measure(
-        "renderCharacter",
-        "renderCharacter:start",
-        "renderCharacter:end",
-      );
-    }
+    finishRenderCharacter(profiler);
   }
 }
 
@@ -603,37 +187,12 @@ export function extractAnimationFromCanvas(
   if (!canvas) {
     return null;
   }
-
-  const config = animationConfigByName[animationName];
-  if (!config) {
-    console.error("Unknown animation:", animationName);
-    return null;
-  }
-
-  const { row, num } = config;
-  const srcY = row * FRAME_SIZE;
-  const srcHeight = num * FRAME_SIZE;
-
-  // Create new canvas for this animation
-  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
-    SHEET_WIDTH,
-    srcHeight,
-  );
-
-  // Copy animation from main canvas
-  animCtx.drawImage(
+  return extractAnimationFromSheet(
     canvas,
-    0,
-    srcY,
     SHEET_WIDTH,
-    srcHeight,
-    0,
-    0,
-    SHEET_WIDTH,
-    srcHeight,
+    animationName,
+    animationConfigByName,
   );
-
-  return animCanvas;
 }
 
 /** Error returned by `getCanvas` when called before `initCanvas` runs. */
@@ -642,385 +201,4 @@ export type CanvasNotInitialized = { kind: "canvas-not-initialized" };
 /** Get current canvas reference (for external use). */
 export function getCanvas(): Result<HTMLCanvasElement, CanvasNotInitialized> {
   return canvas ? ok(canvas) : err({ kind: "canvas-not-initialized" });
-}
-
-/**
- * Render a single item to a new canvas.
- * Returns a canvas with just this one item rendered.
- */
-export async function renderSingleItem(
-  itemId: string,
-  variant: string | null,
-  recolors: Recolors,
-  bodyType: string,
-  selections: Selections,
-  singleLayer: number | null = null,
-  zipProfiler: ZipExportProfiler | null = null,
-): Promise<HTMLCanvasElement | null> {
-  const customPart = getRuntimeCustomPart(itemId);
-  if (customPart) {
-    return (
-      customPart.sheets["walk"] ?? Object.values(customPart.sheets)[0] ?? null
-    );
-  }
-
-  const metaResult = getItemMerged(itemId);
-  if (metaResult.isErr()) {
-    console.error("Item metadata not found:", itemId);
-    return null;
-  }
-  const meta = metaResult.value;
-
-  // Check if this body type is supported
-  if (!meta.required.includes(bodyType)) {
-    console.error("Body type not supported for this item:", bodyType, itemId);
-    return null;
-  }
-
-  // Check if this is a custom animation item
-  const layer1 =
-    meta.layers && Object.values(meta.layers).find((l) => l.custom_animation);
-  const hasCustomAnimation = layer1 && layer1.custom_animation;
-
-  let itemCanvas: HTMLCanvasElement;
-  let itemCtx: CanvasRenderingContext2D;
-
-  if (hasCustomAnimation && customAnimations) {
-    // Custom animation item - use custom animation size
-    const customAnimName = layer1.custom_animation as string;
-    const customAnimDef = customAnimations[customAnimName];
-    if (!customAnimDef) {
-      console.error("Custom animation definition not found:", customAnimName);
-      return null;
-    }
-
-    const animHeight = customAnimDef.frameSize * customAnimDef.frames.length;
-    const animWidth = customAnimDef.frameSize * customAnimDef.frames[0]!.length;
-
-    const customLayers = Object.values(meta.layers).filter(
-      (l) => l.custom_animation,
-    );
-    const customAnimationsInItem = customLayers
-      .map((l) => l.custom_animation as string)
-      .filter((value, index, array) => array.indexOf(value) === index);
-    const numCustomAnims = customAnimationsInItem.length;
-    const getYPosForCustomAnim = (name: string): number => {
-      const index = customAnimationsInItem.indexOf(name);
-      return SHEET_HEIGHT + index * animHeight;
-    };
-
-    const createdItem = createCanvas(
-      animWidth,
-      SHEET_HEIGHT + animHeight * numCustomAnims,
-    );
-    itemCanvas = createdItem.canvas;
-    itemCtx = createdItem.ctx;
-
-    // Render all layers of this custom animation item
-    const customSprites: { spritePath: string; zPos: number; yPos: number }[] =
-      [];
-    const animsList = getSortedLayersByAnim(
-      defaultCatalog,
-      itemId,
-      true,
-    ).unwrapOr({} as Record<string, AnimationLayer[]>);
-    for (const animName in animsList) {
-      for (let layerNum = 1; layerNum < 10; layerNum++) {
-        if (singleLayer !== null && layerNum !== singleLayer) continue;
-        const animLayer = animsList[animName]?.find(
-          (l) => l.animLayerNum === layerNum,
-        );
-        if (!animLayer) continue;
-        const layerKey = `layer_${animLayer.layerNum}`;
-        const layer = meta.layers?.[layerKey];
-        if (!layer) break;
-
-        const yPos = getYPosForCustomAnim(layer.custom_animation as string);
-        const basePath = layer[bodyType] as string | undefined;
-        if (!basePath) continue;
-
-        const spritePath = `spritesheets/${basePath}${variantToFilename(
-          variant ?? "",
-        )}.png`;
-
-        customSprites.push({ spritePath, zPos: animLayer.zPos, yPos });
-      }
-    }
-
-    // Sort by zPos
-    customSprites.sort((a, b) => a.zPos - b.zPos);
-
-    let loadedSprites:
-      | LoadedImage<(typeof customSprites)[number]>[]
-      | undefined;
-    await zipExportProfiledLoadComposite(
-      zipProfiler,
-      "render_imageLoadDecode_renderSingleItem",
-      "render_composite_renderSingleItem",
-      async () => {
-        loadedSprites = await loadImagesInParallel(customSprites);
-      },
-      async () => {
-        if (!loadedSprites) return;
-        for (const { item: sprite, img, success } of loadedSprites) {
-          if (success && img) {
-            const imageToDraw = await getImageToDraw(
-              img,
-              itemId,
-              recolors,
-              sprite.spritePath,
-            );
-            itemCtx.drawImage(imageToDraw, 0, sprite.yPos);
-          }
-        }
-      },
-    );
-  } else {
-    // Standard animation item - use standard sheet size
-    const createdItem = createCanvas(SHEET_WIDTH, SHEET_HEIGHT);
-    itemCanvas = createdItem.canvas;
-    itemCtx = createdItem.ctx;
-  }
-
-  // Build list of sprites to draw for this item
-  type StandardSprite = {
-    itemId: string;
-    variant: string | null;
-    recolors: Recolors;
-    spritePath: string;
-    zPos: number;
-    layerNum: number;
-    animation: string;
-    yPos: number;
-  };
-  const spritesToDraw: StandardSprite[] = [];
-
-  for (let layerNum = 1; layerNum < 10; layerNum++) {
-    if (singleLayer !== null && layerNum !== singleLayer) continue;
-    const layerKey = `layer_${layerNum}`;
-    if (!meta.layers?.[layerKey]) break;
-
-    const zPos = getZPos(defaultCatalog, itemId, layerNum);
-
-    // Add each animation for this layer
-    for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-      if (!supportsAnimation(meta, animName)) continue;
-
-      const pathResult = getSpritePath(
-        itemId,
-        variant,
-        recolors,
-        bodyType,
-        animName,
-        layerNum,
-        selections,
-        meta,
-      );
-      if (pathResult.isErr()) {
-        debugWarn(formatPathError(itemId, pathResult.error));
-        continue;
-      }
-
-      spritesToDraw.push({
-        itemId,
-        variant,
-        recolors,
-        spritePath: pathResult.value,
-        zPos,
-        layerNum,
-        animation: animName,
-        yPos,
-      });
-    }
-
-    // Sort by animation first, then by zPos
-    spritesToDraw.sort((a, b) => {
-      if (a.yPos !== b.yPos) return a.yPos - b.yPos;
-      return a.zPos - b.zPos;
-    });
-
-    let loadedImages: LoadedImage<StandardSprite>[] | undefined;
-    await zipExportProfiledLoadComposite(
-      zipProfiler,
-      "render_imageLoadDecode_renderSingleItem",
-      "render_composite_renderSingleItem",
-      async () => {
-        loadedImages = await loadImagesInParallel(spritesToDraw);
-      },
-      async () => {
-        if (!loadedImages) return;
-        for (const { item: sprite, img, success } of loadedImages) {
-          if (success && img) {
-            const imageToDraw = await getImageToDraw(
-              img,
-              itemId,
-              sprite.recolors,
-              sprite.spritePath,
-            );
-            itemCtx.drawImage(imageToDraw, 0, sprite.yPos);
-          }
-        }
-      },
-    );
-  }
-
-  return itemCanvas;
-}
-
-/**
- * Render a single item for a single animation to a new canvas.
- * Returns a canvas with just this one item's one animation rendered.
- */
-export async function renderSingleItemAnimation(
-  itemId: string,
-  variant: string | null,
-  recolors: Recolors,
-  bodyType: string,
-  animationName: string,
-  selections: Selections,
-  singleLayer: number | null = null,
-  zipProfiler: ZipExportProfiler | null = null,
-): Promise<HTMLCanvasElement | null> {
-  const customPart = getRuntimeCustomPart(itemId);
-  if (customPart) {
-    return customPart.sheets[animationName] ?? null;
-  }
-
-  const metaResult = getItemMerged(itemId);
-  if (metaResult.isErr()) {
-    console.error("Item metadata not found:", itemId);
-    return null;
-  }
-  const meta = metaResult.value;
-
-  // Check if this body type is supported
-  if (!meta.required.includes(bodyType)) {
-    return null;
-  }
-
-  // Check if this is a custom animation item
-  const layer1 = meta.layers?.["layer_1"];
-  const hasCustomAnimation = layer1 && layer1.custom_animation;
-
-  if (hasCustomAnimation && customAnimations) {
-    // Custom animation item - just return the full item canvas (custom animations are not split by standard animation)
-    return await renderSingleItem(
-      itemId,
-      variant,
-      recolors,
-      bodyType,
-      selections,
-      singleLayer,
-      zipProfiler,
-    );
-  }
-
-  const config = animationConfigByName[animationName];
-  if (!config) {
-    console.error("Unknown animation:", animationName);
-    return null;
-  }
-
-  const { num } = config;
-  const animYPos = 0;
-  const animHeight = num * FRAME_SIZE;
-
-  // Create a new canvas for this animation
-  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
-    SHEET_WIDTH,
-    animHeight,
-  );
-
-  // Build list of sprites to draw for this item & animation
-  type AnimSprite = {
-    spritePath: string;
-    zPos: number;
-    layerNum: number;
-    recolors: Recolors;
-  };
-  const spritesToDraw: AnimSprite[] = [];
-
-  for (let layerNum = 1; layerNum < 10; layerNum++) {
-    if (singleLayer !== null && layerNum !== singleLayer) continue;
-    const layerKey = `layer_${layerNum}`;
-    if (!meta.layers?.[layerKey]) break;
-
-    const zPos = getZPos(defaultCatalog, itemId, layerNum);
-
-    // Check animation support
-    if (animationName === "combat_idle") {
-      if (!meta.animations.includes("combat")) continue;
-    } else if (animationName === "backslash") {
-      if (
-        !meta.animations.includes("1h_slash") &&
-        !meta.animations.includes("1h_backslash")
-      )
-        continue;
-    } else if (animationName === "halfslash") {
-      if (!meta.animations.includes("1h_halfslash")) continue;
-    } else {
-      if (!meta.animations.includes(animationName)) continue;
-    }
-
-    const pathResult = getSpritePath(
-      itemId,
-      variant,
-      recolors,
-      bodyType,
-      animationName,
-      layerNum,
-      selections,
-      meta,
-    );
-    if (pathResult.isErr()) {
-      debugWarn(formatPathError(itemId, pathResult.error));
-      continue;
-    }
-
-    spritesToDraw.push({
-      spritePath: pathResult.value,
-      zPos,
-      layerNum,
-      recolors,
-    });
-  }
-
-  // Sort by zPos
-  spritesToDraw.sort((a, b) => a.zPos - b.zPos);
-
-  let loadedImages: LoadedImage<AnimSprite>[] | undefined;
-  await zipExportProfiledLoadComposite(
-    zipProfiler,
-    "render_imageLoadDecode_renderSingleItemAnimation",
-    "render_composite_renderSingleItemAnimation",
-    async () => {
-      loadedImages = await loadImagesInParallel(spritesToDraw);
-    },
-    async () => {
-      if (!loadedImages) return;
-      for (const { item: sprite, img, success } of loadedImages) {
-        if (success && img) {
-          const imageToDraw = await getImageToDraw(
-            img,
-            itemId,
-            sprite.recolors,
-            sprite.spritePath,
-          );
-          animCtx.drawImage(
-            imageToDraw,
-            0,
-            animYPos,
-            SHEET_WIDTH,
-            animHeight,
-            0,
-            0,
-            SHEET_WIDTH,
-            animHeight,
-          );
-        }
-      }
-    },
-  );
-
-  return animCanvas;
 }

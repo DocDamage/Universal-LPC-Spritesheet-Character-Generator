@@ -1,10 +1,9 @@
 import "../install-item-metadata.ts";
 import { ok, err, type Result } from "neverthrow";
-import { ANIMATIONS } from "./constants.ts";
+import { ANIMATIONS, BODY_TYPES } from "./constants.ts";
 import { getHashParamsforSelections } from "./hash.ts";
 import {
-  getItemMerged,
-  getMetadataIndexes,
+  defaultCatalog,
   type ItemMerged,
   type LoadError,
   type MetadataIndexes,
@@ -76,8 +75,8 @@ function createDefaultPathDeps(): PathDeps {
     es6DynamicTemplate,
     debugLog,
     animations: ANIMATIONS,
-    getItemMetadata: getItemMerged,
-    getMetadataIndexes,
+    getItemMetadata: (itemId) => defaultCatalog.getItemMerged(itemId),
+    getMetadataIndexes: () => defaultCatalog.getMetadataIndexes(),
   };
 }
 
@@ -199,6 +198,64 @@ export function getSpritePath(
   // were falsy the block above derived `variant` from the itemId.
   const fileName = !recolors ? `/${pathDeps.variantToFilename(variant!)}` : "";
   return ok(`spritesheets/${basePath}${animName}${fileName}.png`);
+}
+
+export function getSpritePathWithBodyTypeFallback(
+  itemId: string,
+  variant: string | null,
+  recolors: Record<string, string> | boolean | null,
+  bodyType: string,
+  animName: string,
+  layerNum: number = 1,
+  selections: Selections = {},
+  meta: PathMeta | null = null,
+): Result<string, PathError> {
+  const direct = getSpritePath(
+    itemId,
+    variant,
+    recolors,
+    bodyType,
+    animName,
+    layerNum,
+    selections,
+    meta,
+  );
+  if (direct.isOk() || direct.error.kind !== "missing-bodytype-path") {
+    return direct;
+  }
+
+  for (const fallbackBodyType of getBodyTypeFallbacks(bodyType)) {
+    const fallback = getSpritePath(
+      itemId,
+      variant,
+      recolors,
+      fallbackBodyType,
+      animName,
+      layerNum,
+      selections,
+      meta,
+    );
+    if (fallback.isOk()) return fallback;
+  }
+
+  return direct;
+}
+
+export function getBodyTypeFallbacks(bodyType: string): string[] {
+  const preferredFallbacks: Record<string, string[]> = {
+    muscular: ["male"],
+    pregnant: ["female"],
+    teen: ["male", "female"],
+    child: ["male", "female"],
+  };
+  return [
+    ...(preferredFallbacks[bodyType] ?? []),
+    ...BODY_TYPES.filter(
+      (fallback) =>
+        fallback !== bodyType &&
+        !(preferredFallbacks[bodyType] ?? []).includes(fallback),
+    ),
+  ];
 }
 
 /** Replace `${typeName}` placeholders in a path using the current selections. */

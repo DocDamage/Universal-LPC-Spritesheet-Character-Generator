@@ -5,6 +5,7 @@ import type { PartEditorState, EditorLayer, Direction } from "./types.ts";
 import { drawShapePreview } from "./shapes.ts";
 import { clamp } from "../../../utils/helpers.ts";
 import m from "mithril";
+import { schedulePartEditorLivePreview } from "./live-preview.ts";
 
 export function createDirectionCanvases(): Record<
   Direction,
@@ -201,6 +202,7 @@ export function debouncedRecomposeCanvases(stateObj: PartEditorState): void {
   }
   stateObj.recomposeDebounceTimer = window.setTimeout(() => {
     recomposeCanvases(stateObj);
+    schedulePartEditorLivePreview(stateObj);
     m.redraw();
   }, 100);
 }

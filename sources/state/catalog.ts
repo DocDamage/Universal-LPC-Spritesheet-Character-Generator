@@ -29,350 +29,39 @@
  *     migration and get removed in the final cleanup phase.
  */
 
-import { ok, err, type Result } from "neverthrow";
-import { createCanvas } from "../canvas/canvas-utils.ts";
+// Re-export all types and the error formatter from the type module.
+export * from "./catalog-types.ts";
+
+// Re-export custom-parts CRUD (previously inlined here).
+export * from "./custom-parts.ts";
+
+// ────────────────────────────────────────────────────────────────────────────
+// Additional imports needed only by the factory
+// ────────────────────────────────────────────────────────────────────────────
+
+import { ok, err } from "neverthrow";
 import {
   buildItemsByTypeNameLite,
   expandInternedItemLite,
   expandMetadataIndexesWithInternedArrays,
   isInternedItemLite,
 } from "./resolve-hash-param.ts";
-import {
-  loadStoredCustomParts,
-  persistCustomParts,
-} from "./custom-parts-storage.ts";
-
-// ────────────────────────────────────────────────────────────────────────────
-// Error shape
-// ────────────────────────────────────────────────────────────────────────────
-
-export type ChunkName = "index" | "lite" | "credits" | "palette" | "layers";
-
-export type LoadError =
-  | { kind: "loading"; chunk: ChunkName }
-  | { kind: "not-found"; id: string };
-
-/** Human-readable description of a catalog `LoadError`. Shared formatter for
- *  every getter that returns `Result<T, LoadError>`. Exhaustive over `kind`. */
-export function formatLoadError(e: LoadError): string {
-  switch (e.kind) {
-    case "loading":
-      return `chunk "${e.chunk}" not loaded`;
-    case "not-found":
-      return `item ${e.id} not in catalog`;
-  }
-}
-
-export type CustomPart = {
-  itemId: string;
-  name: string;
-  type_name: string;
-  baseItemId: string;
-  sheets: Record<string, HTMLCanvasElement>;
-  image?: HTMLCanvasElement | HTMLImageElement;
-  drawLayerNum?: number;
-  drawZPos?: number;
-  tags?: string[];
-};
-
-const customPartGlobal = globalThis as typeof globalThis & {
-  __LPC_customParts?: Record<string, CustomPart>;
-};
-
-export const customParts: Record<string, CustomPart> =
-  (customPartGlobal.__LPC_customParts ??= {});
-
-type RegisterCustomPartOptions = {
-  persist?: boolean;
-};
-
-export function registerCustomPart(
-  part: CustomPart,
-  options: RegisterCustomPartOptions = {},
-): void {
-  customParts[part.itemId] = part;
-  if (options.persist !== false) {
-    persistCustomParts(customParts);
-  }
-}
-
-export function getCustomPart(id: string): CustomPart | undefined {
-  return customParts[id];
-}
-
-export function renameCustomPart(
-  id: string,
-  name: string,
-  options: RegisterCustomPartOptions = {},
-): boolean {
-  const part = customParts[id];
-  if (!part) return false;
-
-  part.name = name;
-  if (options.persist !== false) {
-    persistCustomParts(customParts);
-  }
-  return true;
-}
-
-export function duplicateCustomPart(
-  id: string,
-  options: RegisterCustomPartOptions = {},
-): CustomPart | null {
-  const part = customParts[id];
-  if (!part) return null;
-
-  const newItemId = `custom_${part.type_name}_${Date.now()}`;
-  const newSheets: Record<string, HTMLCanvasElement> = {};
-  for (const [animation, sheet] of Object.entries(part.sheets)) {
-    const { canvas: newCanvas, ctx } = createCanvas(
-      sheet.width,
-      sheet.height,
-      true,
-    );
-    ctx.drawImage(sheet, 0, 0);
-    newSheets[animation] = newCanvas;
-  }
-
-  const firstSheet = newSheets["walk"] ?? Object.values(newSheets)[0];
-  const duplicated: CustomPart = {
-    itemId: newItemId,
-    name: `${part.name} (Copy)`,
-    type_name: part.type_name,
-    baseItemId: part.baseItemId,
-    drawLayerNum: part.drawLayerNum,
-    drawZPos: part.drawZPos,
-    tags: part.tags ? [...part.tags] : undefined,
-    sheets: newSheets,
-    image: firstSheet,
-  };
-
-  registerCustomPart(duplicated, options);
-  return duplicated;
-}
-
-export function deleteCustomPart(
-  id: string,
-  options: RegisterCustomPartOptions = {},
-): boolean {
-  if (!customParts[id]) return false;
-
-  delete customParts[id];
-  if (options.persist !== false) {
-    persistCustomParts(customParts);
-  }
-  return true;
-}
-
-export function clearCustomParts(
-  options: RegisterCustomPartOptions = {},
-): void {
-  for (const itemId of Object.keys(customParts)) {
-    delete customParts[itemId];
-  }
-  if (options.persist !== false) {
-    persistCustomParts(customParts);
-  }
-}
-
-export async function hydrateCustomPartsFromStorage(): Promise<void> {
-  const parts = await loadStoredCustomParts();
-  for (const part of parts) {
-    registerCustomPart(part, { persist: false });
-  }
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// Catalog data shapes (audited from real consumer usage)
-// ────────────────────────────────────────────────────────────────────────────
-
-/** Shared by `PaletteRecolor.palettes` and `PaletteMaterialMeta.palettes`. */
-export type PaletteMap = Record<string, Record<string, string[]>>;
-
-export type PaletteRecolor = {
-  material: string;
-  palettes: PaletteMap;
-  // Vary per recolor — only the first recolor in an item has a type_name
-  // when it represents the item itself; subsequent recolors target sub-types.
-  type_name?: string;
-  variants?: string[];
-  label?: string;
-  matchBodyColor?: boolean;
-  base?: string;
-  source?: string[];
-  default?: string;
-};
-
-export type ItemLite = {
-  name: string;
-  type_name: string;
-  required: string[];
-  animations: string[];
-  recolors: PaletteRecolor[];
-  matchBodyColor: boolean;
-  variants: string[];
-  path: string[];
-  preview_row?: number;
-};
-
-/** Complete item metadata as emitted by the build pipeline (includes layers,
- *  credits, and optional interned indices `v` / `r`). */
-export type FullItemMetadata = ItemLite & {
-  layers?: Record<string, LayerEntry>;
-  credits?: Credit[];
-  v?: number;
-  r?: number;
-};
-
-export type Credit = {
-  file: string;
-  authors: string[];
-  licenses: string[];
-  urls: string[];
-  notes?: string;
-};
-
-/**
- * A single `meta.layers[layer_N]` entry. Heterogeneous: known metadata fields
- * (`zPos`, `custom_animation`) plus body-type-keyed asset paths. Modeled as
- * an open shape because the body-type keys are dynamic.
- */
-export type LayerEntry = {
-  zPos?: number;
-  custom_animation?: string;
-  [bodyTypeOrField: string]: string | number | undefined;
-};
-
-export type ItemMerged = ItemLite & {
-  layers: Record<string, LayerEntry>;
-  credits: Credit[];
-};
-
-export type AliasEntry = {
-  typeName: string;
-  name: string;
-  variant: string;
-};
-
-/** Outer key: source typeName. Inner key: `name_variant`. */
-export type AliasMetadata = Record<string, Record<string, AliasEntry>>;
-
-export type CategoryTreeNode = {
-  items?: string[];
-  children?: Record<string, CategoryTreeNode>;
-};
-
-export type CategoryTree = CategoryTreeNode;
-
-/**
- * Slim row shape stored in `MetadataIndexes.byTypeName[typeName]` and
- * `hashMatch.itemsByTypeName[typeName]`. Documented in `resolve-hash-param.ts`:
- * just enough fields for hash-resolution and path-name lookups; the full
- * record lives in the lite item store.
- */
-export type SlimByTypeNameRow = {
-  itemId: string;
-  name: string;
-  type_name: string;
-  variants: string[];
-  recolors: { variants: string[] }[];
-};
-
-export type MetadataIndexes = {
-  byTypeName: Record<string, SlimByTypeNameRow[]>;
-  hashMatch: { itemsByTypeName?: Record<string, SlimByTypeNameRow[]> };
-  // Only emitted when the build interned variant indices — production
-  // `index-metadata.js` includes them; in-memory test fixtures usually don't.
-  variantArrays?: string[][];
-  recolorVariantArrays?: string[][];
-};
-
-export type PaletteMaterialMeta = {
-  palettes: PaletteMap;
-  type: "material";
-  label: string;
-  desc: string;
-  default: string;
-  base: string;
-};
-
-export type PaletteVersionMeta = {
-  type: "version";
-  label: string;
-  desc: string;
-};
-
-export type PaletteMetadata = {
-  materials: Record<string, PaletteMaterialMeta>;
-  // Production data always has versions, but several test fixtures provide
-  // a minimal `{ materials: {...} }` without versions; keep optional for them.
-  versions?: Record<string, PaletteVersionMeta>;
-};
-
-// ────────────────────────────────────────────────────────────────────────────
-// Catalog interface — split into reader + writer halves
-// ────────────────────────────────────────────────────────────────────────────
-
-export type CatalogReady = {
-  readonly onIndexReady: Promise<void>;
-  readonly onLiteReady: Promise<void>;
-  readonly onCreditsReady: Promise<void>;
-  readonly onPaletteReady: Promise<void>;
-  readonly onLayersReady: Promise<void>;
-  readonly onAllReady: Promise<void>;
-};
-
-/** Read-only surface — what components and downstream factories should consume. */
-export type CatalogReader = {
-  chunkReady(chunk: ChunkName): Result<true, LoadError>;
-  getItemLite(id: string): Result<ItemLite, LoadError>;
-  getItemMerged(id: string): Result<ItemMerged, LoadError>;
-  getItemCredits(id: string): Result<Credit[], LoadError>;
-  getItemLayers(id: string): Result<Record<string, LayerEntry>, LoadError>;
-  getPaletteMetadata(): Result<PaletteMetadata, LoadError>;
-  getCategoryTree(): Result<CategoryTree, LoadError>;
-  getMetadataIndexes(): Result<MetadataIndexes, LoadError>;
-  getAliasMetadata(): Result<AliasMetadata, LoadError>;
-  isIndexReady(): boolean;
-  isLiteReady(): boolean;
-  isCreditsReady(): boolean;
-  isPaletteReady(): boolean;
-  isLayersReady(): boolean;
-  buildItemsByTypeNameFromRegisteredLite(): Record<string, SlimByTypeNameRow[]>;
-  readonly ready: CatalogReady;
-};
-
-/** Write-only surface — only the boot path (`install-item-metadata.ts`) and
- *  test setup should hold this. */
-export type CatalogWriter = {
-  registerFromIndexModule(exports_: {
-    aliasMetadata: AliasMetadata;
-    categoryTree: CategoryTree;
-    metadataIndexes: MetadataIndexes;
-  }): void;
-  registerFromPaletteModule(exports_: {
-    paletteMetadata: PaletteMetadata;
-  }): void;
-  registerFromItemModule(exports_: {
-    itemMetadata: Record<string, ItemLite>;
-  }): void;
-  registerFromCreditsModule(exports_: {
-    itemCredits: Record<string, Credit[]>;
-  }): void;
-  registerFromLayersModule(exports_: {
-    itemLayers: Record<string, Record<string, LayerEntry>>;
-  }): void;
-  loadCatalogFromFixtures(fixtureGlobals: {
-    itemMetadata: Record<string, FullItemMetadata>;
-    aliasMetadata: AliasMetadata;
-    categoryTree: CategoryTree;
-    metadataIndexes: MetadataIndexes;
-    paletteMetadata: PaletteMetadata;
-  }): void;
-  resetForTests(): void;
-};
-
-export type Catalog = CatalogReader & CatalogWriter;
+import { customParts, clearCustomParts } from "./custom-parts.ts";
+import type {
+  ChunkName,
+  LoadError,
+  AliasMetadata,
+  CategoryTree,
+  MetadataIndexes,
+  PaletteMetadata,
+  ItemLite,
+  Credit,
+  LayerEntry,
+  FullItemMetadata,
+  ItemMerged,
+  CatalogReady,
+  Catalog,
+} from "./catalog-types.ts";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Internal helpers — pure, outside the factory
@@ -428,9 +117,6 @@ const notFound = (id: string): LoadError => ({ kind: "not-found", id });
 // ────────────────────────────────────────────────────────────────────────────
 
 export function createCatalog(): Catalog {
-  // All stage trackers and stores live in this closure — unreachable from
-  // outside the factory. Mutation only happens through the registrar methods
-  // returned below.
   let indexStage = makeStage();
   let liteStage = makeStage();
   let creditsStage = makeStage();
@@ -445,11 +131,6 @@ export function createCatalog(): Catalog {
   let itemLayersStore: Record<string, Record<string, LayerEntry>> | null = null;
   let paletteMetadataStore: PaletteMetadata | null = null;
 
-  /**
-   * Fills `variants` and `recolors[0].variants` from `metadataIndexesStore`
-   * when the lite chunk was emitted with interned `v` / `r` (shared tables
-   * live only in `index-metadata.js`).
-   */
   function expandInternedItemLitesInStore(): void {
     if (itemLiteStore === null || metadataIndexesStore === null) return;
     const { variantArrays, recolorVariantArrays } = metadataIndexesStore;
@@ -575,8 +256,6 @@ export function createCatalog(): Catalog {
 
     getPaletteMetadata() {
       if (!paletteStage.resolved) return err(loading("palette"));
-      // Non-null by construction: registerFromPaletteModule sets the store
-      // before resolving the stage.
       return ok(paletteMetadataStore!);
     },
 
@@ -595,11 +274,6 @@ export function createCatalog(): Catalog {
       return ok(aliasMetadataStore!);
     },
 
-    /**
-     * `byTypeName` for hash resolution when the index module is not registered
-     * yet. Rows match `buildSlimByTypeNameRow` (itemId, name, type_name,
-     * variants, recolors minimal array).
-     */
     buildItemsByTypeNameFromRegisteredLite() {
       if (!itemLiteStore) return {};
       const synthetic: Record<string, ItemMerged> = {};
@@ -609,7 +283,7 @@ export function createCatalog(): Catalog {
       return buildItemsByTypeNameLite(synthetic);
     },
 
-    // writer — only `install-item-metadata.ts` and test setup should call these
+    // writer methods
     registerFromIndexModule(exports_) {
       aliasMetadataStore = exports_.aliasMetadata;
       categoryTreeStore = exports_.categoryTree;
@@ -644,10 +318,6 @@ export function createCatalog(): Catalog {
       layersStage.resolve();
     },
 
-    /**
-     * Loads the catalog from `extractMetadataGlobalsFromWrites` / `runBuild`
-     * `.globals` (merged `itemMetadata` is split into lite, credits, layers).
-     */
     loadCatalogFromFixtures(fixtureGlobals) {
       this.resetForTests();
       const {
@@ -670,11 +340,6 @@ export function createCatalog(): Catalog {
       this.registerFromLayersModule({ itemLayers });
     },
 
-    /**
-     * Reset to a fresh empty state. Used by tests that share `defaultCatalog`
-     * across cases. Tests can also construct a brand-new `createCatalog()` to
-     * sidestep this entirely.
-     */
     resetForTests() {
       indexStage = makeStage();
       liteStage = makeStage();
@@ -695,87 +360,10 @@ export function createCatalog(): Catalog {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Default instance + legacy free-function exports (transitional)
+// Default instance + test reset helper
 // ────────────────────────────────────────────────────────────────────────────
-//
-// All exports below preserve the pre-factory module surface for incremental
-// migration. They delegate to a single shared `defaultCatalog`. Phase Final
-// of the migration deletes everything between these comment fences; main.ts
-// will own the only `createCatalog()` instance at that point.
 
 export const defaultCatalog: Catalog = createCatalog();
-
-export const catalogReady = defaultCatalog.ready;
-
-export const isIndexReady = (): boolean => defaultCatalog.isIndexReady();
-export const isLiteReady = (): boolean => defaultCatalog.isLiteReady();
-export const isCreditsReady = (): boolean => defaultCatalog.isCreditsReady();
-export const isPaletteReady = (): boolean => defaultCatalog.isPaletteReady();
-export const isLayersReady = (): boolean => defaultCatalog.isLayersReady();
-
-export const chunkReady = (chunk: ChunkName): Result<true, LoadError> =>
-  defaultCatalog.chunkReady(chunk);
-
-export const getItemLite = (id: string): Result<ItemLite, LoadError> =>
-  defaultCatalog.getItemLite(id);
-
-export const getItemMerged = (id: string): Result<ItemMerged, LoadError> =>
-  defaultCatalog.getItemMerged(id);
-
-export const getItemCredits = (id: string): Result<Credit[], LoadError> =>
-  defaultCatalog.getItemCredits(id);
-
-export const getItemLayers = (
-  id: string,
-): Result<Record<string, LayerEntry>, LoadError> =>
-  defaultCatalog.getItemLayers(id);
-
-export const getPaletteMetadata = (): Result<PaletteMetadata, LoadError> =>
-  defaultCatalog.getPaletteMetadata();
-
-export const getCategoryTree = (): Result<CategoryTree, LoadError> =>
-  defaultCatalog.getCategoryTree();
-
-export const getMetadataIndexes = (): Result<MetadataIndexes, LoadError> =>
-  defaultCatalog.getMetadataIndexes();
-
-export const getAliasMetadata = (): Result<AliasMetadata, LoadError> =>
-  defaultCatalog.getAliasMetadata();
-
-export const buildItemsByTypeNameFromRegisteredLite = (): Record<
-  string,
-  SlimByTypeNameRow[]
-> => defaultCatalog.buildItemsByTypeNameFromRegisteredLite();
-
-export const registerFromIndexModule = (exports_: {
-  aliasMetadata: AliasMetadata;
-  categoryTree: CategoryTree;
-  metadataIndexes: MetadataIndexes;
-}): void => defaultCatalog.registerFromIndexModule(exports_);
-
-export const registerFromPaletteModule = (exports_: {
-  paletteMetadata: PaletteMetadata;
-}): void => defaultCatalog.registerFromPaletteModule(exports_);
-
-export const registerFromItemModule = (exports_: {
-  itemMetadata: Record<string, ItemLite>;
-}): void => defaultCatalog.registerFromItemModule(exports_);
-
-export const registerFromCreditsModule = (exports_: {
-  itemCredits: Record<string, Credit[]>;
-}): void => defaultCatalog.registerFromCreditsModule(exports_);
-
-export const registerFromLayersModule = (exports_: {
-  itemLayers: Record<string, Record<string, LayerEntry>>;
-}): void => defaultCatalog.registerFromLayersModule(exports_);
-
-export const loadCatalogFromFixtures = (fixtureGlobals: {
-  itemMetadata: Record<string, FullItemMetadata>;
-  aliasMetadata: AliasMetadata;
-  categoryTree: CategoryTree;
-  metadataIndexes: MetadataIndexes;
-  paletteMetadata: PaletteMetadata;
-}): void => defaultCatalog.loadCatalogFromFixtures(fixtureGlobals);
 
 /**
  * Reset the shared compatibility catalog. New isolated tests should prefer
@@ -789,22 +377,11 @@ export const resetCatalogForTests = (): void => defaultCatalog.resetForTests();
 // ────────────────────────────────────────────────────────────────────────────
 
 if (typeof globalThis !== "undefined") {
-  /**
-   * Playwright, Argos, and `dump-computed-styles` (production / vite preview).
-   * Inlined here so the assignment is not tree-shaken.
-   */
   (
     globalThis as unknown as { __LPC_waitCatalogAllReady: () => Promise<void> }
   ).__LPC_waitCatalogAllReady = async () => {
     await defaultCatalog.ready.onAllReady;
   };
-  /**
-   * Same gates as `PaletteSelectModal` (split metadata: palette + layers must
-   * be present). Used when a stale preview build omits `__LPC_waitCatalogAllReady`
-   * so we do not treat "shell un-spinner" as sufficient — otherwise the
-   * skintone modal stays on "Loading layer data…" and `data-previews-ready`
-   * never flips to true.
-   */
   (
     globalThis as unknown as {
       __LPC_arePaletteModalMetadataChunksReady: () => boolean;

@@ -1,7 +1,7 @@
 // Global state and state operations
 import m from "mithril";
 import { syncSelectionsToHash, loadSelectionsFromHash } from "./hash.ts";
-import { getItemMerged, type ItemMerged } from "./catalog.ts";
+import { defaultCatalog, type ItemMerged } from "./catalog.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
 import { state } from "./app-state.ts";
 import type { Selections } from "./app-state.ts";
@@ -30,7 +30,8 @@ type StateDeps = {
 // Dependency injection for testability (see setStateDeps / resetStateDeps)
 function createDefaultStateDeps(): StateDeps {
   return {
-    getItemMetadata: (itemId) => getItemMerged(itemId).unwrapOr(null),
+    getItemMetadata: (itemId) =>
+      defaultCatalog.getItemMerged(itemId).unwrapOr(null),
     selectDefaults,
     redraw: () => m.redraw(),
     syncSelectionsToHash,
@@ -153,7 +154,10 @@ export function applyMatchBodyColor(
   }
 }
 
+import { checkCachedLicense } from "./license-state.ts";
+
 export async function initState(): Promise<void> {
+  await checkCachedLicense();
   stateDeps.loadSelectionsFromHash();
 
   if (Object.keys(state.selections).length === 0) {

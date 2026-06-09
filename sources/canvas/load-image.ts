@@ -50,7 +50,7 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   }
 
   const img = new Image();
-  img.onload = () => {
+  img.onload = async () => {
     loadedImages[src] = img;
     inFlight.delete(src);
 
@@ -61,6 +61,14 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
         `image-load:${src}:start`,
         `image-load:${src}:end`,
       );
+    }
+
+    if (typeof img.decode === "function") {
+      try {
+        await img.decode();
+      } catch (_err) {
+        // Ignore decode failures and fallback to immediate resolve
+      }
     }
 
     resolve(img);

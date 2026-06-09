@@ -1,4 +1,5 @@
 import { LICENSE_CONFIG, ANIMATIONS, BODY_TYPES } from "./constants.ts";
+import { BUILD_TIER, BUILD_CHANNEL } from "./build-config.ts";
 import type { TweenMode, TweenPreset, TweenEasing } from "../canvas/tween.ts";
 
 /** A single item selection within a selection group (e.g. body, head, ears). */
@@ -17,6 +18,7 @@ export type Selection = {
 export type Selections = Record<string, Selection>;
 
 type ZipMode = { isRunning: boolean };
+export type AppPlan = "free" | "pro" | "studio";
 
 /** Global application state. Mutated in place; Mithril views observe via redraw. */
 export type State = {
@@ -63,10 +65,13 @@ export type State = {
 
   activeTab: "character" | "accessories";
   editingPart: { slotLabel: string; itemId: string } | null;
+  appPlan: AppPlan;
 
   // transient (never saved)
   showCommandPalette: boolean;
   showShortcutHelp: boolean;
+  showOnboarding: boolean;
+  showAbout: boolean;
   zipByAnimation: ZipMode;
   zipByItem: ZipMode;
   zipByAnimationAndItem: ZipMode;
@@ -109,12 +114,30 @@ export const state: State = {
   ),
   activeTab: "character",
   editingPart: null,
+  appPlan: BUILD_TIER,
 
   // Following transient state should never be saved
   showCommandPalette: false,
   showShortcutHelp: false,
+  showOnboarding: false,
+  showAbout: false,
   zipByAnimation: { isRunning: false },
   zipByItem: { isRunning: false },
   zipByAnimationAndItem: { isRunning: false },
   zipIndividualFrames: { isRunning: false },
 };
+
+let appPlanVal = BUILD_TIER;
+Object.defineProperty(state, "appPlan", {
+  get() {
+    return appPlanVal;
+  },
+  set(val: AppPlan) {
+    if (BUILD_CHANNEL !== "dev") {
+      return;
+    }
+    appPlanVal = val;
+  },
+  configurable: true,
+  enumerable: true,
+});

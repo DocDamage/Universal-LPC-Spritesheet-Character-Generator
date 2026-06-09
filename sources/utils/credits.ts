@@ -1,12 +1,12 @@
 // Credit collection and formatting utilities
 
-import { getItemMerged, type Credit } from "../state/catalog.ts";
+import { defaultCatalog, type Credit } from "../state/catalog.ts";
 import { state } from "../state/state.ts";
 import type { Selections } from "../state/state.ts";
 import { replaceInPath } from "../state/path.ts";
 import { variantToFilename } from "../utils/helpers.ts";
 
-type CreditWithFileName = Credit & { fileName: string };
+export type CreditWithFileName = Credit & { fileName: string };
 
 /**
  * Collect credits from all selected items. Only includes credits for files
@@ -21,7 +21,7 @@ export function getAllCredits(
 
   for (const [, selection] of Object.entries(selections)) {
     const { itemId } = selection;
-    const metaResult = getItemMerged(itemId);
+    const metaResult = defaultCatalog.getItemMerged(itemId);
     if (metaResult.isErr()) continue;
     const meta = metaResult.value;
     if (meta.credits.length === 0) continue;

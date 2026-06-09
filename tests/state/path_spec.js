@@ -6,10 +6,7 @@ import {
   setPathDeps,
   resetPathDeps,
 } from "../../sources/state/path.ts";
-import {
-  loadCatalogFromFixtures,
-  resetCatalogForTests,
-} from "../../sources/state/catalog.ts";
+import { defaultCatalog } from "../../sources/state/catalog.ts";
 import { restoreAppCatalogAfterTest } from "../browser-catalog-fixture.js";
 import { es6DynamicTemplate } from "../../sources/utils/helpers.ts";
 import { err } from "neverthrow";
@@ -19,7 +16,7 @@ import { describe, it, beforeEach, afterEach } from "mocha-globals";
 
 describe("state/path.ts", () => {
   beforeEach(() => {
-    resetCatalogForTests();
+    defaultCatalog.resetForTests();
     resetPathDeps();
   });
 
@@ -95,7 +92,7 @@ describe("state/path.ts", () => {
     });
 
     it("resolves ${} using catalog byTypeName for name stripping", () => {
-      loadCatalogFromFixtures({
+      defaultCatalog.loadCatalogFromFixtures({
         itemMetadata: {
           x: {
             type_name: "head",

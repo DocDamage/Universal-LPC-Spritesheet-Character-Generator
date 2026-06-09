@@ -2,23 +2,8 @@
 import { expect } from "chai";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
 import {
-  loadCatalogFromFixtures,
-  registerFromCreditsModule,
-  registerFromIndexModule,
-  registerFromItemModule,
-  registerFromLayersModule,
-  registerFromPaletteModule,
+  defaultCatalog,
   resetCatalogForTests,
-} from "../../sources/state/catalog.ts";
-import {
-  getAliasMetadata,
-  getCategoryTree,
-  getItemCredits,
-  getItemLayers,
-  getItemLite,
-  getItemMerged,
-  getMetadataIndexes,
-  getPaletteMetadata,
 } from "../../sources/state/catalog.ts";
 import { restoreAppCatalogAfterTest } from "../browser-catalog-fixture.js";
 
@@ -44,7 +29,7 @@ describe("state/catalog.ts", () => {
 
   describe("getItemLite", () => {
     it("returns Err({kind:'loading'}) before lite chunk loads", () => {
-      const r = getItemLite("a");
+      const r = defaultCatalog.getItemLite("a");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) {
         expect(r.error).to.deep.equal({ kind: "loading", chunk: "lite" });
@@ -52,8 +37,10 @@ describe("state/catalog.ts", () => {
     });
 
     it("returns Ok(item) after lite chunk loads with valid id", () => {
-      registerFromItemModule({ itemMetadata: FIXTURES.itemMetadata });
-      const r = getItemLite("a");
+      defaultCatalog.registerFromItemModule({
+        itemMetadata: FIXTURES.itemMetadata,
+      });
+      const r = defaultCatalog.getItemLite("a");
       expect(r.isOk()).to.be.true;
       if (r.isOk()) {
         expect(r.value.name).to.equal("A");
@@ -62,8 +49,10 @@ describe("state/catalog.ts", () => {
     });
 
     it("returns Err({kind:'not-found'}) after load with unknown id", () => {
-      registerFromItemModule({ itemMetadata: FIXTURES.itemMetadata });
-      const r = getItemLite("ghost");
+      defaultCatalog.registerFromItemModule({
+        itemMetadata: FIXTURES.itemMetadata,
+      });
+      const r = defaultCatalog.getItemLite("ghost");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) {
         expect(r.error).to.deep.equal({ kind: "not-found", id: "ghost" });
@@ -73,14 +62,16 @@ describe("state/catalog.ts", () => {
 
   describe("getItemMerged", () => {
     it("returns Err({kind:'loading'}) before lite chunk loads", () => {
-      const r = getItemMerged("a");
+      const r = defaultCatalog.getItemMerged("a");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) expect(r.error.kind).to.equal("loading");
     });
 
     it("returns Ok with empty layers/credits when only lite is loaded", () => {
-      registerFromItemModule({ itemMetadata: FIXTURES.itemMetadata });
-      const r = getItemMerged("a");
+      defaultCatalog.registerFromItemModule({
+        itemMetadata: FIXTURES.itemMetadata,
+      });
+      const r = defaultCatalog.getItemMerged("a");
       expect(r.isOk()).to.be.true;
       if (r.isOk()) {
         expect(r.value.name).to.equal("A");
@@ -90,14 +81,16 @@ describe("state/catalog.ts", () => {
     });
 
     it("returns Err({kind:'not-found'}) for unknown id", () => {
-      registerFromItemModule({ itemMetadata: FIXTURES.itemMetadata });
-      const r = getItemMerged("ghost");
+      defaultCatalog.registerFromItemModule({
+        itemMetadata: FIXTURES.itemMetadata,
+      });
+      const r = defaultCatalog.getItemMerged("ghost");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) expect(r.error.kind).to.equal("not-found");
     });
 
     it("merges credits and layers when those chunks have loaded", () => {
-      loadCatalogFromFixtures({
+      defaultCatalog.loadCatalogFromFixtures({
         ...FIXTURES,
         itemMetadata: {
           a: {
@@ -107,7 +100,7 @@ describe("state/catalog.ts", () => {
           },
         },
       });
-      const r = getItemMerged("a");
+      const r = defaultCatalog.getItemMerged("a");
       expect(r.isOk()).to.be.true;
       if (r.isOk()) {
         expect(r.value.layers.layer_1.male).to.equal("path/to/a");
@@ -118,14 +111,14 @@ describe("state/catalog.ts", () => {
 
   describe("getItemCredits", () => {
     it("returns Err({kind:'loading'}) before credits chunk loads", () => {
-      const r = getItemCredits("a");
+      const r = defaultCatalog.getItemCredits("a");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) expect(r.error.kind).to.equal("loading");
     });
 
     it("returns Err({kind:'not-found'}) for unknown id when credits chunk is loaded", () => {
-      registerFromCreditsModule({ itemCredits: {} });
-      const r = getItemCredits("ghost");
+      defaultCatalog.registerFromCreditsModule({ itemCredits: {} });
+      const r = defaultCatalog.getItemCredits("ghost");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) {
         expect(r.error).to.deep.equal({ kind: "not-found", id: "ghost" });
@@ -133,17 +126,17 @@ describe("state/catalog.ts", () => {
     });
 
     it("returns Ok(credits) when chunk is loaded and id has entries", () => {
-      registerFromCreditsModule({
+      defaultCatalog.registerFromCreditsModule({
         itemCredits: { a: [{ file: "f", licenses: ["MIT"] }] },
       });
-      const r = getItemCredits("a");
+      const r = defaultCatalog.getItemCredits("a");
       expect(r.isOk()).to.be.true;
       if (r.isOk()) expect(r.value[0].licenses).to.deep.equal(["MIT"]);
     });
 
     it("returns Ok([]) when chunk is loaded and id has an empty array entry", () => {
-      registerFromCreditsModule({ itemCredits: { a: [] } });
-      const r = getItemCredits("a");
+      defaultCatalog.registerFromCreditsModule({ itemCredits: { a: [] } });
+      const r = defaultCatalog.getItemCredits("a");
       expect(r.isOk()).to.be.true;
       if (r.isOk()) expect(r.value).to.deep.equal([]);
     });
@@ -151,14 +144,14 @@ describe("state/catalog.ts", () => {
 
   describe("getItemLayers", () => {
     it("returns Err({kind:'loading'}) before layers chunk loads", () => {
-      const r = getItemLayers("a");
+      const r = defaultCatalog.getItemLayers("a");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) expect(r.error.kind).to.equal("loading");
     });
 
     it("returns Err({kind:'not-found'}) for unknown id when layers chunk is loaded", () => {
-      registerFromLayersModule({ itemLayers: {} });
-      const r = getItemLayers("ghost");
+      defaultCatalog.registerFromLayersModule({ itemLayers: {} });
+      const r = defaultCatalog.getItemLayers("ghost");
       expect(r.isErr()).to.be.true;
       if (r.isErr()) {
         expect(r.error).to.deep.equal({ kind: "not-found", id: "ghost" });
@@ -166,8 +159,8 @@ describe("state/catalog.ts", () => {
     });
 
     it("returns Ok({}) when chunk is loaded and id has an empty object entry", () => {
-      registerFromLayersModule({ itemLayers: { a: {} } });
-      const r = getItemLayers("a");
+      defaultCatalog.registerFromLayersModule({ itemLayers: { a: {} } });
+      const r = defaultCatalog.getItemLayers("a");
       expect(r.isOk()).to.be.true;
       if (r.isOk()) expect(r.value).to.deep.equal({});
     });
@@ -175,16 +168,16 @@ describe("state/catalog.ts", () => {
 
   describe("getPaletteMetadata", () => {
     it("returns Err({kind:'loading'}) before palette chunk loads", () => {
-      const r = getPaletteMetadata();
+      const r = defaultCatalog.getPaletteMetadata();
       expect(r.isErr()).to.be.true;
       if (r.isErr()) expect(r.error.kind).to.equal("loading");
     });
 
     it("returns Ok(meta) when palette chunk is loaded", () => {
-      registerFromPaletteModule({
+      defaultCatalog.registerFromPaletteModule({
         paletteMetadata: { versions: {}, materials: { skin: {} } },
       });
-      const r = getPaletteMetadata();
+      const r = defaultCatalog.getPaletteMetadata();
       expect(r.isOk()).to.be.true;
       if (r.isOk()) expect(r.value.materials).to.have.property("skin");
     });
@@ -192,9 +185,9 @@ describe("state/catalog.ts", () => {
 
   describe("getCategoryTree / getMetadataIndexes / getAliasMetadata (index chunk)", () => {
     it("all return Err({kind:'loading', chunk:'index'}) before index chunk loads", () => {
-      const tree = getCategoryTree();
-      const indexes = getMetadataIndexes();
-      const alias = getAliasMetadata();
+      const tree = defaultCatalog.getCategoryTree();
+      const indexes = defaultCatalog.getMetadataIndexes();
+      const alias = defaultCatalog.getAliasMetadata();
       for (const r of [tree, indexes, alias]) {
         expect(r.isErr()).to.be.true;
         if (r.isErr()) {
@@ -204,14 +197,14 @@ describe("state/catalog.ts", () => {
     });
 
     it("all return Ok after index chunk loads", () => {
-      registerFromIndexModule({
+      defaultCatalog.registerFromIndexModule({
         aliasMetadata: FIXTURES.aliasMetadata,
         categoryTree: FIXTURES.categoryTree,
         metadataIndexes: FIXTURES.metadataIndexes,
       });
-      const tree = getCategoryTree();
-      const indexes = getMetadataIndexes();
-      const alias = getAliasMetadata();
+      const tree = defaultCatalog.getCategoryTree();
+      const indexes = defaultCatalog.getMetadataIndexes();
+      const alias = defaultCatalog.getAliasMetadata();
       expect(tree.isOk()).to.be.true;
       expect(indexes.isOk()).to.be.true;
       expect(alias.isOk()).to.be.true;
@@ -221,15 +214,15 @@ describe("state/catalog.ts", () => {
 
   describe("resetCatalogForTests", () => {
     it("flips all getters back to Err({kind:'loading'})", () => {
-      loadCatalogFromFixtures(FIXTURES);
-      expect(getItemLite("a").isOk()).to.be.true;
-      expect(getCategoryTree().isOk()).to.be.true;
+      defaultCatalog.loadCatalogFromFixtures(FIXTURES);
+      expect(defaultCatalog.getItemLite("a").isOk()).to.be.true;
+      expect(defaultCatalog.getCategoryTree().isOk()).to.be.true;
       resetCatalogForTests();
-      expect(getItemLite("a").isErr()).to.be.true;
-      expect(getCategoryTree().isErr()).to.be.true;
-      expect(getItemCredits("a").isErr()).to.be.true;
-      expect(getItemLayers("a").isErr()).to.be.true;
-      expect(getPaletteMetadata().isErr()).to.be.true;
+      expect(defaultCatalog.getItemLite("a").isErr()).to.be.true;
+      expect(defaultCatalog.getCategoryTree().isErr()).to.be.true;
+      expect(defaultCatalog.getItemCredits("a").isErr()).to.be.true;
+      expect(defaultCatalog.getItemLayers("a").isErr()).to.be.true;
+      expect(defaultCatalog.getPaletteMetadata().isErr()).to.be.true;
     });
   });
 });

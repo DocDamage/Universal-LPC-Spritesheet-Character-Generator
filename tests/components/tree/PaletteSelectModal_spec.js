@@ -6,14 +6,7 @@ import { PaletteSelectModal } from "../../../sources/components/tree/PaletteSele
 import { state } from "../../../sources/state/state.ts";
 import {
   defaultCatalog,
-  isLayersReady,
-  isLiteReady,
-  isPaletteReady,
   resetCatalogForTests,
-  registerFromCreditsModule,
-  registerFromIndexModule,
-  registerFromItemModule,
-  registerFromPaletteModule,
 } from "../../../sources/state/catalog.ts";
 import { BODY_TYPES } from "../../../sources/state/constants.ts";
 import { resetState } from "../../../sources/state/filters.ts";
@@ -145,7 +138,7 @@ describe("PaletteSelectModal", function () {
 
     m.render(host, m(PaletteSelectModal, modalAttrs()));
 
-    assert.strictEqual(isPaletteReady(), false);
+    assert.strictEqual(defaultCatalog.isPaletteReady(), false);
     assert.include(host.textContent, "Loading palette data…");
     assert.notEqual(host.querySelector(".palette-modal-overlay"), null);
     assert.strictEqual(
@@ -158,7 +151,7 @@ describe("PaletteSelectModal", function () {
     resetCatalogForTests();
     const itemMetadata = psmShirtItem();
     const byTypeName = buildItemsByTypeNameLite(itemMetadata);
-    registerFromIndexModule({
+    defaultCatalog.registerFromIndexModule({
       aliasMetadata: {},
       categoryTree: { items: [], children: {} },
       metadataIndexes: {
@@ -166,16 +159,16 @@ describe("PaletteSelectModal", function () {
         hashMatch: { itemsByTypeName: byTypeName },
       },
     });
-    registerFromPaletteModule({
+    defaultCatalog.registerFromPaletteModule({
       paletteMetadata: modalPaletteMetadata,
     });
     const { itemMetadataLite, itemCredits } =
       splitItemMetadataForRegisters(itemMetadata);
-    registerFromItemModule({ itemMetadata: itemMetadataLite });
-    registerFromCreditsModule({ itemCredits });
-    assert.strictEqual(isPaletteReady(), true);
-    assert.strictEqual(isLiteReady(), true);
-    assert.strictEqual(isLayersReady(), false);
+    defaultCatalog.registerFromItemModule({ itemMetadata: itemMetadataLite });
+    defaultCatalog.registerFromCreditsModule({ itemCredits });
+    assert.strictEqual(defaultCatalog.isPaletteReady(), true);
+    assert.strictEqual(defaultCatalog.isLiteReady(), true);
+    assert.strictEqual(defaultCatalog.isLayersReady(), false);
 
     m.render(host, m(PaletteSelectModal, modalAttrs()));
 

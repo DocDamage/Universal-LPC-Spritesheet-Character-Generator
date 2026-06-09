@@ -11,7 +11,7 @@ import {
 import { loadImage } from "../../../canvas/load-image.ts";
 import { getSpritePath } from "../../../state/path.ts";
 import { get2DContext } from "../../../canvas/canvas-utils.ts";
-import { getItemMerged } from "../../../state/catalog.ts";
+import { defaultCatalog } from "../../../state/catalog.ts";
 import type { ItemMerged } from "../../../state/catalog.ts";
 import { supportsAnimation } from "../../../state/meta.ts";
 import { state } from "../../../state/state.ts";
@@ -257,7 +257,7 @@ export async function loadAnimationFrameCanvases(
   const baseId = stateObj.baseItemId;
   if (!baseId) return canvases;
 
-  const meta = getItemMerged(baseId).unwrapOr(null);
+  const meta = defaultCatalog.getItemMerged(baseId).unwrapOr(null);
   if (!meta) return canvases;
 
   const selection = state.selections[meta.type_name];

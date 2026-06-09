@@ -274,6 +274,13 @@ export function recolorImageWebGL(
   sourceImage: HTMLImageElement | HTMLCanvasElement,
   paletteMappings: PaletteMapping[],
 ): HTMLCanvasElement {
+  // Reset shared context if it was lost
+  if (sharedGL && sharedGL.isContextLost()) {
+    sharedGL = null;
+    sharedCanvas = null;
+    sharedProgram = null;
+  }
+
   // Initialize shared resources if needed
   if (!sharedGL) {
     initSharedWebGL();

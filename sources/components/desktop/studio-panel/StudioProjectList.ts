@@ -43,6 +43,7 @@ export const StudioProjectList: m.Component<StudioProjectListAttrs> = {
       "div.studio-project-list",
       visibleProjects.map((project) =>
         m("article.studio-project-row", { key: project.id }, [
+          renderProjectThumbnail(project),
           m("div.studio-project-meta", [
             m("input.input.is-small", {
               value: project.name,
@@ -115,6 +116,20 @@ export const StudioProjectList: m.Component<StudioProjectListAttrs> = {
     );
   },
 };
+
+function renderProjectThumbnail(project: StudioProject): m.Children {
+  return m("div.studio-project-thumbnail", [
+    project.thumbnailDataUrl
+      ? m("img", {
+          src: project.thumbnailDataUrl,
+          alt: `${project.name} thumbnail`,
+          loading: "lazy",
+        })
+      : m("div.studio-project-thumbnail-placeholder", [
+          m("span", project.name.slice(0, 1).toUpperCase() || "?"),
+        ]),
+  ]);
+}
 
 function renderStatusSelect(
   panelState: StudioPanelState,

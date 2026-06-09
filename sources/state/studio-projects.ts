@@ -47,6 +47,7 @@ export type StudioProject = {
   name: string;
   createdAt: string;
   updatedAt: string;
+  thumbnailDataUrl?: string;
   snapshot: StudioProjectSnapshot;
   metadata: StudioProjectMetadata;
   versions: StudioProjectVersion[];
@@ -147,9 +148,41 @@ function normalizeMetadata(
 function normalizeProject(project: StudioProject): StudioProject {
   return {
     ...project,
+    thumbnailDataUrl:
+      typeof project.thumbnailDataUrl === "string"
+        ? project.thumbnailDataUrl
+        : undefined,
     metadata: normalizeMetadata(project.metadata),
     versions: Array.isArray(project.versions) ? project.versions : [],
   };
+}
+
+function captureProjectThumbnail(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+
+  const source = document.querySelector<HTMLCanvasElement>(
+    "#desktop-preview-canvas",
+  );
+  if (!source || source.width === 0 || source.height === 0) return undefined;
+
+  const thumb = document.createElement("canvas");
+  thumb.width = 96;
+  thumb.height = 96;
+  const ctx = thumb.getContext("2d");
+  if (!ctx) return undefined;
+
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, thumb.width, thumb.height);
+
+  const frameSize = Math.min(source.height, source.width);
+  const x = Math.max(0, Math.floor((source.width - frameSize) / 2));
+  ctx.drawImage(source, x, 0, frameSize, frameSize, 16, 16, 64, 64);
+
+  try {
+    return thumb.toDataURL("image/png");
+  } catch {
+    return undefined;
+  }
 }
 
 export function createStudioProjectSnapshot(
@@ -203,6 +236,7 @@ export function saveStudioProject(
     name: trimmedName,
     createdAt: now,
     updatedAt: now,
+    thumbnailDataUrl: captureProjectThumbnail(),
     snapshot: createStudioProjectSnapshot(source),
     metadata: normalizeMetadata(metadata),
     versions: [],
@@ -227,6 +261,7 @@ export function updateStudioProject(
   const updated: StudioProject = {
     ...existing,
     updatedAt: new Date().toISOString(),
+    thumbnailDataUrl: captureProjectThumbnail() ?? existing.thumbnailDataUrl,
     snapshot: createStudioProjectSnapshot(source),
   };
 
@@ -275,6 +310,7 @@ export function duplicateStudioProject(id: string): StudioProject | null {
     name: `${original.name} Copy`,
     createdAt: now,
     updatedAt: now,
+    thumbnailDataUrl: original.thumbnailDataUrl,
     metadata: {
       ...normalizeMetadata(original.metadata),
       locked: false,
@@ -373,6 +409,10 @@ export function importStudioProjectLibrary(content: string): number {
     id: createProjectId(),
     createdAt: project.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    thumbnailDataUrl:
+      typeof project.thumbnailDataUrl === "string"
+        ? project.thumbnailDataUrl
+        : undefined,
   }));
 
   if (imported.length === 0) return 0;

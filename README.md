@@ -23,7 +23,7 @@ Highlights:
 - Switch between Free, Pro, and Studio modes to model a feature-based product split while keeping every LPC asset available in all modes.
 - **Free mode:** full asset library, basic character creator, credits export, JSON save/load, and single full spritesheet PNG export.
 - **Pro mode:** advanced editor, custom imports, animation GIF/WebP exports, ZIP exports, individual frame exports, and engine preset workflows.
-- **Studio mode:** reserved for future team/cloud features, bulk workflows, and project libraries.
+- **Studio mode:** local project libraries, named saved builds, library import/export, and batch project ZIP handoff.
 - Edit selected parts directly in the browser and save the result as a new custom part without modifying the original LPC asset.
 - **Autosave & recovery:** drafts are saved to IndexedDB automatically and can be recovered after a refresh or crash.
 - **Status bar:** live cursor position, zoom, active layer, brush size, and frame info at the bottom of the editor.
@@ -57,7 +57,7 @@ This was originally based on https://github.com/makrohn/Universal-LPC-spriteshee
 
 [@ElizaWy](https://github.com/ElizaWy) has revised and expanded the LPC paradigm. See https://github.com/ElizaWy/LPC
 
-[@DocDamage](https://github.com/DocDamage) added the desktop app workflow upgrades, including the integrated part editor, custom import/library tools, tweened preview/export workflows, export wizard, progress/cancellation handling, module refactors, and the Free/Pro/Studio feature-mode gating.
+[@DocDamage](https://github.com/DocDamage) added the desktop app workflow upgrades, including the integrated part editor, custom import/library tools, tweened preview/export workflows, export wizard, progress/cancellation handling, Studio project workflows, module refactors, and the Free/Pro/Studio feature-mode gating.
 
 ### Licensing and Attribution (Credits)
 
@@ -151,7 +151,7 @@ All LPC artwork remains available in every mode. The mode selector only gates wo
 
 - **Free:** browse and use the complete asset library, build characters, export credits, save/load JSON through the clipboard, and export a single full spritesheet PNG.
 - **Pro:** unlock the production workflow tools: advanced part editing, custom asset imports, GIF/WebP animation exports, ZIP export modes, individual frame exports, and engine preset/export wizard workflows.
-- **Studio:** selectable as the top tier and reserved for future team/cloud features, bulk workflows, project libraries, and priority collaboration features.
+- **Studio:** unlock local project libraries for saving named character builds, loading/updating/deleting saved projects, importing/exporting the full library as JSON, and exporting all saved projects as a batch ZIP with a manifest.
 
 ### Run This Project Locally for Development
 

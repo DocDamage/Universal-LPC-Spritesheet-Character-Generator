@@ -63,7 +63,8 @@ const featureRules: Record<PaidFeature, FeatureRule> = {
   "studio-tools": {
     label: "Studio tools",
     requiredPlan: "studio",
-    message: "Team, cloud, and project library tools are Studio features.",
+    message:
+      "Project libraries and batch Studio workflows are Studio features.",
   },
 };
 

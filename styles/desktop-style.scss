@@ -1353,6 +1353,7 @@
   overflow-y: auto !important;
   display: flex !important;
   flex-direction: column !important;
+  gap: 10px;
 
   scrollbar-width: thin;
   scrollbar-color: var(--accent-primary) var(--bg-darkest);
@@ -1367,6 +1368,120 @@
     background: var(--accent-primary);
     border-radius: 3px;
   }
+}
+
+.studio-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(20, 24, 33, 0.78);
+  padding: 10px;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.studio-panel-locked {
+  color: var(--text-muted);
+}
+
+.studio-panel-header,
+.studio-project-save,
+.studio-project-actions,
+.studio-project-row,
+.studio-project-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-panel-header {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.studio-panel-header h3 {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.studio-panel-pill {
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.studio-panel p,
+.studio-empty {
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.studio-project-save {
+  margin-bottom: 8px;
+}
+
+.studio-project-save .input {
+  min-width: 0;
+}
+
+.studio-project-actions {
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.studio-import-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.studio-import-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.studio-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.studio-project-row {
+  justify-content: space-between;
+  align-items: flex-start;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 7px;
+}
+
+.studio-project-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.studio-project-meta strong {
+  font-size: 11px;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.studio-project-meta span {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.studio-project-row-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Empty state */

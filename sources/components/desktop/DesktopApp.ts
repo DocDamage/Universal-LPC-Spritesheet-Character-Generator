@@ -8,6 +8,7 @@ import { ActionBar } from "./ActionBar.ts";
 import { SLOT_CONFIG } from "./slot-config.ts";
 import { PartEditor } from "./PartEditor.ts";
 import { PlanSelector } from "./PlanSelector.ts";
+import { StudioPanel } from "./StudioPanel.ts";
 import {
   executeCommand,
   getCommandTitle,
@@ -177,6 +178,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         // Right panel
         m("div.desktop-panel.desktop-panel-right.part-editor-panel", [
           m(PartEditor),
+          m(StudioPanel),
         ]),
       ]),
 

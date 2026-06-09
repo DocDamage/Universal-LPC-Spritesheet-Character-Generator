@@ -8,7 +8,7 @@ const plans: AppPlan[] = ["free", "pro", "studio"];
 const planDescriptions: Record<AppPlan, string> = {
   free: "Full assets, basic creator, single PNG export",
   pro: "Advanced editor, custom imports, ZIP/batch exports, engine presets",
-  studio: "Team/cloud features, bulk workflows, project libraries",
+  studio: "Project libraries, saved builds, batch project ZIPs",
 };
 
 export const PlanSelector: m.Component = {

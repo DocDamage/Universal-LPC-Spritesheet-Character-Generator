@@ -33,6 +33,8 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox
+        env:
+          HOME: /root
 
       - name: Check formatting
         run: npm run format:check

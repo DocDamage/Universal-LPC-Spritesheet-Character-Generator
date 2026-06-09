@@ -1517,6 +1517,54 @@
   margin-right: 3px;
 }
 
+.workflow-tools-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(14, 18, 25, 0.78);
+  padding: 10px;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.workflow-tier {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.workflow-tier h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--text-main);
+}
+
+.studio-gallery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.studio-gallery-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px;
+  min-width: 0;
+}
+
+.studio-gallery-card strong,
+.studio-gallery-card span {
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.studio-gallery-card span {
+  color: var(--text-muted);
+}
+
 .studio-project-row-actions {
   flex-wrap: wrap;
   justify-content: flex-end;

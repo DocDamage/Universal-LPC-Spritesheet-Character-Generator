@@ -35,6 +35,13 @@ export type StudioProjectMetadata = {
   exportPreset: StudioExportPreset;
 };
 
+export type StudioProjectVersion = {
+  id: string;
+  label: string;
+  createdAt: string;
+  snapshot: StudioProjectSnapshot;
+};
+
 export type StudioProject = {
   id: string;
   name: string;
@@ -42,6 +49,7 @@ export type StudioProject = {
   updatedAt: string;
   snapshot: StudioProjectSnapshot;
   metadata: StudioProjectMetadata;
+  versions: StudioProjectVersion[];
 };
 
 type StudioProjectLibrary = {
@@ -140,6 +148,7 @@ function normalizeProject(project: StudioProject): StudioProject {
   return {
     ...project,
     metadata: normalizeMetadata(project.metadata),
+    versions: Array.isArray(project.versions) ? project.versions : [],
   };
 }
 
@@ -196,6 +205,7 @@ export function saveStudioProject(
     updatedAt: now,
     snapshot: createStudioProjectSnapshot(source),
     metadata: normalizeMetadata(metadata),
+    versions: [],
   };
 
   library.projects.push(project);
@@ -271,11 +281,63 @@ export function duplicateStudioProject(id: string): StudioProject | null {
       status: "draft",
     },
     snapshot: cloneJson(original.snapshot),
+    versions: cloneJson(normalizeProject(original).versions),
   };
 
   library.projects.push(project);
   writeLibrary(library);
   return project;
+}
+
+export function addStudioProjectVersion(
+  id: string,
+  label: string,
+): StudioProject | null {
+  const library = readLibrary();
+  const index = library.projects.findIndex((project) => project.id === id);
+  if (index === -1) return null;
+
+  const project = normalizeProject(library.projects[index]!);
+  const now = new Date().toISOString();
+  const version: StudioProjectVersion = {
+    id: createProjectId(),
+    label: label.trim() || `Version ${project.versions.length + 1}`,
+    createdAt: now,
+    snapshot: cloneJson(project.snapshot),
+  };
+
+  const updated: StudioProject = {
+    ...project,
+    updatedAt: now,
+    versions: [...project.versions, version],
+  };
+  library.projects[index] = updated;
+  writeLibrary(library);
+  return updated;
+}
+
+export function restoreStudioProjectVersion(
+  projectId: string,
+  versionId: string,
+): StudioProject | null {
+  const library = readLibrary();
+  const index = library.projects.findIndex(
+    (project) => project.id === projectId,
+  );
+  if (index === -1) return null;
+
+  const project = normalizeProject(library.projects[index]!);
+  const version = project.versions.find((entry) => entry.id === versionId);
+  if (!version || project.metadata.locked) return null;
+
+  const updated: StudioProject = {
+    ...project,
+    updatedAt: new Date().toISOString(),
+    snapshot: cloneJson(version.snapshot),
+  };
+  library.projects[index] = updated;
+  writeLibrary(library);
+  return updated;
 }
 
 export function deleteStudioProject(id: string): boolean {

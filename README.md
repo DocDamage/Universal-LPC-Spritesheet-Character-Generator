@@ -45,6 +45,7 @@ Highlights:
 - **Unified animation settings management:** global tween settings with clear-all-overrides, copy-settings-to-all-animations, and reset-defaults commands; override count badge and per-animation override markers visible in the UI.
 - **Progress reporting & cancellation:** long exports show progress phases (preparing, rendering, tweening, encoding, archiving) and can be cancelled mid-flight with an AbortController-backed signal.
 - **Studio production workflows:** save named character builds into collections with roles, tags, notes, status, locks, export presets, duplicate/rename actions, combined credits export, QA reports, and a handoff ZIP containing project JSON, spritesheet PNGs, credits, manifests, and engine metadata.
+- **Cross-tier workflow tools:** Free starter templates, themed randomizers, build undo/redo, and favorites; Pro palette/naming/alignment presets, layer inspection, animation checks, and style-guide notes; Studio gallery cards, contact sheets, restore points, bulk status updates, and production checklists.
 
 ### History
 
@@ -150,9 +151,9 @@ Weapon and tool slots include an importer for custom PNG assets. Choose a built-
 
 All LPC artwork remains available in every mode. The mode selector only gates workflow features:
 
-- **Free:** browse and use the complete asset library, build characters, export credits, save/load JSON through the clipboard, and export a single full spritesheet PNG.
-- **Pro:** unlock the production workflow tools: advanced part editing, custom asset imports, GIF/WebP animation exports, ZIP export modes, individual frame exports, and engine preset/export wizard workflows.
-- **Studio:** unlock project collections, saved build metadata, duplicate/rename workflows, approval locks, export presets, combined credits, QA reports, batch PNG rendering, and a production handoff ZIP with per-project spritesheets, JSON manifests, credits, and engine metadata.
+- **Free:** browse and use the complete asset library, build characters, export credits, save/load JSON through the clipboard, export a single full spritesheet PNG, use starter templates, themed randomizers, build undo/redo, favorites, and quick preview controls.
+- **Pro:** unlock the production workflow tools: advanced part editing, custom asset imports, GIF/WebP animation exports, ZIP export modes, individual frame exports, engine preset/export wizard workflows, palette and recolor preset notes, layer inspection, animation completeness checks, alignment presets, naming templates, and style-guide export.
+- **Studio:** unlock project collections, saved build metadata, duplicate/rename workflows, approval locks, export presets, combined credits, QA reports, batch PNG rendering, production handoff ZIPs, visual gallery cards, contact-sheet export, restore points, bulk metadata updates, and production checklists.
 
 ### Run This Project Locally for Development
 

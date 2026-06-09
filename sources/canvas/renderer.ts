@@ -26,9 +26,8 @@ import {
   defaultCatalog,
   getItemMerged,
 } from "../state/catalog.ts";
-import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
-import { state as appState, type Selections } from "../state/app-state.ts";
+import type { Selections } from "../state/app-state.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 import { renderState } from "../state/render-state.ts";
 import {
@@ -51,6 +50,12 @@ import {
   drawCustomAnimationAreas,
   type CustomAnimationItem,
 } from "./renderer-custom-areas.ts";
+import {
+  beginRenderCharacter,
+  finishRenderCharacter,
+} from "./renderer-lifecycle.ts";
+import { addCustomUploadDrawCalls } from "./renderer-upload.ts";
+import { populateRenderPlan } from "./renderer-plan.ts";
 
 export {
   SHEET_HEIGHT,
@@ -85,8 +90,6 @@ const animationConfigByName = ANIMATION_CONFIGS as Record<
   string,
   AnimationConfig | undefined
 >;
-const animationOffsetByName = ANIMATION_OFFSETS as Record<string, number>;
-
 /** Commit 10: one render at a time; new calls wait behind the in-flight one. */
 let renderCharacterSerial: Promise<void> = Promise.resolve();
 
@@ -126,16 +129,7 @@ async function runRenderCharacter(
 ): Promise<void> {
   const profiler = window.profiler;
 
-  // Build list of draw calls
-  drawCalls.length = 0;
-  addedCustomAnimations.clear();
-
-  appState.isRenderingCharacter = true;
-  m.redraw();
-
-  if (profiler) {
-    profiler.mark("renderCharacter:start");
-  }
+  beginRenderCharacter(profiler);
 
   try {
     // Use provided canvas or default to main canvas
@@ -152,155 +146,15 @@ async function runRenderCharacter(
     // Build list of items to draw
     const customAnimationItems: CustomAnimationItem[] = []; // Track items with custom animations
 
-    for (const [, selection] of Object.entries(selections)) {
-      const { itemId, subId, variant } = selection;
-      const customPart = getRuntimeCustomPart(itemId);
-      if (customPart) {
-        const layerNum = customPart.drawLayerNum ?? 1;
-        const zPos = customPart.drawZPos ?? 100;
-        const recolors = getMultiRecolors(itemId, selections);
-        for (const [animation, sheet] of Object.entries(customPart.sheets)) {
-          const yPos = animationOffsetByName[animation];
-          if (yPos === undefined) {
-            if (customAnimations[animation]) {
-              addedCustomAnimations.add(animation);
-              customAnimationItems.push({
-                itemId,
-                name: selection.name,
-                variant: null,
-                recolors,
-                source: { kind: "custom", image: sheet },
-                zPos,
-                layerNum,
-                customAnimation: animation,
-              });
-            }
-            continue;
-          }
-          drawCalls.push({
-            itemId,
-            name: selection.name,
-            variant: null,
-            recolors,
-            source: { kind: "custom", image: sheet },
-            zPos,
-            layerNum,
-            animation,
-            yPos,
-            needsRecolor: false,
-          });
-        }
-        continue;
-      }
+    populateRenderPlan({
+      selections,
+      bodyType,
+      drawCalls,
+      addedCustomAnimations,
+      customAnimationItems,
+    });
 
-      const assetItemId = itemId;
-      const metaResult = getItemMerged(assetItemId);
-      if (metaResult.isErr() || subId) continue;
-      const meta = metaResult.value;
-
-      // Check if this body type is supported
-      if (!meta.required.includes(bodyType)) {
-        continue;
-      }
-
-      // Get Multiple Recolors If Available
-      const recolors = getMultiRecolors(itemId, selections);
-
-      // Process all layers for this item
-      for (let layerNum = 1; layerNum < 10; layerNum++) {
-        // Check if this layer exists
-        const layerKey = `layer_${layerNum}`;
-        const layer = meta.layers?.[layerKey];
-        if (!layer) break;
-
-        const zPos = getZPos(defaultCatalog, assetItemId, layerNum);
-
-        // Check if this layer has a custom animation
-        if (layer.custom_animation) {
-          const customAnimName = layer.custom_animation as string;
-          addedCustomAnimations.add(customAnimName);
-
-          // Get base path for this body type
-          const basePath = layer[bodyType] as string | undefined;
-          if (!basePath) {
-            continue;
-          }
-
-          // Custom animations use direct file path
-          const spritePath = `spritesheets/${basePath}${variantToFilename(
-            variant ?? "",
-          )}.png`;
-
-          customAnimationItems.push({
-            itemId,
-            name: selection.name,
-            variant: variant ?? null,
-            recolors,
-            source: { kind: "catalog", spritePath },
-            zPos,
-            layerNum,
-            customAnimation: customAnimName,
-          });
-
-          continue; // Skip standard animation processing for this layer
-        }
-
-        // Process standard animations for this layer
-        for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-          // Skip if item doesn't have animations array (custom animations only)
-          if (!meta.animations || meta.animations.length === 0) {
-            continue;
-          }
-
-          if (!supportsAnimation(meta, animName)) continue;
-
-          const pathResult = getSpritePath(
-            assetItemId,
-            variant ?? null,
-            recolors,
-            bodyType,
-            animName,
-            layerNum,
-            selections,
-            meta,
-          );
-          if (pathResult.isErr()) {
-            debugWarn(formatPathError(itemId, pathResult.error));
-            continue;
-          }
-
-          drawCalls.push({
-            itemId,
-            name: selection.name,
-            variant: variant ?? null,
-            recolors,
-            source: { kind: "catalog", spritePath: pathResult.value },
-            zPos,
-            layerNum,
-            animation: animName,
-            yPos,
-            needsRecolor: itemId === "body-body" && variant !== "light", // Flag body variants for recoloring
-          });
-        }
-      }
-    }
-
-    // Add custom uploaded image as a draw call if present
-    if (appState.customUploadedImage) {
-      const customImage = appState.customUploadedImage;
-      // Add custom image to be drawn at all standard animation positions
-      for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-        drawCalls.push({
-          itemId: "custom-upload",
-          variant: null,
-          source: { kind: "custom", image: customImage },
-          zPos: appState.customImageZPos,
-          layerNum: 0,
-          animation: animName,
-          yPos,
-        });
-      }
-    }
+    addCustomUploadDrawCalls(drawCalls);
 
     // Sort by zPos (lower zPos = drawn first = behind). Shadow (zPos=0) before
     // body (zPos=10), etc.
@@ -338,18 +192,7 @@ async function runRenderCharacter(
       customAnimYPositions: customAnimationLayout.customAnimYPositions,
     });
   } finally {
-    appState.isRenderingCharacter = false;
-    m.redraw();
-
-    // Mark end and measure
-    if (profiler) {
-      profiler.mark("renderCharacter:end");
-      profiler.measure(
-        "renderCharacter",
-        "renderCharacter:start",
-        "renderCharacter:end",
-      );
-    }
+    finishRenderCharacter(profiler);
   }
 }
 

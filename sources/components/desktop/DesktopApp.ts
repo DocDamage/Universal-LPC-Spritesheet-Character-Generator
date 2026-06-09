@@ -22,6 +22,7 @@ import {
   teardownGlobalShortcutListener,
 } from "../../state/commands.ts";
 import { CommandPaletteModal } from "./CommandPaletteModal.ts";
+import { CreditsPreviewModal } from "./CreditsPreviewModal.ts";
 import { ShortcutHelpModal } from "./ShortcutHelpModal.ts";
 import { ConfirmDialogModal } from "../notifications/ConfirmDialogModal.ts";
 import { NotificationCenter } from "../notifications/NotificationCenter.ts";
@@ -396,7 +397,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       m(ShortcutHelpModal),
       m(OnboardingModal, { catalog }),
       m(AboutModal),
-      m(require("./CreditsPreviewModal.ts").CreditsPreviewModal),
+      m(CreditsPreviewModal),
       m(LicenseGateModal),
       m(ConfirmDialogModal),
       m(NotificationCenter),

@@ -1,6 +1,7 @@
 import type { ResultAsync } from "neverthrow";
 import { canvasToBlob } from "./canvas-utils.ts";
 import { getCanvas, type CanvasNotInitialized } from "./renderer.ts";
+import { withExportLayerVisibility } from "../state/export-layer-visibility.ts";
 
 type GetCanvasBlobFn = () => ResultAsync<Blob, CanvasNotInitialized>;
 
@@ -20,7 +21,7 @@ export async function downloadAsPNG(
   filename: string = "character-spritesheet.png",
   getCanvasBlobFunc: GetCanvasBlobFn = () => getCanvas().asyncMap(canvasToBlob),
 ): Promise<void> {
-  const blobResult = await getCanvasBlobFunc();
+  const blobResult = await withExportLayerVisibility(getCanvasBlobFunc);
   if (blobResult.isErr()) {
     console.error("Error downloading PNG:", blobResult.error);
     return;

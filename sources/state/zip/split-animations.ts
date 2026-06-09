@@ -19,6 +19,10 @@ import {
   estimateTweenExportFrames,
   getTweenSettingsForAnimation,
 } from "../tween-settings.ts";
+import {
+  applyNamingTemplate,
+  makeUniqueFileName,
+} from "../../utils/fileName.ts";
 
 // Export ZIP - Split by animation
 export const exportSplitAnimations = async (
@@ -40,9 +44,13 @@ export const exportSplitAnimations = async (
     async ({ zip, timestamp, state, bodyType, profiler }: ZipExportContext) => {
       const { addCanvas, addSlice } = makeZipAdders(profiler, deps);
 
-      const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
-      const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+      const { loadProSettings } =
+        await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
       const proSettings = loadProSettings();
+      const standardFileNames = new Set<string>();
+      const tweenedStandardFileNames = new Set<string>();
+      const customFileNames = new Set<string>();
+      const tweenedCustomFileNames = new Set<string>();
 
       const standardFolder = zip.folder("standard")!;
       const customFolder = zip.folder("custom")!;
@@ -70,9 +78,17 @@ export const exportSplitAnimations = async (
             failedStandard.push(anim.value);
             continue;
           }
-          const exportFilename = proSettings.namingTemplate
-            ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: anim.value, direction: "all", frame: "spritesheet" }) + ".png"
-            : `${anim.value}.png`;
+          const exportFilename = makeUniqueFileName(
+            proSettings.namingTemplate
+              ? `${applyNamingTemplate(proSettings.namingTemplate, {
+                  character: "character",
+                  animation: anim.value,
+                  direction: "all",
+                  frame: "spritesheet",
+                })}.png`
+              : `${anim.value}.png`,
+            standardFileNames,
+          );
 
           const result = await addCanvas(
             standardFolder,
@@ -100,9 +116,17 @@ export const exportSplitAnimations = async (
                 DIRECTIONS,
               );
               if (tweenedCanvas) {
-                const tweenedFilename = proSettings.namingTemplate
-                  ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: anim.value, direction: "all", frame: "tweened" }) + ".png"
-                  : `${anim.value}.png`;
+                const tweenedFilename = makeUniqueFileName(
+                  proSettings.namingTemplate
+                    ? `${applyNamingTemplate(proSettings.namingTemplate, {
+                        character: "character",
+                        animation: anim.value,
+                        direction: "all",
+                        frame: "tweened",
+                      })}.png`
+                    : `${anim.value}.png`,
+                  tweenedStandardFileNames,
+                );
                 const tweenedResult = await addCanvas(
                   tweenedStandardFolder,
                   tweenedFilename,
@@ -143,9 +167,17 @@ export const exportSplitAnimations = async (
           if (!canvas) {
             throw new Error("Canvas not initialized");
           }
-          const customExportFilename = proSettings.namingTemplate
-            ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: animName, direction: "all", frame: "spritesheet" }) + ".png"
-            : `${animName}.png`;
+          const customExportFilename = makeUniqueFileName(
+            proSettings.namingTemplate
+              ? `${applyNamingTemplate(proSettings.namingTemplate, {
+                  character: "character",
+                  animation: animName,
+                  direction: "all",
+                  frame: "spritesheet",
+                })}.png`
+              : `${animName}.png`,
+            customFileNames,
+          );
           const result = await addSlice(
             customFolder,
             customExportFilename,
@@ -176,9 +208,17 @@ export const exportSplitAnimations = async (
                   DIRECTIONS,
                 );
                 if (tweenedCanvas) {
-                  const customTweenedFilename = proSettings.namingTemplate
-                    ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: animName, direction: "all", frame: "tweened" }) + ".png"
-                    : `${animName}.png`;
+                  const customTweenedFilename = makeUniqueFileName(
+                    proSettings.namingTemplate
+                      ? `${applyNamingTemplate(proSettings.namingTemplate, {
+                          character: "character",
+                          animation: animName,
+                          direction: "all",
+                          frame: "tweened",
+                        })}.png`
+                      : `${animName}.png`,
+                    tweenedCustomFileNames,
+                  );
                   const tweenedResult = await addCanvas(
                     tweenedCustomFolder,
                     customTweenedFilename,

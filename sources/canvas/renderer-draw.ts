@@ -1,6 +1,7 @@
 import { loadImage } from "./load-image.ts";
 import { getImageToDraw } from "./palette-recolor.ts";
 import { debugWarn } from "../utils/debug.ts";
+import { state } from "../state/state.ts";
 import type { DrawCall } from "../state/render-state.ts";
 
 type LoadedDrawCall = {
@@ -31,8 +32,9 @@ export async function drawStandardDrawCalls(
   renderCtx: CanvasRenderingContext2D,
   drawCalls: DrawCall[],
 ): Promise<void> {
-  const { state } = await import("../state/state.ts");
-  const filteredCalls = drawCalls.filter(call => !state.hiddenLayerIds.has(call.itemId));
+  const filteredCalls = drawCalls.filter(
+    (call) => !state.hiddenLayerIds.has(call.itemId),
+  );
   const loadedItems = await Promise.all(filteredCalls.map(loadDrawCallImage));
 
   for (const { item, img, success } of loadedItems) {

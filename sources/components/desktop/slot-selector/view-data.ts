@@ -34,7 +34,9 @@ export function buildSlotViewData(
   let options = getSlotOptions(slot, catalog);
   const filterText = stateObj.slotItemFilter.trim().toLowerCase();
   if (filterText) {
-    options = options.filter(opt => opt.label.toLowerCase().includes(filterText));
+    options = options.filter((opt) =>
+      opt.label.toLowerCase().includes(filterText),
+    );
   }
   const selectedValue = getSlotSelectedValue(slot, catalog);
   const hasSelection = selectedValue !== "";

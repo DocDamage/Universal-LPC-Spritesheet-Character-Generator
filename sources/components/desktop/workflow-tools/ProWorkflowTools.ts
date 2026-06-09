@@ -132,38 +132,69 @@ export const ProWorkflowTools: m.Component<ProWorkflowToolsAttrs> = {
             m("input[type=checkbox]", {
               checked: state.excludeHiddenLayersFromExports,
               onchange: (e: Event) => {
-                state.excludeHiddenLayersFromExports = (e.target as HTMLInputElement).checked;
-              }
+                state.excludeHiddenLayersFromExports = (
+                  e.target as HTMLInputElement
+                ).checked;
+              },
             }),
-            " Exclude hidden layers from exports"
-          ])
+            " Exclude hidden layers from exports",
+          ]),
         ]),
-        m("div.pro-layer-list", { style: { maxHeight: "180px", overflowY: "auto", border: "1px solid #ddd", padding: "4px", borderRadius: "4px", backgroundColor: "#fff" } }, [
-          Object.entries(state.selections).map(([slotKey, selection]) => {
-            const isHidden = state.hiddenLayerIds.has(selection.itemId);
-            return m("div.pro-layer-row", {
-              key: selection.itemId,
-              style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 4px", fontSize: "12px", borderBottom: "1px solid #eee" }
-            }, [
-              m("span", `${selection.name} (${slotKey})`),
-              m("button.button.is-small.is-light", {
-                type: "button",
-                style: { padding: "0 6px", height: "20px" },
-                onclick: async () => {
-                  if (isHidden) {
-                    state.hiddenLayerIds.delete(selection.itemId);
-                  } else {
-                    state.hiddenLayerIds.add(selection.itemId);
-                  }
-                  const { triggerRender } = await import("../../render-effect.ts");
-                  await triggerRender();
-                  m.redraw();
-                }
-              }, isHidden ? "👁‍🗨" : "👁")
-            ]);
-          })
-        ])
-      ])
+        m(
+          "div.pro-layer-list",
+          {
+            style: {
+              maxHeight: "180px",
+              overflowY: "auto",
+              border: "1px solid #ddd",
+              padding: "4px",
+              borderRadius: "4px",
+              backgroundColor: "#fff",
+            },
+          },
+          [
+            Object.entries(state.selections).map(([slotKey, selection]) => {
+              const isHidden = state.hiddenLayerIds.has(selection.itemId);
+              return m(
+                "div.pro-layer-row",
+                {
+                  key: selection.itemId,
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "2px 4px",
+                    fontSize: "12px",
+                    borderBottom: "1px solid #eee",
+                  },
+                },
+                [
+                  m("span", `${selection.name} (${slotKey})`),
+                  m(
+                    "button.button.is-small.is-light",
+                    {
+                      type: "button",
+                      style: { padding: "0 6px", height: "20px" },
+                      onclick: async () => {
+                        if (isHidden) {
+                          state.hiddenLayerIds.delete(selection.itemId);
+                        } else {
+                          state.hiddenLayerIds.add(selection.itemId);
+                        }
+                        const { triggerRender } =
+                          await import("../../render-effect.ts");
+                        await triggerRender();
+                        m.redraw();
+                      },
+                    },
+                    isHidden ? "👁‍🗨" : "👁",
+                  ),
+                ],
+              );
+            }),
+          ],
+        ),
+      ]),
     ]);
   },
 };

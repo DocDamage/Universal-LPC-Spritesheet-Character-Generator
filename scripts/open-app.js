@@ -28,7 +28,7 @@ function openUrl() {
   }).unref();
 }
 
-console.log(`Starting Vite at ${url}`);
+process.stdout.write(`Starting Vite at ${url}\n`);
 const { createServer } = await import("vite");
 const server = await createServer({
   root: rootDir,
@@ -42,7 +42,7 @@ const server = await createServer({
 await server.listen();
 server.printUrls();
 openUrl();
-console.log(`Opened ${url}`);
+process.stdout.write(`Opened ${url}\n`);
 
 /** @type {NodeJS.Signals[]} */
 const shutdownSignals = ["SIGINT", "SIGTERM"];

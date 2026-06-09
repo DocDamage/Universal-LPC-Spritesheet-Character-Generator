@@ -1,5 +1,8 @@
 import { type SavedSnapshot } from "../components/desktop/workflow-tools/types.ts";
-import { applyStudioProjectSnapshot, createStudioProjectSnapshot } from "./studio-projects.ts";
+import {
+  applyStudioProjectSnapshot,
+  createStudioProjectSnapshot,
+} from "./studio-projects.ts";
 import { triggerRender } from "../components/render-effect.ts";
 
 let undoStack: SavedSnapshot[] = [];
@@ -50,5 +53,5 @@ export const characterUndoStore = {
   clear(): void {
     undoStack = [];
     redoStack = [];
-  }
+  },
 };

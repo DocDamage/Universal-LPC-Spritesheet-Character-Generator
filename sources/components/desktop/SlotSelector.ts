@@ -65,15 +65,17 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
         m("label.desktop-slot-label", slot.label),
         m("div.desktop-slot-control", [
           // Render search/filter input if there are more than 8 total options or if slotItemFilter is active
-          (getSlotOptions(slot, catalog).length > 8 || vnode.state.slotItemFilter)
+          getSlotOptions(slot, catalog).length > 8 || vnode.state.slotItemFilter
             ? m("input.input.is-small.desktop-slot-item-filter", {
                 type: "text",
                 placeholder: `Filter ${slot.label}...`,
                 value: vnode.state.slotItemFilter,
                 oninput: (e: Event) => {
-                  vnode.state.slotItemFilter = (e.target as HTMLInputElement).value;
+                  vnode.state.slotItemFilter = (
+                    e.target as HTMLInputElement
+                  ).value;
                 },
-                style: { marginBottom: "4px", width: "100%" }
+                style: { marginBottom: "4px", width: "100%" },
               })
             : null,
           m(

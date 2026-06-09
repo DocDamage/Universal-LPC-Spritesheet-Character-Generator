@@ -1,5 +1,6 @@
 import m from "mithril";
 import { downloadFile } from "../../../canvas/download.ts";
+import { executeCommand } from "../../../state/commands.ts";
 import { requireFeature } from "../../../state/feature-gates.ts";
 import { showToast } from "../../../state/notifications.ts";
 import {
@@ -66,11 +67,10 @@ export const StudioWorkflowTools: m.Component<StudioWorkflowToolsAttrs> = {
           {
             type: "button",
             onclick: () => {
-              const { executeCommand } = require("../../../state/commands.ts");
               executeCommand("app.export.referenceSheet");
-            }
+            },
           },
-          "Reference Sheet"
+          "Reference Sheet",
         ),
         m(
           "button.button.is-small",

@@ -6,7 +6,10 @@ import {
   restoreAppCatalogAfterTest,
   seedBrowserCatalog,
 } from "../browser-catalog-fixture.js";
-import { getItemFileName } from "../../sources/utils/fileName.ts";
+import {
+  getItemFileName,
+  makeUniqueFileName,
+} from "../../sources/utils/fileName.ts";
 
 describe("getItemFileName", () => {
   beforeEach(() => {
@@ -90,5 +93,25 @@ describe("getItemFileName", () => {
   it("should use a different layer number if provided", () => {
     const result = getItemFileName(1, "variant1", "body_male_light.png", 2);
     expect(result).to.equal("075 body_male_light.png");
+  });
+});
+
+describe("makeUniqueFileName", () => {
+  it("returns the original filename when it has not been used", () => {
+    const used = new Set();
+
+    expect(makeUniqueFileName("character_walk.png", used)).to.equal(
+      "character_walk.png",
+    );
+    expect([...used]).to.deep.equal(["character_walk.png"]);
+  });
+
+  it("appends incrementing suffixes before the extension for collisions", () => {
+    const used = new Set(["character_walk.png", "character_walk-2.png"]);
+
+    expect(makeUniqueFileName("character_walk.png", used)).to.equal(
+      "character_walk-3.png",
+    );
+    expect(used.has("character_walk-3.png")).to.equal(true);
   });
 });

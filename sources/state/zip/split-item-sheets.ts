@@ -2,7 +2,11 @@ import { renderSingleItem } from "../../canvas/renderer.ts";
 import { defaultCatalog } from "../catalog.ts";
 import { getSortedLayersWithCustomFallback } from "../meta.ts";
 import { getMultiRecolors } from "../palettes.ts";
-import { getItemFileName } from "../../utils/fileName.ts";
+import {
+  applyNamingTemplate,
+  getItemFileName,
+  makeUniqueFileName,
+} from "../../utils/fileName.ts";
 import { runZipExport, makeZipAdders, type ZipExportContext } from "./run.ts";
 import { type ExportSplitItemSheetsDeps } from "./types.ts";
 
@@ -24,13 +28,17 @@ export const exportSplitItemSheets = async (
       const exportedItems: string[] = [];
       const failedItems: string[] = [];
 
-      const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
-      const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+      const { loadProSettings } =
+        await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
       const proSettings = loadProSettings();
+      const itemFileNames = new Set<string>();
 
       for (const [, selection] of Object.entries(state.selections)) {
         const { itemId, variant, name } = selection;
-        if (state.excludeHiddenLayersFromExports && state.hiddenLayerIds.has(itemId)) {
+        if (
+          state.excludeHiddenLayersFromExports &&
+          state.hiddenLayerIds.has(itemId)
+        ) {
           continue;
         }
         const itemLayers = getSortedLayersWithCustomFallback(
@@ -47,9 +55,19 @@ export const exportSplitItemSheets = async (
             name,
             layer.layerNum,
           );
-          const fileName = proSettings.namingTemplate
-            ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: "spritesheet", direction: "all", frame: "spritesheet", zpos: layer.zPos, slot: itemId }) + ".png"
-            : defaultFileName;
+          const fileName = makeUniqueFileName(
+            proSettings.namingTemplate
+              ? `${applyNamingTemplate(proSettings.namingTemplate, {
+                  character: "character",
+                  animation: "spritesheet",
+                  direction: "all",
+                  frame: "spritesheet",
+                  zpos: layer.zPos,
+                  slot: itemId,
+                })}.png`
+              : defaultFileName,
+            itemFileNames,
+          );
           try {
             const itemCanvas = await renderSingleItemFn(
               itemId,

@@ -5,7 +5,11 @@ import { getImageToDraw } from "../../canvas/palette-recolor.ts";
 import { defaultCatalog } from "../catalog.ts";
 import { getSortedLayersWithCustomFallback } from "../meta.ts";
 import { getMultiRecolors } from "../palettes.ts";
-import { getItemFileName } from "../../utils/fileName.ts";
+import {
+  applyNamingTemplate,
+  getItemFileName,
+  makeUniqueFileName,
+} from "../../utils/fileName.ts";
 import {
   customAnimations,
   customAnimationSize,
@@ -46,13 +50,17 @@ export const exportSplitItemAnimations = async (
       for (const anim of animationList) {
         if (anim.noExport) continue;
         const animFolder = standardFolder.folder(anim.value)!;
+        const animFileNames = new Set<string>();
 
         exportedStandard[anim.value] = [];
         failedStandard[anim.value] = [];
 
         for (const [, selection] of Object.entries(state.selections)) {
           const { itemId, variant, name } = selection;
-          if (state.excludeHiddenLayersFromExports && state.hiddenLayerIds.has(itemId)) {
+          if (
+            state.excludeHiddenLayersFromExports &&
+            state.hiddenLayerIds.has(itemId)
+          ) {
             continue;
           }
           const metaResult = defaultCatalog.getItemMerged(itemId);
@@ -75,8 +83,8 @@ export const exportSplitItemAnimations = async (
             defaultCatalog,
             itemId,
           ).unwrapOr([]);
-          const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
-          const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+          const { loadProSettings } =
+            await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
           const proSettings = loadProSettings();
 
           for (const layer of itemLayers) {
@@ -86,9 +94,19 @@ export const exportSplitItemAnimations = async (
               name,
               layer.layerNum,
             );
-            const fileName = proSettings.namingTemplate
-              ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: anim.value, direction: "all", frame: "spritesheet", zpos: layer.zPos, slot: itemId }) + ".png"
-              : defaultFileName;
+            const fileName = makeUniqueFileName(
+              proSettings.namingTemplate
+                ? `${applyNamingTemplate(proSettings.namingTemplate, {
+                    character: "character",
+                    animation: anim.value,
+                    direction: "all",
+                    frame: "spritesheet",
+                    zpos: layer.zPos,
+                    slot: itemId,
+                  })}.png`
+                : defaultFileName,
+              animFileNames,
+            );
 
             try {
               const animCanvas = await renderSingleItemAnimationFn(

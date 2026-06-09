@@ -396,29 +396,36 @@ export const DesktopPreview: m.Component<
             ),
           )
         : null,
-      (state.showScaleStrip && vnode.state.directionalFrames.length > 0)
+      state.showScaleStrip && vnode.state.directionalFrames.length > 0
         ? m("div.desktop-scale-strip", [
             m("h5", "Multi-Scale Preview"),
             m("div.desktop-scale-grid", [
               [1, 2, 3, 4].map((scale) =>
                 m("div.desktop-scale-card", { key: scale }, [
-                  m("div.scale-canvas-container", {
-                    style: {
-                      width: `${64 * scale}px`,
-                      height: `${64 * scale}px`,
-                      overflow: "hidden"
-                    }
-                  }, [
-                    m("img", {
-                      src: vnode.state.directionalFrames[2]?.src || vnode.state.directionalFrames[0]?.src || "",
-                      alt: `${scale}x scale preview`,
+                  m(
+                    "div.scale-canvas-container",
+                    {
                       style: {
                         width: `${64 * scale}px`,
                         height: `${64 * scale}px`,
-                        imageRendering: "pixelated"
-                      }
-                    })
-                  ]),
+                        overflow: "hidden",
+                      },
+                    },
+                    [
+                      m("img", {
+                        src:
+                          vnode.state.directionalFrames[2]?.src ||
+                          vnode.state.directionalFrames[0]?.src ||
+                          "",
+                        alt: `${scale}x scale preview`,
+                        style: {
+                          width: `${64 * scale}px`,
+                          height: `${64 * scale}px`,
+                          imageRendering: "pixelated",
+                        },
+                      }),
+                    ],
+                  ),
                   m("span", `${scale}×`),
                 ]),
               ),

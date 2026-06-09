@@ -139,7 +139,10 @@ export const FreeWorkflowTools: m.Component<WorkflowToolsAttrs> = {
             type: "button",
             onclick: () => {
               const favorite = selectionSummary() || "Current character";
-              favoritesStore.addFavorite(favorite, createStudioProjectSnapshot());
+              favoritesStore.addFavorite(
+                favorite,
+                createStudioProjectSnapshot(),
+              );
               showToast("Character saved to favorites.", { kind: "success" });
             },
           },

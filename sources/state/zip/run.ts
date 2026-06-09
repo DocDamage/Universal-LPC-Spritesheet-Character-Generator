@@ -24,6 +24,7 @@ import { renderState } from "../render-state.ts";
 import m from "mithril";
 import type { State } from "../state.ts";
 import type { ZipFolder as ZipFolderType } from "../../utils/zip-helpers.ts";
+import { withExportLayerVisibility } from "../export-layer-visibility.ts";
 
 declare global {
   interface Window {
@@ -154,37 +155,40 @@ export async function runZipExport(
     const bodyType = state.bodyType;
     const creditsFolder = zip.folder("credits")!;
 
-    const result = await execute({
-      zip,
-      timestamp,
-      state,
-      bodyType,
-      profiler,
-      creditsFolder,
-    });
-
-    await profiler.phase("staticFiles", async () => {
-      addCharacterJsonAndCredits(
+    const { result, zipBlob } = await withExportLayerVisibility(async () => {
+      const result = await execute({
         zip,
+        timestamp,
+        state: state!,
+        bodyType,
+        profiler,
         creditsFolder,
-        state!,
-        renderState.drawCalls,
-      );
+      });
+
+      await profiler.phase("staticFiles", async () => {
+        addCharacterJsonAndCredits(
+          zip,
+          creditsFolder,
+          state!,
+          renderState.drawCalls,
+        );
+      });
+
+      if (result.metadata) {
+        creditsFolder.file(
+          "metadata.json",
+          JSON.stringify(result.metadata, null, 2),
+        );
+      }
+
+      if (result.includeTweenFiles && result.tweenExportKind) {
+        addTweenExportFiles(zip, creditsFolder, result.tweenExportKind);
+      }
+
+      result.beforeGenerateZip?.();
+      const zipBlob = await zipGenerateBlobWithProfiler(profiler, zip);
+      return { result, zipBlob };
     });
-
-    if (result.metadata) {
-      creditsFolder.file(
-        "metadata.json",
-        JSON.stringify(result.metadata, null, 2),
-      );
-    }
-
-    if (result.includeTweenFiles && result.tweenExportKind) {
-      addTweenExportFiles(zip, creditsFolder, result.tweenExportKind);
-    }
-
-    result.beforeGenerateZip?.();
-    const zipBlob = await zipGenerateBlobWithProfiler(profiler, zip);
     downloadZipBlob(zipBlob, buildFilename(bodyType, timestamp));
 
     if (result.warningMessage) {

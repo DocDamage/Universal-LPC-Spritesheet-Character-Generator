@@ -92,7 +92,9 @@ describe("Verify License Netlify Function", () => {
     // Let's provide a real 32-byte Ed25519 PKCS8 DER signature key in hex if it imports it, or let's see.
     // To make sure it doesn't fail importing private key:
     // Let's use a valid hex PKCS8 Ed25519 key:
-    const mockPKCS8Hex = "302e020100300506032b657004220420" + "0000000000000000000000000000000000000000000000000000000000000000";
+    const mockPKCS8Hex =
+      "302e020100300506032b657004220420" +
+      "0000000000000000000000000000000000000000000000000000000000000000";
     process.env["LICENSE_SIGNING_SECRET"] = mockPKCS8Hex;
     try {
       const res = await handler({

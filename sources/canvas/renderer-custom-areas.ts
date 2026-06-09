@@ -3,6 +3,7 @@ import {
   type CustomAnimationDefinition,
 } from "../custom-animations.ts";
 import type { Recolors } from "../state/palettes.ts";
+import { state } from "../state/state.ts";
 import type {
   CustomAreaItem,
   DrawCall,
@@ -62,8 +63,9 @@ export async function drawCustomAnimationAreas({
     );
     customAreaItems[customAnimName] = areaItems;
 
-    const { state } = await import("../state/state.ts");
-    const filteredAreaItems = areaItems.filter(item => !state.hiddenLayerIds.has(item.itemId));
+    const filteredAreaItems = areaItems.filter(
+      (item) => !state.hiddenLayerIds.has(item.itemId),
+    );
     const loadedCustomImages = await loadCustomAreaImages(filteredAreaItems);
 
     for (const { item: areaItem, img, success } of loadedCustomImages) {

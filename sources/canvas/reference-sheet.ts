@@ -1,13 +1,19 @@
 import { createCanvas, canvasToBlob } from "./canvas-utils.ts";
 import { getCanvas, renderCharacter } from "./renderer.ts";
-import { applyStudioProjectSnapshot, createStudioProjectSnapshot } from "../state/studio-projects.ts";
+import {
+  applyStudioProjectSnapshot,
+  createStudioProjectSnapshot,
+} from "../state/studio-projects.ts";
 import { state } from "../state/state.ts";
 import { triggerRender } from "../components/render-effect.ts";
 import { getAllCredits, creditsToTxt } from "../utils/credits.ts";
 import { downloadBlob } from "./download.ts";
 import { renderDirectionalPreviewCanvases } from "./preview-animation.ts";
 
-export async function exportReferenceSheet(characterName: string, bodyType: string): Promise<void> {
+export async function exportReferenceSheet(
+  characterName: string,
+  bodyType: string,
+): Promise<void> {
   const originalState = createStudioProjectSnapshot();
   const cell = 128;
   const cols = 4;
@@ -38,10 +44,10 @@ export async function exportReferenceSheet(characterName: string, bodyType: stri
     const scale = i + 1;
     const x = i * cell + (cell - 64 * scale) / 2;
     const y = 50 + (cell - 64 * scale) / 2;
-    
+
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(mainCanvas, 0, 0, 64, 64, x, y, 64 * scale, 64 * scale);
-    
+
     ctx.fillStyle = "#94a3b8";
     ctx.font = "10px sans-serif";
     ctx.fillText(`${scale}x`, i * cell + 8, 50 + cell - 8);
@@ -76,5 +82,8 @@ export async function exportReferenceSheet(characterName: string, bodyType: stri
   applyStudioProjectSnapshot(originalState);
   await triggerRender();
 
-  downloadBlob(await canvasToBlob(canvas), `${characterName}-reference-sheet.png`);
+  downloadBlob(
+    await canvasToBlob(canvas),
+    `${characterName}-reference-sheet.png`,
+  );
 }

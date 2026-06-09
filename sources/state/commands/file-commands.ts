@@ -110,11 +110,13 @@ export function getFileCommands(): Command[] {
       id: "app.export.referenceSheet",
       label: "Export Reference Sheet PNG",
       category: "File",
-      tooltip: "Export character reference sheet with scales, directions, and credits",
+      tooltip:
+        "Export character reference sheet with scales, directions, and credits",
       shortcut: "Ctrl+Shift+R",
       keyCombo: { key: "r", ctrlKey: true, shiftKey: true },
       action: async () => {
-        const { exportReferenceSheet } = await import("../../canvas/reference-sheet.ts");
+        const { exportReferenceSheet } =
+          await import("../../canvas/reference-sheet.ts");
         try {
           await exportReferenceSheet("character", state.bodyType);
           showToast("Reference sheet exported.", { kind: "success" });

@@ -54,3 +54,28 @@ export function applyNamingTemplate(
   // Clean up potential unsafe characters, keeping folders/extensions if any, but let's make it relatively safe:
   return name.replace(/[<>:"\\|?*]/g, "_");
 }
+
+export function makeUniqueFileName(
+  fileName: string,
+  usedFileNames: Set<string>,
+): string {
+  if (!usedFileNames.has(fileName)) {
+    usedFileNames.add(fileName);
+    return fileName;
+  }
+
+  const extensionStart = fileName.lastIndexOf(".");
+  const hasExtension = extensionStart > 0;
+  const base = hasExtension ? fileName.slice(0, extensionStart) : fileName;
+  const extension = hasExtension ? fileName.slice(extensionStart) : "";
+  let suffix = 2;
+  let nextName = `${base}-${suffix}${extension}`;
+
+  while (usedFileNames.has(nextName)) {
+    suffix += 1;
+    nextName = `${base}-${suffix}${extension}`;
+  }
+
+  usedFileNames.add(nextName);
+  return nextName;
+}

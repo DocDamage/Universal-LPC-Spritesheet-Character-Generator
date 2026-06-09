@@ -42,5 +42,5 @@ export const favoritesStore = {
   async loadFavorite(entry: FavoriteEntry): Promise<void> {
     applyStudioProjectSnapshot(entry.snapshot);
     await triggerRender();
-  }
+  },
 };

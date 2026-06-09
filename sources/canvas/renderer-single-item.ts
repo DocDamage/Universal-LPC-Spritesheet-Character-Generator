@@ -1,5 +1,8 @@
 import { loadImagesInParallel, type LoadedImage } from "./load-image.ts";
-import { getSpritePath } from "../state/path.ts";
+import {
+  getBodyTypeFallbacks,
+  getSpritePathWithBodyTypeFallback,
+} from "../state/path.ts";
 import { getImageToDraw } from "./palette-recolor.ts";
 import type { Recolors } from "../state/palettes.ts";
 import { createCanvas, getZPos } from "./canvas-utils.ts";
@@ -118,7 +121,7 @@ export async function renderSingleItem(
         if (!layer) break;
 
         const yPos = getYPosForCustomAnim(layer.custom_animation as string);
-        const basePath = layer[bodyType] as string | undefined;
+        const basePath = getBodyTypeLayerPath(layer, bodyType);
         if (!basePath) continue;
 
         const spritePath = `spritesheets/${basePath}${variantToFilename(
@@ -184,7 +187,7 @@ export async function renderSingleItem(
     for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
       if (!supportsAnimation(meta, animName)) continue;
 
-      const pathResult = getSpritePath(
+      const pathResult = getSpritePathWithBodyTypeFallback(
         itemId,
         variant,
         recolors,
@@ -319,7 +322,7 @@ export async function renderSingleItemAnimation(
     const zPos = getZPos(defaultCatalog, itemId, layerNum);
     if (!supportsSingleAnimation(meta.animations, animationName)) continue;
 
-    const pathResult = getSpritePath(
+    const pathResult = getSpritePathWithBodyTypeFallback(
       itemId,
       variant,
       recolors,
@@ -379,6 +382,17 @@ export async function renderSingleItemAnimation(
   );
 
   return animCanvas;
+}
+
+function getBodyTypeLayerPath(
+  layer: Record<string, unknown>,
+  bodyType: string,
+): string | undefined {
+  for (const fallback of [bodyType, ...getBodyTypeFallbacks(bodyType)]) {
+    const path = layer[fallback] as string | undefined;
+    if (path) return path;
+  }
+  return undefined;
 }
 
 function supportsSingleAnimation(

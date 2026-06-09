@@ -251,6 +251,7 @@ function renderProjectRowActions(
         onclick: () => {
           duplicateStudioProject(project.id);
           refreshProjects(panelState);
+          showToast(`Duplicated "${project.name}".`, { kind: "success" });
         },
       },
       "Duplicate",
@@ -260,9 +261,14 @@ function renderProjectRowActions(
       {
         type: "button",
         onclick: () => {
+          const nextLocked = !project.metadata.locked;
           updateProjectField(panelState, project, {
-            locked: !project.metadata.locked,
+            locked: nextLocked,
           });
+          showToast(
+            nextLocked ? `Locked "${project.name}".` : `Unlocked "${project.name}".`,
+            { kind: "success" },
+          );
         },
       },
       project.metadata.locked ? "Unlock" : "Lock",
@@ -274,6 +280,7 @@ function renderProjectRowActions(
         onclick: () => {
           deleteStudioProject(project.id);
           refreshProjects(panelState);
+          showToast(`Deleted "${project.name}".`, { kind: "success" });
         },
       },
       "Delete",

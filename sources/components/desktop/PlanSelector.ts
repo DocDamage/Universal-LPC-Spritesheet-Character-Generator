@@ -3,6 +3,7 @@ import { state } from "../../state/state.ts";
 import { PLAN_LABELS } from "../../state/feature-gates.ts";
 import type { AppPlan } from "../../state/app-state.ts";
 import { BUILD_CHANNEL, BUILD_TIER } from "../../state/build-config.ts";
+import { showToast } from "../../state/notifications.ts";
 
 const plans: AppPlan[] = ["free", "pro", "studio"];
 
@@ -33,7 +34,11 @@ export const PlanSelector: m.Component = {
               class: state.appPlan === plan ? "is-info is-selected" : "",
               title: planDescriptions[plan],
               onclick: () => {
+                if (state.appPlan === plan) return;
                 state.appPlan = plan;
+                showToast(`${PLAN_LABELS[plan]} mode enabled.`, {
+                  kind: "success",
+                });
               },
             },
             PLAN_LABELS[plan],

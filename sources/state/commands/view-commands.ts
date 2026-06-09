@@ -1,6 +1,7 @@
 import { setPreviewCanvasZoom } from "../../canvas/preview-canvas.ts";
 import { clamp } from "../../utils/helpers.ts";
-import { state } from "../state.ts";
+import { showToast } from "../notifications.ts";
+import { selectItem, state } from "../state.ts";
 import type { Command, EditorCommandContext } from "../commands.ts";
 
 const MIN_PREVIEW_ZOOM = 0.5;
@@ -9,6 +10,8 @@ const PREVIEW_ZOOM_STEP = 0.25;
 const MIN_EDITOR_ZOOM = 2;
 const MAX_EDITOR_ZOOM = 16;
 const DEFAULT_EDITOR_ZOOM = 4;
+const SHADOW_ITEM_ID = "shadow";
+const SHADOW_VARIANT = "shadow";
 
 export type ViewCommandContext = {
   getEditorContext: () => EditorCommandContext | null;
@@ -48,15 +51,27 @@ export function getViewCommands(context: ViewCommandContext): Command[] {
       tooltip: "Toggle the preview transparency grid",
       action: () => {
         state.showTransparencyGrid = !state.showTransparencyGrid;
+        showToast(
+          state.showTransparencyGrid
+            ? "Transparency grid enabled."
+            : "Transparency grid disabled.",
+          { kind: "success" },
+        );
       },
     },
     {
       id: "app.shadows.toggle",
       label: "Toggle Cast Shadow",
       category: "View",
-      tooltip: "Toggle cast shadow transparency mask",
+      tooltip: "Toggle the cast shadow layer",
       action: () => {
-        state.applyTransparencyMask = !state.applyTransparencyMask;
+        const isSelected =
+          state.selections["shadow"]?.itemId === SHADOW_ITEM_ID;
+        selectItem(SHADOW_ITEM_ID, SHADOW_VARIANT, isSelected);
+        showToast(
+          isSelected ? "Cast shadow disabled." : "Cast shadow enabled.",
+          { kind: "success" },
+        );
       },
     },
   ];

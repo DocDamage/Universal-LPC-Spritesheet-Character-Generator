@@ -15,7 +15,7 @@
     "build:pro": "cross-env VITE_BUILD_TIER=pro VITE_BUILD_REQUIRES_LICENSE=true VITE_BUILD_CHANNEL=itch VITE_BUILD_PRICE=9.99 vite build",
     "build:studio": "cross-env VITE_BUILD_TIER=studio VITE_BUILD_REQUIRES_LICENSE=true VITE_BUILD_CHANNEL=itch VITE_BUILD_PRICE=19.99 vite build",
     "preview": "vite preview",
-    "serve:open": "vite --open",
+    "serve:open": "node scripts/open-app.js",
     "lint": "eslint . --cache",
     "lint:fix": "eslint . --cache --fix",
     "type-check": "tsgo --noEmit",

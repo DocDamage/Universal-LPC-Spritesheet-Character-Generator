@@ -5,6 +5,7 @@ import type { PartEditorState } from "../types.ts";
 import { QUICK_COLORS } from "../types.ts";
 import { undo, redo, resetCanvases } from "../history.ts";
 import { saveCustomPartFromEditor } from "../save-custom-part.ts";
+import { showToast } from "../../../../state/notifications.ts";
 
 export function renderNameField(stateObj: PartEditorState): m.Children {
   return m("div.field.mb-2", [
@@ -132,7 +133,10 @@ export function renderToolButtons(stateObj: PartEditorState): m.Children {
     m(
       "button.button.is-small",
       {
-        onclick: () => undo(stateObj),
+        onclick: () => {
+          undo(stateObj);
+          showToast("Undid editor change.", { kind: "info" });
+        },
         disabled: stateObj.historyIndex <= 0,
         title: "Undo last stroke (Ctrl+Z)",
       },
@@ -141,7 +145,10 @@ export function renderToolButtons(stateObj: PartEditorState): m.Children {
     m(
       "button.button.is-small",
       {
-        onclick: () => redo(stateObj),
+        onclick: () => {
+          redo(stateObj);
+          showToast("Redid editor change.", { kind: "info" });
+        },
         disabled: stateObj.historyIndex >= stateObj.history.length - 1,
         title: "Redo edit (Ctrl+Y or Ctrl+Shift+Z)",
       },
@@ -150,7 +157,10 @@ export function renderToolButtons(stateObj: PartEditorState): m.Children {
     m(
       "button.button.is-small",
       {
-        onclick: () => resetCanvases(stateObj),
+        onclick: () => {
+          resetCanvases(stateObj);
+          showToast("Editor canvas reset.", { kind: "warning" });
+        },
         title: "Reset all directions to original sprite",
       },
       "🗑",
@@ -189,6 +199,12 @@ export function renderAutoPropagate(stateObj: PartEditorState): m.Children {
           checked: stateObj.autoPropagate,
           onchange: (e: Event) => {
             stateObj.autoPropagate = (e.target as HTMLInputElement).checked;
+            showToast(
+              stateObj.autoPropagate
+                ? "Auto-propagate enabled."
+                : "Auto-propagate disabled.",
+              { kind: "success" },
+            );
           },
         }),
         " Auto-propagate front view to sides & back",

@@ -1,8 +1,26 @@
 // Desktop-style action bar (bottom buttons and toggles)
 import m from "mithril";
-import { state } from "../../state/state.ts";
+import { selectItem, state } from "../../state/state.ts";
 import { executeCommand, getCommandTitle } from "../../state/commands.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
+import { showToast } from "../../state/notifications.ts";
+
+const SHADOW_ITEM_ID = "shadow";
+const SHADOW_VARIANT = "shadow";
+
+function isShadowSelected(): boolean {
+  return state.selections["shadow"]?.itemId === SHADOW_ITEM_ID;
+}
+
+function setShadowSelected(checked: boolean): void {
+  const selected = isShadowSelected();
+  if (checked !== selected) {
+    selectItem(SHADOW_ITEM_ID, SHADOW_VARIANT, selected);
+    showToast(checked ? "Cast shadow enabled." : "Cast shadow disabled.", {
+      kind: "success",
+    });
+  }
+}
 
 type ActionBarAttrs = {
   catalog: CatalogReader;
@@ -23,6 +41,12 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
                 state.showTransparencyGrid = (
                   e.target as HTMLInputElement
                 ).checked;
+                showToast(
+                  state.showTransparencyGrid
+                    ? "Transparency grid enabled."
+                    : "Transparency grid disabled.",
+                  { kind: "success" },
+                );
                 m.redraw();
               },
             }),
@@ -34,11 +58,9 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
           { title: getCommandTitle("app.shadows.toggle", "Cast Shadow") },
           [
             m("input[type=checkbox]", {
-              checked: state.applyTransparencyMask,
+              checked: isShadowSelected(),
               onchange: (e: Event) => {
-                state.applyTransparencyMask = (
-                  e.target as HTMLInputElement
-                ).checked;
+                setShadowSelected((e.target as HTMLInputElement).checked);
                 m.redraw();
               },
             }),

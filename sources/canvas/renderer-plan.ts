@@ -1,7 +1,10 @@
 import { ANIMATION_OFFSETS } from "../state/constants.ts";
 import type { Selections } from "../state/app-state.ts";
 import type { DrawCall } from "../state/render-state.ts";
-import { getSpritePath } from "../state/path.ts";
+import {
+  getBodyTypeFallbacks,
+  getSpritePathWithBodyTypeFallback,
+} from "../state/path.ts";
 import { getMultiRecolors } from "../state/palettes.ts";
 import { defaultCatalog } from "../state/catalog.ts";
 import { supportsAnimation } from "../state/meta.ts";
@@ -92,7 +95,7 @@ export function populateRenderPlan({
         const customAnimName = layer.custom_animation as string;
         addedCustomAnimations.add(customAnimName);
 
-        const basePath = layer[bodyType] as string | undefined;
+        const basePath = getBodyTypeLayerPath(layer, bodyType);
         if (!basePath) {
           continue;
         }
@@ -122,7 +125,7 @@ export function populateRenderPlan({
 
         if (!supportsAnimation(meta, animName)) continue;
 
-        const pathResult = getSpritePath(
+        const pathResult = getSpritePathWithBodyTypeFallback(
           assetItemId,
           variant ?? null,
           recolors,
@@ -152,4 +155,15 @@ export function populateRenderPlan({
       }
     }
   }
+}
+
+function getBodyTypeLayerPath(
+  layer: Record<string, unknown>,
+  bodyType: string,
+): string | undefined {
+  for (const fallback of [bodyType, ...getBodyTypeFallbacks(bodyType)]) {
+    const path = layer[fallback] as string | undefined;
+    if (path) return path;
+  }
+  return undefined;
 }

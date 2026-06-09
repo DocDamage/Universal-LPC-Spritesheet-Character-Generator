@@ -97,6 +97,35 @@ describe("state/commands.ts", () => {
     expect(state.previewCanvasZoomLevel).to.equal(1);
   });
 
+  it("toggles cast shadow through the command and shows feedback", () => {
+    setStateDeps({
+      getItemMetadata: (itemId) =>
+        itemId === "shadow"
+          ? {
+              name: "Shadow",
+              type_name: "shadow",
+              variants: ["shadow"],
+            }
+          : null,
+    });
+    state.selections = {};
+
+    expect(executeCommand("app.shadows.toggle")).to.equal(true);
+    expect(state.selections.shadow).to.include({
+      itemId: "shadow",
+      variant: "shadow",
+    });
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Cast shadow enabled.",
+    );
+
+    expect(executeCommand("app.shadows.toggle")).to.equal(true);
+    expect(state.selections.shadow).to.equal(undefined);
+    expect(getToasts().map((toast) => toast.message)).to.include(
+      "Cast shadow disabled.",
+    );
+  });
+
   it("routes zoom and tool commands to the active editor context", () => {
     const editorContext = {
       activeEditorTab: "edit",

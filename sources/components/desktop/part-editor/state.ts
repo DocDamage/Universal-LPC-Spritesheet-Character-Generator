@@ -43,6 +43,9 @@ export function getEditorWheelZoomUpdate({
 export function initializePartEditorState(stateObj: PartEditorState): void {
   stateObj.loading = false;
   stateObj.baseItemId = null;
+  stateObj.draftPreviewPartId = null;
+  stateObj.draftPreviewSelectionGroup = null;
+  stateObj.draftPreviewOriginalSelection = null;
   stateObj.name = "";
   stateObj.activeEditorTab = "edit";
   stateObj.activeDirection = "front";
@@ -120,6 +123,9 @@ export function createPartEditorStateForTests(
   const stateObj = {
     loading: false,
     baseItemId: null,
+    draftPreviewPartId: null,
+    draftPreviewSelectionGroup: null,
+    draftPreviewOriginalSelection: null,
     name: "",
     activeEditorTab: "edit",
     activeDirection: "front",

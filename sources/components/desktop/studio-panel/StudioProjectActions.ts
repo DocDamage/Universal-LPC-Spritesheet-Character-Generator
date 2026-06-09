@@ -37,6 +37,9 @@ export const StudioProjectActions: m.Component<StudioProjectActionsAttrs> = {
               "lpc-studio-projects.json",
               "application/json",
             );
+            showToast("Studio project library exported.", {
+              kind: "success",
+            });
           },
         },
         "Export Library",
@@ -136,6 +139,7 @@ export const StudioProjectActions: m.Component<StudioProjectActionsAttrs> = {
               "studio-credits.csv",
               "text/csv",
             );
+            showToast("Studio credits exported.", { kind: "success" });
           },
         },
         "Credits",
@@ -151,6 +155,7 @@ export const StudioProjectActions: m.Component<StudioProjectActionsAttrs> = {
               "studio-qa-report.md",
               "text/markdown",
             );
+            showToast("Studio QA report exported.", { kind: "success" });
           },
         },
         "QA Report",

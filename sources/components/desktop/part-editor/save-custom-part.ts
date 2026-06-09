@@ -12,6 +12,8 @@ import { recomposeCanvases } from "./canvas.ts";
 import { createEditorContextSnapshot } from "./history.ts";
 import { saveActiveEditorContext } from "./animation.ts";
 import type { PartEditorState } from "./types.ts";
+import { cleanupPartEditorLivePreview } from "./live-preview.ts";
+import { showToast } from "../../../state/notifications.ts";
 
 export async function saveCustomPartFromEditor(
   editorState: PartEditorState,
@@ -44,7 +46,8 @@ export async function saveCustomPartFromEditor(
     }
 
     const customPartId = `custom_part_${Date.now()}`;
-    const currentSelection = state.selections[meta.type_name];
+    const currentSelection =
+      editorState.draftPreviewOriginalSelection ?? state.selections[meta.type_name];
     const customName = editorState.name.trim() || `Custom ${meta.name}`;
 
     registerCustomPart({
@@ -67,13 +70,19 @@ export async function saveCustomPartFromEditor(
       name: customName,
     };
 
+    cleanupPartEditorLivePreview(editorState, false);
     state.editingPart = null;
     editorState.baseItemId = null;
     editorState.unsavedChanges = false;
     void clearDraft(baseId);
+    showToast(`Saved "${customName}" as a custom part.`, { kind: "success" });
     m.redraw();
   } catch (err) {
     console.error("Failed to save custom part:", err);
+    showToast(
+      err instanceof Error ? err.message : "Failed to save custom part.",
+      { kind: "error" },
+    );
   } finally {
     editorState.loading = false;
   }

@@ -77,6 +77,7 @@ export function getFileCommands(): Command[] {
           return;
         }
         downloadAsPNG("character-spritesheet.png");
+        showToast("PNG spritesheet exported.", { kind: "success" });
       },
     },
     {
@@ -90,6 +91,7 @@ export function getFileCommands(): Command[] {
         const allCredits = getAllCredits(state.selections, state.bodyType);
         const csvContent = creditsToCsv(allCredits);
         downloadFile(csvContent, "credits.csv", "text/csv");
+        showToast("Credits CSV exported.", { kind: "success" });
       },
     },
   ];

@@ -13,6 +13,7 @@ import { loadPartEditorItemIfNeeded } from "./part-editor/load-item.ts";
 import { handleEditorShortcut } from "./part-editor/keyboard.ts";
 import { stopPlayback } from "./part-editor/animation.ts";
 import { createCanvasInteractionHandlers } from "./part-editor/canvas-interactions.ts";
+import { cleanupPartEditorLivePreview } from "./part-editor/live-preview.ts";
 
 import {
   renderEmptyEditor,
@@ -86,6 +87,7 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
       );
     }
     stopPlayback(vnode.state);
+    cleanupPartEditorLivePreview(vnode.state, true);
     if (vnode.state.autosaveDebounceTimer) {
       window.clearTimeout(vnode.state.autosaveDebounceTimer);
     }
@@ -97,6 +99,7 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
   view(vnode) {
     const editing = state.editingPart;
     if (!editing) {
+      cleanupPartEditorLivePreview(vnode.state, true);
       return renderEmptyEditor();
     }
 

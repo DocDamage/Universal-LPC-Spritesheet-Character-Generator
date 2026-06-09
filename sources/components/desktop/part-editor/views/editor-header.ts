@@ -1,7 +1,9 @@
 // Part editor header: title, fullscreen toggle, and close button
 import m from "mithril";
 import { state } from "../../../../state/state.ts";
+import { showToast } from "../../../../state/notifications.ts";
 import type { PartEditorState } from "../types.ts";
+import { cleanupPartEditorLivePreview } from "../live-preview.ts";
 
 export function renderEditorHeader(stateObj: PartEditorState): m.Children {
   return m("div.part-editor-header", [
@@ -16,6 +18,12 @@ export function renderEditorHeader(stateObj: PartEditorState): m.Children {
             : "Fullscreen editor (F)",
           onclick: () => {
             stateObj.isFullscreen = !stateObj.isFullscreen;
+            showToast(
+              stateObj.isFullscreen
+                ? "Fullscreen editor enabled."
+                : "Fullscreen editor disabled.",
+              { kind: "success" },
+            );
           },
         },
         stateObj.isFullscreen ? "⤢" : "⛶",
@@ -32,7 +40,9 @@ export function renderEditorHeader(stateObj: PartEditorState): m.Children {
               );
               if (!confirmed) return;
             }
+            cleanupPartEditorLivePreview(stateObj, true);
             state.editingPart = null;
+            showToast("Part editor closed.", { kind: "info" });
           },
         },
         "✕",

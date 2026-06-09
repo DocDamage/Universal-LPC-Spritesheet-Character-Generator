@@ -2,7 +2,7 @@
 // Simplified renderer that draws character sprites based on selections
 
 import { ok, err, type Result } from "neverthrow";
-import { loadImage, loadImagesInParallel } from "./load-image.ts";
+import { loadImagesInParallel } from "./load-image.ts";
 import type { LoadedImage } from "./load-image.ts";
 import { getSpritePath } from "../state/path.ts";
 import { getImageToDraw } from "./palette-recolor.ts";
@@ -50,6 +50,9 @@ import {
   setOffscreenCanvasInitializedForTests,
   zipExportProfiledLoadComposite,
 } from "./renderer-internals.ts";
+import { drawStandardDrawCalls } from "./renderer-draw.ts";
+import { extractAnimationFromSheet } from "./animation-extract.ts";
+import { calculateCustomAnimationLayout } from "./renderer-custom-animation-layout.ts";
 
 export {
   SHEET_HEIGHT,
@@ -322,90 +325,27 @@ async function runRenderCharacter(
     // body (zPos=10), etc.
     drawCalls.sort((a, b) => a.zPos - b.zPos);
 
-    // Calculate total canvas height needed (standard sheet + custom animations)
-    let totalHeight = SHEET_HEIGHT;
-    let totalWidth = SHEET_WIDTH;
-    const currentCustomAnimations: Record<
-      string,
-      (typeof customAnimations)[string]
-    > = {};
-
-    if (addedCustomAnimations.size > 0 && customAnimations) {
-      for (const customAnimName of addedCustomAnimations) {
-        const customAnimDef = customAnimations[customAnimName];
-        if (customAnimDef) {
-          const animHeight =
-            customAnimDef.frameSize * customAnimDef.frames.length;
-          const animWidth =
-            customAnimDef.frameSize * customAnimDef.frames[0]!.length;
-          totalHeight += animHeight;
-          totalWidth = Math.max(totalWidth, animWidth);
-          currentCustomAnimations[customAnimName] = customAnimDef;
-        }
-      }
-    }
+    const customAnimationLayout = calculateCustomAnimationLayout(
+      addedCustomAnimations,
+      customAnimations,
+      SHEET_WIDTH,
+      SHEET_HEIGHT,
+    );
 
     // Resize canvas to fit all content
-    renderCanvas.width = totalWidth;
-    renderCanvas.height = totalHeight;
+    renderCanvas.width = customAnimationLayout.totalWidth;
+    renderCanvas.height = customAnimationLayout.totalHeight;
 
     // Clear canvas (no transparency background on offscreen canvas)
     renderCtx.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
 
     // Store custom animations for animation preview dropdown
-    setCurrentCustomAnimations(currentCustomAnimations);
-
-    // Calculate custom animation Y positions first (needed for drawing standard items into custom areas)
-    const customAnimYPositions: Record<string, number> = {};
-    if (addedCustomAnimations.size > 0 && customAnimations) {
-      let currentY = SHEET_HEIGHT;
-      for (const customAnimName of addedCustomAnimations) {
-        customAnimYPositions[customAnimName] = currentY;
-        const customAnimDef = customAnimations[customAnimName];
-        if (customAnimDef) {
-          const animHeight =
-            customAnimDef.frameSize * customAnimDef.frames.length;
-          currentY += animHeight;
-        }
-      }
-    }
+    setCurrentCustomAnimations(customAnimationLayout.currentCustomAnimations);
 
     // Store Y positions for external access
-    setCustomAnimYPositions(customAnimYPositions);
+    setCustomAnimYPositions(customAnimationLayout.customAnimYPositions);
 
-    // Load all standard animation images in parallel and attach them to their items
-    const loadPromises = drawCalls.map((item) => {
-      if (item.source.kind === "custom") {
-        // Already-decoded user-uploaded image
-        return Promise.resolve({ item, img: item.source.image, success: true });
-      }
-      const { spritePath } = item.source;
-      return loadImage(spritePath)
-        .then((img) => ({ item, img, success: true }))
-        .catch(() => {
-          debugWarn(`Failed to load sprite: ${spritePath}`);
-          return {
-            item,
-            img: null as HTMLImageElement | null,
-            success: false,
-          };
-        });
-    });
-
-    const loadedItems = await Promise.all(loadPromises);
-
-    // Draw all items in sorted z-order
-    for (const { item, img, success } of loadedItems) {
-      if (success && img) {
-        const imageToDraw = await getImageToDraw(
-          img,
-          item.itemId,
-          item.recolors,
-          item.source.kind === "catalog" ? item.source.spritePath : null,
-        );
-        renderCtx.drawImage(imageToDraw, 0, item.yPos);
-      }
-    }
+    await drawStandardDrawCalls(renderCtx, drawCalls);
 
     for (const key of Object.keys(customAreaItems)) {
       delete customAreaItems[key];
@@ -418,7 +358,8 @@ async function runRenderCharacter(
         const customAnimDef = customAnimations[customAnimName];
         if (!customAnimDef) continue;
 
-        const offsetY = customAnimYPositions[customAnimName];
+        const offsetY =
+          customAnimationLayout.customAnimYPositions[customAnimName];
         const baseAnim = customAnimationBase
           ? customAnimationBase(customAnimDef)
           : null;
@@ -524,37 +465,12 @@ export function extractAnimationFromCanvas(
   if (!canvas) {
     return null;
   }
-
-  const config = animationConfigByName[animationName];
-  if (!config) {
-    console.error("Unknown animation:", animationName);
-    return null;
-  }
-
-  const { row, num } = config;
-  const srcY = row * FRAME_SIZE;
-  const srcHeight = num * FRAME_SIZE;
-
-  // Create new canvas for this animation
-  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
-    SHEET_WIDTH,
-    srcHeight,
-  );
-
-  // Copy animation from main canvas
-  animCtx.drawImage(
+  return extractAnimationFromSheet(
     canvas,
-    0,
-    srcY,
     SHEET_WIDTH,
-    srcHeight,
-    0,
-    0,
-    SHEET_WIDTH,
-    srcHeight,
+    animationName,
+    animationConfigByName,
   );
-
-  return animCanvas;
 }
 
 /** Error returned by `getCanvas` when called before `initCanvas` runs. */

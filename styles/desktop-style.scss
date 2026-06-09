@@ -1434,6 +1434,25 @@
   margin-bottom: 8px;
 }
 
+.studio-field-grid,
+.studio-project-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.studio-field-grid {
+  margin-bottom: 6px;
+}
+
+.studio-notes-input {
+  margin-bottom: 8px;
+}
+
+.studio-collection-filter {
+  max-width: 150px;
+}
+
 .studio-import-button {
   position: relative;
   overflow: hidden;
@@ -1464,8 +1483,9 @@
 .studio-project-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
+  flex: 1;
 }
 
 .studio-project-meta strong {
@@ -1479,9 +1499,28 @@
   color: var(--text-muted);
 }
 
+.studio-project-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.studio-project-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.studio-project-toggles input {
+  margin-right: 3px;
+}
+
 .studio-project-row-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
+  max-width: 92px;
 }
 
 /* Empty state */

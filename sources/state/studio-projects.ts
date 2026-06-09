@@ -16,12 +16,32 @@ export type StudioProjectSnapshot = {
   enabledAnimations: Record<string, boolean>;
 };
 
+export type StudioProjectStatus = "draft" | "approved" | "final";
+
+export type StudioExportPreset = {
+  engine: "generic" | "godot" | "phaser" | "rpg-maker";
+  includePng: boolean;
+  includeCredits: boolean;
+  includeJson: boolean;
+};
+
+export type StudioProjectMetadata = {
+  collection: string;
+  tags: string[];
+  notes: string;
+  role: string;
+  status: StudioProjectStatus;
+  locked: boolean;
+  exportPreset: StudioExportPreset;
+};
+
 export type StudioProject = {
   id: string;
   name: string;
   createdAt: string;
   updatedAt: string;
   snapshot: StudioProjectSnapshot;
+  metadata: StudioProjectMetadata;
 };
 
 type StudioProjectLibrary = {
@@ -90,6 +110,39 @@ function isStudioProject(value: unknown): value is StudioProject {
   );
 }
 
+function defaultExportPreset(): StudioExportPreset {
+  return {
+    engine: "generic",
+    includePng: true,
+    includeCredits: true,
+    includeJson: true,
+  };
+}
+
+function normalizeMetadata(
+  metadata?: Partial<StudioProjectMetadata>,
+): StudioProjectMetadata {
+  return {
+    collection: metadata?.collection ?? "",
+    tags: Array.isArray(metadata?.tags) ? metadata.tags : [],
+    notes: metadata?.notes ?? "",
+    role: metadata?.role ?? "",
+    status: metadata?.status ?? "draft",
+    locked: metadata?.locked ?? false,
+    exportPreset: {
+      ...defaultExportPreset(),
+      ...(metadata?.exportPreset ?? {}),
+    },
+  };
+}
+
+function normalizeProject(project: StudioProject): StudioProject {
+  return {
+    ...project,
+    metadata: normalizeMetadata(project.metadata),
+  };
+}
+
 export function createStudioProjectSnapshot(
   source: State = state,
 ): StudioProjectSnapshot {
@@ -123,14 +176,15 @@ export function applyStudioProjectSnapshot(
 }
 
 export function listStudioProjects(): StudioProject[] {
-  return readLibrary().projects.sort((a, b) =>
-    b.updatedAt.localeCompare(a.updatedAt),
-  );
+  return readLibrary()
+    .projects.map(normalizeProject)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export function saveStudioProject(
   name: string,
   source: State = state,
+  metadata?: Partial<StudioProjectMetadata>,
 ): StudioProject {
   const trimmedName = name.trim() || "Untitled project";
   const now = new Date().toISOString();
@@ -141,6 +195,7 @@ export function saveStudioProject(
     createdAt: now,
     updatedAt: now,
     snapshot: createStudioProjectSnapshot(source),
+    metadata: normalizeMetadata(metadata),
   };
 
   library.projects.push(project);
@@ -156,8 +211,11 @@ export function updateStudioProject(
   const index = library.projects.findIndex((project) => project.id === id);
   if (index === -1) return null;
 
+  const existing = normalizeProject(library.projects[index]!);
+  if (existing.metadata.locked) return null;
+
   const updated: StudioProject = {
-    ...library.projects[index]!,
+    ...existing,
     updatedAt: new Date().toISOString(),
     snapshot: createStudioProjectSnapshot(source),
   };
@@ -165,6 +223,59 @@ export function updateStudioProject(
   library.projects[index] = updated;
   writeLibrary(library);
   return updated;
+}
+
+export function updateStudioProjectMetadata(
+  id: string,
+  patch: Partial<StudioProjectMetadata> & { name?: string },
+): StudioProject | null {
+  const library = readLibrary();
+  const index = library.projects.findIndex((project) => project.id === id);
+  if (index === -1) return null;
+
+  const existing = normalizeProject(library.projects[index]!);
+  const updated: StudioProject = {
+    ...existing,
+    name: patch.name?.trim() || existing.name,
+    updatedAt: new Date().toISOString(),
+    metadata: normalizeMetadata({
+      ...existing.metadata,
+      ...patch,
+      exportPreset: {
+        ...existing.metadata.exportPreset,
+        ...(patch.exportPreset ?? {}),
+      },
+    }),
+  };
+
+  library.projects[index] = updated;
+  writeLibrary(library);
+  return updated;
+}
+
+export function duplicateStudioProject(id: string): StudioProject | null {
+  const library = readLibrary();
+  const original = library.projects.find((project) => project.id === id);
+  if (!original) return null;
+
+  const now = new Date().toISOString();
+  const project: StudioProject = {
+    ...normalizeProject(original),
+    id: createProjectId(),
+    name: `${original.name} Copy`,
+    createdAt: now,
+    updatedAt: now,
+    metadata: {
+      ...normalizeMetadata(original.metadata),
+      locked: false,
+      status: "draft",
+    },
+    snapshot: cloneJson(original.snapshot),
+  };
+
+  library.projects.push(project);
+  writeLibrary(library);
+  return project;
 }
 
 export function deleteStudioProject(id: string): boolean {
@@ -196,7 +307,7 @@ export function importStudioProjectLibrary(content: string): number {
   }
 
   const imported = parsed.projects.filter(isStudioProject).map((project) => ({
-    ...project,
+    ...normalizeProject(project),
     id: createProjectId(),
     createdAt: project.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),

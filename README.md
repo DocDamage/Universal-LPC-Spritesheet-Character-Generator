@@ -23,7 +23,7 @@ Highlights:
 - Switch between Free, Pro, and Studio modes to model a feature-based product split while keeping every LPC asset available in all modes.
 - **Free mode:** full asset library, basic character creator, credits export, JSON save/load, and single full spritesheet PNG export.
 - **Pro mode:** advanced editor, custom imports, animation GIF/WebP exports, ZIP exports, individual frame exports, and engine preset workflows.
-- **Studio mode:** local project libraries, named saved builds, library import/export, and batch project ZIP handoff.
+- **Studio mode:** local project libraries, collections, saved build metadata, lockable approvals, combined credits, QA reports, batch PNG export, and production handoff ZIPs.
 - Edit selected parts directly in the browser and save the result as a new custom part without modifying the original LPC asset.
 - **Autosave & recovery:** drafts are saved to IndexedDB automatically and can be recovered after a refresh or crash.
 - **Status bar:** live cursor position, zoom, active layer, brush size, and frame info at the bottom of the editor.
@@ -44,6 +44,7 @@ Highlights:
 - **Custom asset import validation:** imported images are checked for empty content, missing transparency, dimension correctness, and edge bleeding; errors block saving, warnings show a prompt.
 - **Unified animation settings management:** global tween settings with clear-all-overrides, copy-settings-to-all-animations, and reset-defaults commands; override count badge and per-animation override markers visible in the UI.
 - **Progress reporting & cancellation:** long exports show progress phases (preparing, rendering, tweening, encoding, archiving) and can be cancelled mid-flight with an AbortController-backed signal.
+- **Studio production workflows:** save named character builds into collections with roles, tags, notes, status, locks, export presets, duplicate/rename actions, combined credits export, QA reports, and a handoff ZIP containing project JSON, spritesheet PNGs, credits, manifests, and engine metadata.
 
 ### History
 
@@ -151,7 +152,7 @@ All LPC artwork remains available in every mode. The mode selector only gates wo
 
 - **Free:** browse and use the complete asset library, build characters, export credits, save/load JSON through the clipboard, and export a single full spritesheet PNG.
 - **Pro:** unlock the production workflow tools: advanced part editing, custom asset imports, GIF/WebP animation exports, ZIP export modes, individual frame exports, and engine preset/export wizard workflows.
-- **Studio:** unlock local project libraries for saving named character builds, loading/updating/deleting saved projects, importing/exporting the full library as JSON, and exporting all saved projects as a batch ZIP with a manifest.
+- **Studio:** unlock project collections, saved build metadata, duplicate/rename workflows, approval locks, export presets, combined credits, QA reports, batch PNG rendering, and a production handoff ZIP with per-project spritesheets, JSON manifests, credits, and engine metadata.
 
 ### Run This Project Locally for Development
 

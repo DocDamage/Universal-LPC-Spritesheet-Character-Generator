@@ -1051,6 +1051,38 @@
   border: 1px solid var(--border-subtle);
 }
 
+.desktop-preview-playback {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.desktop-preview-playback-btn {
+  height: 24px;
+  min-width: 42px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 7px;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+
+  &:hover,
+  &:focus {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    outline: none;
+  }
+}
+
 .desktop-preview-hint {
   font-size: 10px;
   color: var(--text-muted);

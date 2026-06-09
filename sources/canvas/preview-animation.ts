@@ -445,6 +445,21 @@ export function startPreviewAnimation(): void {
   nextFrame();
 }
 
+export function isPreviewAnimationRunning(): boolean {
+  return animationFrameId !== null;
+}
+
+export function stepPreviewAnimation(delta: number): number {
+  stopPreviewAnimation();
+  const stepCount = Math.max(
+    1,
+    buildTweenSteps(animationFrames, tweenSettings).length,
+  );
+  currentFrameIndex = (currentFrameIndex + delta + stepCount) % stepCount;
+  paintPreviewTweenStep(currentFrameIndex);
+  return currentFrameIndex;
+}
+
 export function syncPreviewTweenSettingsForAnimation(
   animationName: string,
 ): TweenSettings {

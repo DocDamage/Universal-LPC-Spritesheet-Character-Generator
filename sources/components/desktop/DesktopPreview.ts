@@ -11,9 +11,12 @@ import {
   startPreviewAnimation,
   stopPreviewAnimation,
   getCustomAnimations,
+  isPreviewAnimationRunning,
   renderDirectionalPreviewCanvases,
   setPreviewShowTransparencyGrid,
   setPreviewApplyTransparencyMask,
+  stepPreviewAnimation,
+  syncPreviewTweenSettingsForAnimation,
 } from "../../canvas/preview-animation.ts";
 
 type DesktopPreviewState = {
@@ -21,6 +24,7 @@ type DesktopPreviewState = {
   selectedAnimation: string;
   directionalFrames: Array<{ direction: string; src: string }>;
   directionalRefreshTimer: number | null;
+  isPlaying: boolean;
 };
 
 function refreshDirectionalFrames(
@@ -67,6 +71,7 @@ export const DesktopPreview: m.Component<
     vnode.state.selectedAnimation = state.selectedAnimation || "walk";
     vnode.state.directionalFrames = [];
     vnode.state.directionalRefreshTimer = null;
+    vnode.state.isPlaying = true;
   },
 
   oncreate(vnode) {
@@ -84,9 +89,11 @@ export const DesktopPreview: m.Component<
 
     initPreviewCanvas(canvas);
     setPreviewAnimation(vnode.state.selectedAnimation);
+    syncPreviewTweenSettingsForAnimation(vnode.state.selectedAnimation);
     setPreviewShowTransparencyGrid(state.showTransparencyGrid);
     setPreviewApplyTransparencyMask(state.applyTransparencyMask);
     startPreviewAnimation();
+    vnode.state.isPlaying = isPreviewAnimationRunning();
     setPreviewCanvasZoom(vnode.state.zoomLevel);
     if (!refreshDirectionalFrames(vnode)) {
       scheduleDirectionalRefresh(vnode);
@@ -117,6 +124,7 @@ export const DesktopPreview: m.Component<
       vnode.state.selectedAnimation = state.selectedAnimation;
       if (window.canvasRenderer) {
         setPreviewAnimation(vnode.state.selectedAnimation);
+        syncPreviewTweenSettingsForAnimation(vnode.state.selectedAnimation);
         refreshDirectionalFrames(vnode);
       }
     }
@@ -160,7 +168,9 @@ export const DesktopPreview: m.Component<
               if (window.canvasRenderer) {
                 stopPreviewAnimation();
                 setPreviewAnimation(anim);
+                syncPreviewTweenSettingsForAnimation(anim);
                 startPreviewAnimation();
+                vnode.state.isPlaying = isPreviewAnimationRunning();
                 refreshDirectionalFrames(vnode);
               }
             },
@@ -169,6 +179,49 @@ export const DesktopPreview: m.Component<
             m("option", { value: anim.value }, anim.label),
           ),
         ),
+        m("div.desktop-preview-playback", [
+          m(
+            "button.desktop-preview-playback-btn",
+            {
+              type: "button",
+              title: "Step backward",
+              onclick: () => {
+                stepPreviewAnimation(-1);
+                vnode.state.isPlaying = false;
+              },
+            },
+            "Prev",
+          ),
+          m(
+            "button.desktop-preview-playback-btn",
+            {
+              type: "button",
+              title: vnode.state.isPlaying ? "Pause preview" : "Play preview",
+              onclick: () => {
+                if (vnode.state.isPlaying) {
+                  stopPreviewAnimation();
+                  vnode.state.isPlaying = false;
+                } else {
+                  startPreviewAnimation();
+                  vnode.state.isPlaying = isPreviewAnimationRunning();
+                }
+              },
+            },
+            vnode.state.isPlaying ? "Pause" : "Play",
+          ),
+          m(
+            "button.desktop-preview-playback-btn",
+            {
+              type: "button",
+              title: "Step forward",
+              onclick: () => {
+                stepPreviewAnimation(1);
+                vnode.state.isPlaying = false;
+              },
+            },
+            "Next",
+          ),
+        ]),
       ]),
       m("div.desktop-preview-canvas-wrapper", [
         m("canvas#desktop-preview-canvas"),

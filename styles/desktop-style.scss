@@ -2902,6 +2902,14 @@
   }
 }
 
+.command-palette-section-label {
+  padding: 6px 8px 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .command-palette-item-info {
   display: flex;
   flex-direction: column;
@@ -2918,12 +2926,25 @@
 }
 
 .command-palette-item-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.command-palette-recent {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .command-palette-item-shortcut,

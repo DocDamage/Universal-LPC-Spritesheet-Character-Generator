@@ -2,6 +2,7 @@ import m from "mithril";
 import { state } from "./state.ts";
 import type { EditorTool } from "../components/desktop/pixel-editor-tools.ts";
 import { showToast } from "./notifications.ts";
+import { recordRecentCommand } from "./command-history.ts";
 import { getAppCommands } from "./commands/app-commands.ts";
 import { getFileCommands } from "./commands/file-commands.ts";
 import { getViewCommands } from "./commands/view-commands.ts";
@@ -73,6 +74,9 @@ export function executeCommand(id: string): boolean {
   const cmd = commands.find((c) => c.id === id);
   if (cmd?.action && isCommandEnabled(cmd)) {
     runCommandAction(cmd);
+    if (shouldRecordCommand(cmd.id)) {
+      recordRecentCommand(cmd.id);
+    }
     m.redraw();
     return true;
   }
@@ -176,6 +180,12 @@ function registerDefaultCommand(cmd: Command): void {
     defaultKeyCombos[cmd.id] = cmd.keyCombo;
   }
   registerCommand(cmd);
+}
+
+function shouldRecordCommand(commandId: string): boolean {
+  return !["app.commandPalette.toggle", "app.shortcuts.toggle"].includes(
+    commandId,
+  );
 }
 
 function restoreDefaultShortcut(commandId: string): void {

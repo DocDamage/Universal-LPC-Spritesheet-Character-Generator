@@ -11,6 +11,7 @@ import {
   startPreviewAnimation,
   stopPreviewAnimation,
   getCustomAnimations,
+  getPreviewAnimationStatus,
   isPreviewAnimationRunning,
   renderDirectionalPreviewCanvases,
   setPreviewShowTransparencyGrid,
@@ -18,13 +19,16 @@ import {
   stepPreviewAnimation,
   syncPreviewTweenSettingsForAnimation,
 } from "../../canvas/preview-animation.ts";
+import type { PreviewAnimationStatus } from "../../canvas/preview-animation.ts";
 
 type DesktopPreviewState = {
   zoomLevel: number;
   selectedAnimation: string;
   directionalFrames: Array<{ direction: string; src: string }>;
   directionalRefreshTimer: number | null;
+  statusRefreshTimer: number | null;
   isPlaying: boolean;
+  animationStatus: PreviewAnimationStatus | null;
 };
 
 function refreshDirectionalFrames(
@@ -62,6 +66,38 @@ function scheduleDirectionalRefresh(
   }, 250);
 }
 
+function refreshAnimationStatus(
+  vnode: m.Vnode<Record<string, never>, DesktopPreviewState>,
+): void {
+  try {
+    vnode.state.animationStatus = getPreviewAnimationStatus();
+  } catch {
+    vnode.state.animationStatus = null;
+  }
+}
+
+function scheduleStatusRefresh(
+  vnode: m.Vnode<Record<string, never>, DesktopPreviewState>,
+): void {
+  if (vnode.state.statusRefreshTimer !== null) {
+    return;
+  }
+
+  vnode.state.statusRefreshTimer = window.setInterval(() => {
+    refreshAnimationStatus(vnode);
+    m.redraw();
+  }, 500);
+}
+
+function stopStatusRefresh(
+  vnode: m.Vnode<Record<string, never>, DesktopPreviewState>,
+): void {
+  if (vnode.state.statusRefreshTimer !== null) {
+    window.clearInterval(vnode.state.statusRefreshTimer);
+    vnode.state.statusRefreshTimer = null;
+  }
+}
+
 export const DesktopPreview: m.Component<
   Record<string, never>,
   DesktopPreviewState
@@ -71,7 +107,9 @@ export const DesktopPreview: m.Component<
     vnode.state.selectedAnimation = state.selectedAnimation || "walk";
     vnode.state.directionalFrames = [];
     vnode.state.directionalRefreshTimer = null;
+    vnode.state.statusRefreshTimer = null;
     vnode.state.isPlaying = true;
+    vnode.state.animationStatus = null;
   },
 
   oncreate(vnode) {
@@ -94,6 +132,8 @@ export const DesktopPreview: m.Component<
     setPreviewApplyTransparencyMask(state.applyTransparencyMask);
     startPreviewAnimation();
     vnode.state.isPlaying = isPreviewAnimationRunning();
+    refreshAnimationStatus(vnode);
+    scheduleStatusRefresh(vnode);
     setPreviewCanvasZoom(vnode.state.zoomLevel);
     if (!refreshDirectionalFrames(vnode)) {
       scheduleDirectionalRefresh(vnode);
@@ -126,6 +166,7 @@ export const DesktopPreview: m.Component<
         setPreviewAnimation(vnode.state.selectedAnimation);
         syncPreviewTweenSettingsForAnimation(vnode.state.selectedAnimation);
         refreshDirectionalFrames(vnode);
+        refreshAnimationStatus(vnode);
       }
     }
   },
@@ -134,6 +175,10 @@ export const DesktopPreview: m.Component<
     if (this.directionalRefreshTimer !== null) {
       window.clearTimeout(this.directionalRefreshTimer);
       this.directionalRefreshTimer = null;
+    }
+    if (this.statusRefreshTimer !== null) {
+      window.clearInterval(this.statusRefreshTimer);
+      this.statusRefreshTimer = null;
     }
     if (window.canvasRenderer) {
       stopPreviewAnimation();
@@ -172,6 +217,8 @@ export const DesktopPreview: m.Component<
                 startPreviewAnimation();
                 vnode.state.isPlaying = isPreviewAnimationRunning();
                 refreshDirectionalFrames(vnode);
+                refreshAnimationStatus(vnode);
+                scheduleStatusRefresh(vnode);
               }
             },
           },
@@ -188,6 +235,8 @@ export const DesktopPreview: m.Component<
               onclick: () => {
                 stepPreviewAnimation(-1);
                 vnode.state.isPlaying = false;
+                stopStatusRefresh(vnode);
+                refreshAnimationStatus(vnode);
               },
             },
             "Prev",
@@ -201,10 +250,13 @@ export const DesktopPreview: m.Component<
                 if (vnode.state.isPlaying) {
                   stopPreviewAnimation();
                   vnode.state.isPlaying = false;
+                  stopStatusRefresh(vnode);
                 } else {
                   startPreviewAnimation();
                   vnode.state.isPlaying = isPreviewAnimationRunning();
+                  scheduleStatusRefresh(vnode);
                 }
+                refreshAnimationStatus(vnode);
               },
             },
             vnode.state.isPlaying ? "Pause" : "Play",
@@ -217,6 +269,8 @@ export const DesktopPreview: m.Component<
               onclick: () => {
                 stepPreviewAnimation(1);
                 vnode.state.isPlaying = false;
+                stopStatusRefresh(vnode);
+                refreshAnimationStatus(vnode);
               },
             },
             "Next",
@@ -235,6 +289,28 @@ export const DesktopPreview: m.Component<
             ])
           : null,
       ]),
+      vnode.state.animationStatus
+        ? m("div.desktop-animation-status", [
+            m("span", [
+              "Step ",
+              vnode.state.animationStatus.currentStep,
+              "/",
+              vnode.state.animationStatus.totalSteps,
+            ]),
+            m("span", [
+              vnode.state.animationStatus.sourceFrameCount,
+              " source frames",
+            ]),
+            m("span", [
+              vnode.state.animationStatus.directionCount,
+              vnode.state.animationStatus.directionCount === 1
+                ? " direction"
+                : " directions",
+            ]),
+            m("span", [vnode.state.animationStatus.fps, " FPS"]),
+            m("span", vnode.state.animationStatus.tweenMode),
+          ])
+        : null,
       vnode.state.directionalFrames.length > 0
         ? m(
             "div.desktop-direction-preview",

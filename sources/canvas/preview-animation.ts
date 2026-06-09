@@ -59,6 +59,15 @@ export type DirectionalPreviewFrame = {
   canvas: HTMLCanvasElement;
 };
 
+export type PreviewAnimationStatus = {
+  currentStep: number;
+  sourceFrameCount: number;
+  totalSteps: number;
+  directionCount: number;
+  fps: number;
+  tweenMode: TweenSettings["mode"];
+};
+
 /**
  * Set which animation to preview
  */
@@ -447,6 +456,20 @@ export function startPreviewAnimation(): void {
 
 export function isPreviewAnimationRunning(): boolean {
   return animationFrameId !== null;
+}
+
+export function getPreviewAnimationStatus(): PreviewAnimationStatus {
+  return {
+    currentStep: currentFrameIndex + 1,
+    sourceFrameCount: animationFrames.length,
+    totalSteps: Math.max(
+      1,
+      buildTweenSteps(animationFrames, tweenSettings).length,
+    ),
+    directionCount: animRowNum,
+    fps: tweenSettings.fps,
+    tweenMode: tweenSettings.mode,
+  };
 }
 
 export function stepPreviewAnimation(delta: number): number {

@@ -33,6 +33,17 @@ export function getAppCommands(): Command[] {
       },
     },
     {
+      id: "app.about.toggle",
+      label: "About This App",
+      category: "General",
+      action: () => {
+        state.showAbout = !state.showAbout;
+        if (state.showAbout) {
+          state.showCommandPalette = false;
+        }
+      },
+    },
+    {
       id: "app.reset",
       label: "Reset All Selections",
       category: "Actions",

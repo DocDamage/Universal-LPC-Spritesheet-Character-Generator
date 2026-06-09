@@ -2675,7 +2675,8 @@
 .command-palette-overlay,
 .shortcut-help-overlay,
 .confirm-dialog-overlay,
-.onboarding-overlay {
+.onboarding-overlay,
+.about-overlay {
   position: fixed;
   inset: 0;
   z-index: 2200;
@@ -2693,7 +2694,8 @@
   padding: 16px;
 }
 
-.onboarding-overlay {
+.onboarding-overlay,
+.about-overlay {
   align-items: center;
   padding: 16px;
 }
@@ -2701,7 +2703,8 @@
 .command-palette,
 .shortcut-help,
 .confirm-dialog,
-.onboarding-modal {
+.onboarding-modal,
+.about-modal {
   width: min(640px, calc(100vw - 32px));
   max-height: min(74vh, 720px);
   display: flex;
@@ -2728,15 +2731,25 @@
   overflow: auto;
 }
 
+.about-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 14px;
+  overflow: auto;
+}
+
 .onboarding-header,
-.onboarding-footer {
+.onboarding-footer,
+.about-header,
+.about-footer {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
-.onboarding-header h2 {
+.onboarding-header h2,
+.about-header h2 {
   margin: 6px 0 0;
   font-size: 18px;
   line-height: 1.2;
@@ -2744,10 +2757,44 @@
 }
 
 .onboarding-copy,
-.onboarding-footer span {
+.onboarding-footer span,
+.about-copy,
+.about-footer span {
   margin: 10px 0;
   font-size: 12px;
   line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.about-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 9px;
+}
+
+.about-section h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.about-section ul {
+  margin: 0;
+  padding-left: 15px;
+}
+
+.about-section li {
+  margin-bottom: 4px;
+  font-size: 11px;
+  line-height: 1.35;
   color: var(--text-muted);
 }
 
@@ -3267,8 +3314,14 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
   .onboarding-header,
-  .onboarding-footer {
+  .onboarding-footer,
+  .about-header,
+  .about-footer {
     flex-direction: column;
     align-items: stretch;
   }

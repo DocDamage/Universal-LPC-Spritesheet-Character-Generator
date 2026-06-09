@@ -11,6 +11,7 @@ import { PlanSelector } from "./PlanSelector.ts";
 import { StudioPanel } from "./StudioPanel.ts";
 import { WorkflowToolsPanel } from "./WorkflowToolsPanel.ts";
 import { OnboardingModal } from "./OnboardingModal.ts";
+import { AboutModal } from "./AboutModal.ts";
 import { shouldShowOnboarding } from "../../state/onboarding.ts";
 import {
   executeCommand,
@@ -129,6 +130,17 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
           "i",
         ),
         m(
+          "button.desktop-title-btn",
+          {
+            type: "button",
+            title: "About this app",
+            onclick: () => {
+              executeCommand("app.about.toggle");
+            },
+          },
+          "ⓘ",
+        ),
+        m(
           "button.desktop-title-btn.desktop-title-btn-close",
           {
             title: getCommandTitle("app.reset", "Reset all selections"),
@@ -205,6 +217,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       m(CommandPaletteModal),
       m(ShortcutHelpModal),
       m(OnboardingModal, { catalog }),
+      m(AboutModal),
       m(ConfirmDialogModal),
       m(NotificationCenter),
     ]);

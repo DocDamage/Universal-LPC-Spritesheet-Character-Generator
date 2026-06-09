@@ -70,6 +70,7 @@ export type State = {
   showCommandPalette: boolean;
   showShortcutHelp: boolean;
   showOnboarding: boolean;
+  showAbout: boolean;
   zipByAnimation: ZipMode;
   zipByItem: ZipMode;
   zipByAnimationAndItem: ZipMode;
@@ -118,6 +119,7 @@ export const state: State = {
   showCommandPalette: false,
   showShortcutHelp: false,
   showOnboarding: false,
+  showAbout: false,
   zipByAnimation: { isRunning: false },
   zipByItem: { isRunning: false },
   zipByAnimationAndItem: { isRunning: false },

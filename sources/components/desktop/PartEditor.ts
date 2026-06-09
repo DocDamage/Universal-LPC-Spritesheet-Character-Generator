@@ -93,6 +93,7 @@ import {
   renderStatusBar,
   renderRecoveryPrompt,
 } from "./part-editor/panels.ts";
+import { canUseFeature } from "../../state/feature-gates.ts";
 
 import {
   addEditLayer,
@@ -176,6 +177,13 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
       return m("div.part-editor-empty", [
         m("span.part-editor-empty-icon", "✏️"),
         m("p", "No part selected"),
+      ]);
+    }
+
+    if (!canUseFeature("advanced-editor")) {
+      return m("div.part-editor-empty", [
+        m("span.part-editor-empty-icon", "Pro"),
+        m("p", "Advanced part editing is available in Pro."),
       ]);
     }
 

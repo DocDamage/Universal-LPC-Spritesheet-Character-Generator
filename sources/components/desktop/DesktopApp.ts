@@ -7,6 +7,7 @@ import { DesktopPreview } from "./DesktopPreview.ts";
 import { ActionBar } from "./ActionBar.ts";
 import { SLOT_CONFIG } from "./slot-config.ts";
 import { PartEditor } from "./PartEditor.ts";
+import { PlanSelector } from "./PlanSelector.ts";
 import {
   executeCommand,
   getCommandTitle,
@@ -87,6 +88,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         m("select.desktop-palette-select", [
           m("option", { value: "default" }, "Default"),
         ]),
+        m(PlanSelector),
         m("div.desktop-palette-spacer"),
         m(
           "button.desktop-title-btn",

@@ -30,6 +30,7 @@ import {
 } from "../../state/zip.ts";
 import { showToast, requestConfirmation } from "../../state/notifications.ts";
 import { estimateTweenExportFrames } from "../../state/tween-settings.ts";
+import { requireFeature } from "../../state/feature-gates.ts";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types
@@ -49,6 +50,14 @@ function zipFileExtension(summary: ExportSummary): string {
 }
 
 async function runExport(targetId: ExportTargetId): Promise<void> {
+  if (targetId === "gif-preview" || targetId === "webp-preview") {
+    if (!requireFeature("animation-export")) return;
+  } else if (targetId.startsWith("zip-")) {
+    if (!requireFeature("zip-export")) return;
+  } else if (!requireFeature("engine-presets")) {
+    return;
+  }
+
   if (!window.canvasRenderer) {
     showToast("Canvas renderer is not ready yet.", { kind: "warning" });
     return;

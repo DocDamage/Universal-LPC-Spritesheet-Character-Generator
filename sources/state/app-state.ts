@@ -17,6 +17,7 @@ export type Selection = {
 export type Selections = Record<string, Selection>;
 
 type ZipMode = { isRunning: boolean };
+export type AppPlan = "free" | "pro" | "studio";
 
 /** Global application state. Mutated in place; Mithril views observe via redraw. */
 export type State = {
@@ -63,6 +64,7 @@ export type State = {
 
   activeTab: "character" | "accessories";
   editingPart: { slotLabel: string; itemId: string } | null;
+  appPlan: AppPlan;
 
   // transient (never saved)
   showCommandPalette: boolean;
@@ -109,6 +111,7 @@ export const state: State = {
   ),
   activeTab: "character",
   editingPart: null,
+  appPlan: "free",
 
   // Following transient state should never be saved
   showCommandPalette: false,

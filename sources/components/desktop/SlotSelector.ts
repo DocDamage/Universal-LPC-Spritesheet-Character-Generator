@@ -54,6 +54,11 @@ import {
 } from "./slot-selector/types.ts";
 import { initializeSlotSelectorState } from "./slot-selector/state.ts";
 import { renderCustomAssetLibrary } from "./slot-selector/custom-library.ts";
+import {
+  canUseFeature,
+  paidFeatureTitle,
+  requireFeature,
+} from "../../state/feature-gates.ts";
 
 type SlotSelectorAttrs = {
   slot: SlotDef;
@@ -71,6 +76,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     const selectedValue = getSlotSelectedValue(slot, catalog);
     const hasSelection = selectedValue !== "";
     const canImportWeapon = slot.label === "Mainhand";
+    const canEditParts = canUseFeature("advanced-editor");
+    const canImportCustomAssets = canUseFeature("custom-imports");
     const slotTypeNames = getSlotTypeNames(slot);
     const importReferenceOptions = canImportWeapon
       ? options.filter(
@@ -600,8 +607,12 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
             ? m(
                 "button.desktop-slot-edit",
                 {
-                  title: `Edit ${slot.label}`,
+                  class: canEditParts ? "" : "is-locked",
+                  title: canEditParts
+                    ? `Edit ${slot.label}`
+                    : paidFeatureTitle("advanced-editor"),
                   onclick: () => {
+                    if (!requireFeature("advanced-editor")) return;
                     state.editingPart = {
                       slotLabel: slot.label,
                       itemId: selectedItemId!,
@@ -618,8 +629,11 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                   type: "button",
                   title: vnode.state.showImporter
                     ? "Close weapon import"
-                    : "Import a weapon or tool and align it to a built-in reference",
+                    : canImportCustomAssets
+                      ? "Import a weapon or tool and align it to a built-in reference"
+                      : paidFeatureTitle("custom-imports"),
                   onclick: () => {
+                    if (!requireFeature("custom-imports")) return;
                     vnode.state.showColorPicker = false;
                     vnode.state.showImporter = !vnode.state.showImporter;
                     if (!vnode.state.showImporter) {

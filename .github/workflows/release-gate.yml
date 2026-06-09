@@ -60,3 +60,5 @@ jobs:
 
       - name: Run visual tests
         run: npm run test:visual
+        env:
+          HOME: /root

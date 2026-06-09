@@ -58,6 +58,7 @@ jobs:
         env:
           ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
           CI: true
+          HOME: /root
 
   visual-fork:
     name: Visual tests (Playwright + Argos) — fork
@@ -85,7 +86,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run visual tests
-        run: npm run test:visual
+        run: npx playwright test --project=chromium
         env:
           ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
           CI: true

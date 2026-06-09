@@ -40,9 +40,9 @@
 
 1. **components** may import from **state**, **canvas**, and **utils**.
 2. **state** may import from **canvas** and **utils**.  
-   *Exception:* `state/` must **not** import from `components/`.
+   _Exception:_ `state/` must **not** import from `components/`.
 3. **canvas** may import from **utils**.  
-   *Exception:* `canvas/` may import `render-state.ts` from `state/` (it is the shared render-state container).  
+   _Exception:_ `canvas/` may import `render-state.ts` from `state/` (it is the shared render-state container).
    `canvas/` must **not** import any other `state/` module.
 4. **utils** is the bottom layer — it must **not** import from **components**, **state**, or **canvas**.
 
@@ -52,7 +52,7 @@
 
 The original codebase had a severe circular-dependency problem:
 
-- `state.ts` → `canvas/renderer.ts`  
+- `state.ts` → `canvas/renderer.ts`
 - `canvas/renderer.ts` → `state/state.ts`
 
 This meant the state layer was not a leaf. Unit-testing state in isolation required mocking the entire rendering pipeline and UI toolkit. By moving the mutable render state (`drawCalls`, `addedCustomAnimations`, `customAreaItems`) into `state/render-state.ts`, the canvas layer can write to it without importing the full state module, breaking the cycle.
@@ -61,12 +61,12 @@ This meant the state layer was not a leaf. Unit-testing state in isolation requi
 
 ## Module Responsibilities
 
-| Layer | Responsibility | Key Files |
-|-------|-----------------|-----------|
-| `components/` | Mithril v2 UI components, event handling, layout | `App.ts`, `DesktopApp.ts`, `PartEditor.ts`, `SlotSelector.ts` |
-| `state/` | Application state, catalog DI, URL hash sync, export logic | `state.ts`, `catalog.ts`, `hash.ts`, `zip.ts`, `render-state.ts` |
-| `canvas/` | Offscreen canvas rendering, image loading, palette recoloring, tweening | `renderer.ts`, `load-image.ts`, `palette-recolor.ts`, `tween.ts` |
-| `utils/` | Pure helpers, ZIP packaging, credit formatting, debug logging | `zip-helpers.ts`, `credits.ts`, `debug.ts`, `helpers.ts` |
+| Layer         | Responsibility                                                          | Key Files                                                        |
+| ------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `components/` | Mithril v2 UI components, event handling, layout                        | `App.ts`, `DesktopApp.ts`, `PartEditor.ts`, `SlotSelector.ts`    |
+| `state/`      | Application state, catalog DI, URL hash sync, export logic              | `state.ts`, `catalog.ts`, `hash.ts`, `zip.ts`, `render-state.ts` |
+| `canvas/`     | Offscreen canvas rendering, image loading, palette recoloring, tweening | `renderer.ts`, `load-image.ts`, `palette-recolor.ts`, `tween.ts` |
+| `utils/`      | Pure helpers, ZIP packaging, credit formatting, debug logging           | `zip-helpers.ts`, `credits.ts`, `debug.ts`, `helpers.ts`         |
 
 ---
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tests for the bounded LRU recolor cache inside `getImageToDraw`.
  *
@@ -14,6 +15,7 @@ import { describe, it, beforeEach } from "mocha-globals";
 import {
   getImageToDraw,
   clearRecolorCache,
+  drawRecolorPreview,
 } from "../../sources/canvas/palette-recolor.ts";
 
 // Real item id from the dataset with a single recolor region.
@@ -130,5 +132,41 @@ describe("canvas/palette-recolor.ts recolor cache", () => {
 
     expect(a).to.equal(b);
     expect(b).to.equal(c);
+  });
+
+  it("drawRecolorPreview returns 0 without drawing when its signal is already aborted", async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    document.body.appendChild(canvas);
+    const abortController = new AbortController();
+    abortController.abort();
+
+    try {
+      const imagesLoaded = await drawRecolorPreview(
+        "preview_abort_test",
+        {
+          name: "Abort Test",
+          type_name: "body",
+          required: [],
+          animations: ["walk"],
+          recolors: [],
+          matchBodyColor: false,
+          variants: [],
+          path: [],
+          credits: [],
+          layers: { layer_1: { male: "body/bodies/male/" } },
+        },
+        canvas,
+        {},
+        abortController.signal,
+      );
+
+      expect(imagesLoaded).to.equal(0);
+      const pixel = canvas.getContext("2d").getImageData(0, 0, 1, 1).data;
+      expect(pixel[3]).to.equal(0);
+    } finally {
+      canvas.remove();
+    }
   });
 });

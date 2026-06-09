@@ -31,27 +31,14 @@
     {
       "file": "beards/mustache/bigstache",
       "notes": "Original by Pennomi, repositioning by JaidynReiman.",
-      "authors": [
-        "JaidynReiman",
-        "Thane Brimhall (pennomi)",
-        "laetissima"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-base-character-expressions"
-      ]
+      "authors": ["JaidynReiman", "Thane Brimhall (pennomi)", "laetissima"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-base-character-expressions"]
     }
   ],
   "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "mustache"
 }

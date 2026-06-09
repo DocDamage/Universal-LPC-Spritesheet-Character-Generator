@@ -1,8 +1,6 @@
-LPC Sprite Character Cutouts
-=============================================
+# LPC Sprite Character Cutouts
 
 This has blacked out "cutouts" for the arm positions! When using an image editor, add these to a separate layer and select all black on that layer, then choose a separate layer to delete.
-
 
 Currently there's two variations:
 
@@ -11,7 +9,6 @@ Currently there's two variations:
 Head Cutouts are for cutting out the arms solely out of heads or faces. This "should" be global as these are (I believe) the same size for all postions.
 
 Hair, Facial Hair, Eyes, and other Face assets may all fall under this category.
-
 
 2. "Arm Body Cutouts"
 

@@ -33,14 +33,8 @@
     {
       "file": "neck/necklace",
       "notes": "extra animations by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "Luke Mehl"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "Luke Mehl"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/female-mage-clothing-set",
         "http://opengameart.org/content/lpc-clothing-updates"

@@ -1,11 +1,7 @@
 {
   "name": "Kimono",
   "priority": 10,
-  "tags": [
-    "dress",
-    "kimono",
-    "kimono_simple"
-  ],
+  "tags": ["dress", "kimono", "kimono_simple"],
   "layer_1": {
     "zPos": 30,
     "female": "dress/kimono/normal/universal/female/",
@@ -55,14 +51,8 @@
         "Stephen Challener (Redshrike)",
         "Johannes Sjölund (wulax)"
       ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-kimono-relm"
-      ]
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-kimono-relm"]
     }
   ],
   "type_name": "dress"

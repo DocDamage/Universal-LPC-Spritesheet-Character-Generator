@@ -34,17 +34,9 @@
     {
       "file": "torso/aprons/apron_full",
       "notes": "original apron by ElizaWy, extended to all animation frames and edited for v3 bases by bluecarrot16",
-      "authors": [
-        "ElizaWy",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "http://opengameart.org/content/lpc-clothing-updates"
-      ]
+      "authors": ["ElizaWy", "bluecarrot16"],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0"],
+      "urls": ["http://opengameart.org/content/lpc-clothing-updates"]
     }
   ],
   "type_name": "apron"

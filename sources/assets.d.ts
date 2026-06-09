@@ -6,6 +6,16 @@
 declare module "*.scss";
 declare module "*.css";
 
+declare module "*.scss?url" {
+  const href: string;
+  export default href;
+}
+
+declare module "*.css?url" {
+  const href: string;
+  export default href;
+}
+
 // Generated metadata chunks — imported via dynamic `import()` from
 // `install-item-metadata.ts`. Vite's `vite/wiring.js` aliases these to
 // `dist/*-metadata.js` (regex match), which the metadata plugin generates

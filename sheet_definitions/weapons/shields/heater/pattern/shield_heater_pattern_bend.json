@@ -65,17 +65,9 @@
     {
       "file": "shield/heater/original/pattern",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Sander Frenken (castelonia)",
-        "ElizaWy"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-shields"
-      ]
+      "authors": ["bluecarrot16", "Sander Frenken (castelonia)", "ElizaWy"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-shields"]
     }
   ],
   "type_name": "shield_pattern"

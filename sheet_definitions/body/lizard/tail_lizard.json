@@ -42,28 +42,14 @@
     {
       "file": "body/tail/lizard",
       "notes": "edited for v3 bases and recolored by bluecarrot16, additional animations added by JaidynReiman",
-      "authors": [
-        "Nila122",
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/drakes-and-lizardfolk"
-      ]
+      "authors": ["Nila122", "bluecarrot16", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/drakes-and-lizardfolk"]
     }
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "tail"
 }

@@ -58,16 +58,8 @@
     {
       "file": "feet/slippers",
       "notes": "original by Luke Mehl, Joe White did thrust/shoot animations, edited for v3 bases and male sprites by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman",
-        "Joe White",
-        "Luke Mehl"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "JaidynReiman", "Joe White", "Luke Mehl"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/thin-mage-clothing-set",
         "http://opengameart.org/content/lpc-clothing-updates",

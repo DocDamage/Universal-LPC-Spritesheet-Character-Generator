@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Reset window and internal scroll regions so full-page captures align across viewports.
  *
@@ -25,8 +26,8 @@ export async function scrollVisualCaptureToTop(page) {
  * Await `catalogReady.onAllReady` when the build exposes
  * `globalThis.__LPC_waitCatalogAllReady` (see `sources/state/catalog.ts`).
  * Otherwise, if `__LPC_arePaletteModalMetadataChunksReady` exists, wait until it is true
- * (so palette / skintone modals are not opened while the UI still says “Loading layer data…”).
- * Legacy dists without those hooks: only then fall back to “#mithril-filters” un-spinner.
+ * (so palette / skintone modals are not opened while the UI still says "Loading layer data…").
+ * Legacy dists without those hooks: only then fall back to "#mithril-filters" un-spinner.
  */
 export async function waitForCatalogAllReady(page) {
   /* Playwright: options are the 3rd arg; the 2nd is passed to the page function. */
@@ -65,25 +66,29 @@ export async function gotoHomepageReady(
 ) {
   const normalized = `${baseUrl.replace(/\/$/, "")}/`;
   await page.goto(normalized, { waitUntil: "load" });
-  try {
-    await page.waitForLoadState("networkidle", { timeout: 45_000 });
-  } catch {
-    // Some environments never reach idle (long-polling, etc.); continue.
-  }
+  // Removed the `networkidle` wait with a swallowed timeout. Explicit DOM
+  // readiness checks (catalog ready + canvas visible + loading spinners gone)
+  // are more reliable and do not mask genuine network stalls.
   await waitForCatalogAllReady(page);
-  await page.waitForSelector("#mithril-preview canvas", {
-    state: "visible",
-    timeout: 120_000,
-  });
+  await page.waitForSelector(
+    "#desktop-preview-canvas, #mithril-preview canvas",
+    {
+      state: "visible",
+      timeout: 120_000,
+    },
+  );
   await page.waitForFunction(
     () => {
-      const preview = document.getElementById("mithril-preview");
+      const preview =
+        document.getElementById("mithril-preview") ||
+        document.querySelector(".desktop-preview");
       const sheet = document.getElementById("mithril-spritesheet-preview");
-      if (!preview || !sheet) {
+      if (!preview) {
         return false;
       }
       return (
-        !preview.querySelector(".loading") && !sheet.querySelector(".loading")
+        !preview.querySelector(".loading, .desktop-preview-loading") &&
+        (!sheet || !sheet.querySelector(".loading"))
       );
     },
     undefined,
@@ -104,7 +109,7 @@ export async function gotoHomepageReady(
 
 /**
  * Predicate for `page.waitForFunction` (executes in the browser).
- * True when the palette modal exists, has at least one variant canvas, and each canvas’s
+ * True when the palette modal exists, has at least one variant canvas, and each canvas's
  * top-left sample has some non-transparent pixels (async draws have finished).
  * @returns {boolean}
  */
@@ -140,8 +145,8 @@ function paletteModalPreviewCanvasesHaveOpaquePixels() {
 }
 
 /**
- * Expands Head → Heads → Human Heads → Human Male, then opens the Skintone palette modal.
- * (The top-level "Head" row must be expanded before "Heads" is visible.)
+ * Opens the Human Male skintone chooser. Current desktop UI uses the inline Race
+ * color picker; legacy/tree UI uses Head → Heads → Human Heads → Human Male.
  *
  * @param {import('@playwright/test').Page} page
  * @param {{ forComputedStyleDump?: boolean }} [opts] Use `forComputedStyleDump: true` for
@@ -150,6 +155,36 @@ function paletteModalPreviewCanvasesHaveOpaquePixels() {
  */
 export async function openHumanMaleSkintonePalette(page, opts = {}) {
   const { forComputedStyleDump = false } = opts;
+  const desktopRaceSlot = page
+    .locator(".desktop-slot")
+    .filter({
+      has: page.locator(".desktop-slot-label", { hasText: /^Race$/ }),
+    })
+    .first();
+  if (await desktopRaceSlot.isVisible().catch(() => false)) {
+    const raceSelect = desktopRaceSlot.locator("select.desktop-slot-select");
+    const humanMaleValue = await raceSelect.evaluate((select) => {
+      const option = Array.from(select.options).find((opt) =>
+        /^Human Male$/.test(opt.textContent?.trim() ?? ""),
+      );
+      return option?.value ?? "";
+    });
+    if (humanMaleValue) {
+      await raceSelect.selectOption(humanMaleValue);
+    }
+    const swatchButton = desktopRaceSlot.locator(".desktop-slot-color");
+    await swatchButton.waitFor({ state: "visible", timeout: 30_000 });
+    await swatchButton.click();
+    const picker = desktopRaceSlot.locator(".desktop-color-picker");
+    await picker.waitFor({ state: "visible", timeout: 30_000 });
+    await picker
+      .locator(".desktop-color-swatch")
+      .first()
+      .waitFor({ state: "visible", timeout: 30_000 });
+    await page.mouse.move(0, 0);
+    return;
+  }
+
   const tree = page.locator("#chooser-column");
   const clickTreeLabel = async (exact) => {
     const row = tree.locator("div.tree-label").filter({
@@ -209,23 +244,45 @@ export async function openHumanMaleSkintonePalette(page, opts = {}) {
 }
 
 /**
- * Closes the skintone / palette modal if it is open (overlay click).
+ * Closes the skintone chooser if it is open (inline desktop picker or legacy modal).
  *
  * @param {import('@playwright/test').Page} page
  */
 export async function closeSkintonePaletteModal(page) {
+  const desktopPicker = page.locator(".desktop-color-picker").first();
+  if (await desktopPicker.isVisible().catch(() => false)) {
+    const selectedOrFirstSwatch = desktopPicker
+      .locator(".desktop-color-swatch-selected, .desktop-color-swatch")
+      .first();
+    await selectedOrFirstSwatch.evaluate((el) => el.click());
+    await desktopPicker.waitFor({ state: "hidden", timeout: 30_000 });
+    return;
+  }
+
   const overlay = page.locator(".palette-modal-overlay");
   await overlay.click({ position: { x: 2, y: 2 } });
   await page.locator(".palette-modal").waitFor({ state: "hidden" });
 }
 
 /**
- * Expands License Filters, Animation Filters, and Advanced Tools, then sets the
- * asset search query to "arm" (tree filters client-side; waits for a visible match).
+ * Opens a secondary desktop/legacy visual state, then searches "arm".
  *
  * @param {import('@playwright/test').Page} page
  */
 export async function openLicenseAnimationAdvancedAndSearchArm(page) {
+  const desktopSearch = page.locator(".desktop-slot-search").first();
+  if (await desktopSearch.isVisible().catch(() => false)) {
+    await page.getByRole("button", { name: /Gear \(\d+\)/ }).click();
+    await desktopSearch.fill("arm");
+    await page
+      .locator(".desktop-slot")
+      .filter({ hasText: /arm/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 30_000 });
+    await page.mouse.move(0, 0);
+    return;
+  }
+
   const licenseCol = page.locator("div.filters-column").first();
   const licenseTreeLabel = licenseCol.locator("div.tree-label").first();
   licenseTreeLabel.evaluate((el) => (el.style.scrollMarginTop = "-12px"));

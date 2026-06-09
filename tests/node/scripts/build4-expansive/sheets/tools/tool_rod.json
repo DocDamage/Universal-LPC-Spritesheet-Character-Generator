@@ -22,12 +22,8 @@
     "pregnant": "tools/rod/foreground/",
     "teen": "tools/rod/foreground/"
   },
-  "variants": [
-    "rod"
-  ],
-  "animations": [
-    "tool_rod"
-  ],
+  "variants": ["rod"],
+  "animations": ["tool_rod"],
   "credits": [
     {
       "file": "tools/rod",
@@ -39,12 +35,8 @@
         "Johannes Sjölund (wulax)",
         "and Inboxninja"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-hand-tools"
-      ]
+      "licenses": ["CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-hand-tools"]
     }
   ],
   "type_name": "weapon"

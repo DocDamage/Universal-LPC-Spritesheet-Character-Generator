@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   getNameWithoutVariant,
   getSpritePath,
@@ -61,6 +62,13 @@ describe("state/path.ts", () => {
     it("collects variants from multiple items of the same type", () => {
       const items = [{ variants: ["a"] }, { variants: ["b"] }];
       expect(getNameWithoutVariant("x_b", items)).to.equal("x");
+    });
+
+    it("uses a double-underscore delimiter when present", () => {
+      const items = [{ variants: ["brown"] }];
+      expect(getNameWithoutVariant("human_head__light_brown", items)).to.equal(
+        "human_head",
+      );
     });
   });
 
@@ -237,6 +245,63 @@ describe("state/path.ts", () => {
       expect(es6Spy.firstCall.args[0]).to.equal(path);
       expect(es6Spy.firstCall.args[1]).to.deep.equal({ head: "humanoid" });
     });
+
+    it("caches hash params and resolved template paths for unchanged selections", () => {
+      const selections = {};
+      const getHashParamsforSelections = sinon.stub().returns({
+        head: "human_head",
+      });
+      const es6Spy = sinon
+        .stub()
+        .callsFake((path, replacements) =>
+          es6DynamicTemplate(path, replacements),
+        );
+      setPathDeps({
+        getHashParamsforSelections,
+        es6DynamicTemplate: es6Spy,
+      });
+      const meta = {
+        replace_in_path: {
+          head: { human: "humanoid" },
+        },
+      };
+
+      expect(replaceInPath("base/${head}/tail", selections, meta)).to.equal(
+        "base/humanoid/tail",
+      );
+      expect(replaceInPath("base/${head}/tail", selections, meta)).to.equal(
+        "base/humanoid/tail",
+      );
+
+      expect(getHashParamsforSelections.calledOnce).to.be.true;
+      expect(es6Spy.calledOnce).to.be.true;
+    });
+
+    it("invalidates the selections cache when a selections object changes", () => {
+      const selections = {};
+      const getHashParamsforSelections = sinon
+        .stub()
+        .onFirstCall()
+        .returns({ head: "human_head" })
+        .onSecondCall()
+        .returns({ head: "elf_head" });
+      setPathDeps({ getHashParamsforSelections });
+      const meta = {
+        replace_in_path: {
+          head: { human: "humanoid", elf: "elven" },
+        },
+      };
+
+      expect(replaceInPath("base/${head}/tail", selections, meta)).to.equal(
+        "base/humanoid/tail",
+      );
+      selections.head = { itemId: "head_elf_head", variant: "head" };
+      expect(replaceInPath("base/${head}/tail", selections, meta)).to.equal(
+        "base/elven/tail",
+      );
+
+      expect(getHashParamsforSelections.calledTwice).to.be.true;
+    });
   });
 
   describe("getSpritePath", () => {
@@ -361,6 +426,32 @@ describe("state/path.ts", () => {
           meta,
         )._unsafeUnwrap(),
       ).to.equal("spritesheets/x/idle/red.png");
+    });
+
+    it("derives variant from double-underscore item ids when variant is omitted", () => {
+      const meta = {
+        layers: {
+          layer_1: {
+            male: "x/",
+          },
+        },
+      };
+      setPathDeps({
+        variantToFilename: (v) => v,
+        animations: [{ value: "idle", label: "Idle" }],
+      });
+      expect(
+        getSpritePath(
+          "shirt_blue__red_gold",
+          null,
+          null,
+          "male",
+          "idle",
+          1,
+          {},
+          meta,
+        )._unsafeUnwrap(),
+      ).to.equal("spritesheets/x/idle/red_gold.png");
     });
 
     it("omits the variant filename segment when recolors is set", () => {

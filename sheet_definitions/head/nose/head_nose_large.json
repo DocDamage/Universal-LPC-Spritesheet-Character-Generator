@@ -32,12 +32,8 @@
     {
       "file": "head/nose/large",
       "notes": "",
-      "authors": [
-        "ElizaWy"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["ElizaWy"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Head/Head%20Overlay%2001%20-%20Large%20Nose",
         "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
@@ -46,11 +42,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "nose"
 }

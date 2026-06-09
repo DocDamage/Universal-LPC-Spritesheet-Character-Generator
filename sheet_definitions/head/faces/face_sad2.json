@@ -1,12 +1,7 @@
 {
   "name": "Sad Alt",
-  "tags": [
-    "expression"
-  ],
-  "required_tags": [
-    "human",
-    "adult"
-  ],
+  "tags": ["expression"],
+  "required_tags": ["human", "adult"],
   "layer_1": {
     "zPos": 101,
     "male": "head/faces/global/sad2/",
@@ -43,10 +38,7 @@
         "laetissima",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-base-character-expressions",
         "https://opengameart.org/content/ulpc-expanded-expressions"
@@ -55,11 +47,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "expression"
 }

@@ -1,9 +1,7 @@
 {
   "name": "Bat Wings",
   "priority": 20,
-  "tags": [
-    "wings"
-  ],
+  "tags": ["wings"],
   "layer_1": {
     "zPos": 105,
     "male": "body/wings/bat/adult/fg/",
@@ -89,16 +87,9 @@
     {
       "file": "body/wings/bat",
       "notes": "Original by ElizaWy, added to most remaining frames by JaidynReiman",
-      "authors": [
-        "ElizaWy",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-wings-new-animations"
-      ]
+      "authors": ["ElizaWy", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-wings-new-animations"]
     }
   ],
   "type_name": "wings"

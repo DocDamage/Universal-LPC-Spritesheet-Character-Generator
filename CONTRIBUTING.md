@@ -237,6 +237,29 @@ Vite is responsible for the five `dist/*-metadata.js` files when the plugin runs
 
 The **Validate site sources** workflow (`.github/workflows/validate-site-sources.yml`) runs **`npm run validate-site-sources`** and fails if the working tree is dirty afterward. PRs that touch definitions must include regenerated **`CREDITS.csv`** and **`scripts/zPositioning/z_positions.csv`** whenever those files change.
 
+#### Desktop Editor and Custom Import Work
+
+The current desktop editor, fullscreen pro tools, custom weapon/tool importer, command palette shortcuts, and notification layer are documented in [EDITOR_FEATURES.md](EDITOR_FEATURES.md). Start there before changing editor behavior, because it maps user-facing capabilities to implementation files.
+
+Key areas:
+
+- **Pixel editor:** [`sources/components/desktop/PartEditor.ts`](sources/components/desktop/PartEditor.ts) and [`sources/components/desktop/pixel-editor-tools.ts`](sources/components/desktop/pixel-editor-tools.ts).
+- **Weapon/tool imports:** [`sources/components/desktop/custom-weapon-import.ts`](sources/components/desktop/custom-weapon-import.ts) and the importer controls in [`sources/components/desktop/SlotSelector.ts`](sources/components/desktop/SlotSelector.ts).
+- **Custom part persistence:** [`sources/state/catalog.ts`](sources/state/catalog.ts) and [`sources/state/custom-parts-storage.ts`](sources/state/custom-parts-storage.ts).
+- **Shortcuts and command palette:** [`sources/state/commands.ts`](sources/state/commands.ts).
+- **Toasts and confirmations:** [`sources/state/notifications.ts`](sources/state/notifications.ts) and [`sources/components/notifications/`](sources/components/notifications/).
+
+For editor or importer changes, run at least:
+
+```bash
+npm run lint
+npm run type-check
+npm run test:node
+node ./node_modules/testem/testem.js ci --launch "headless chrome"
+```
+
+Run `npm run test:visual` as well when changing fullscreen layout, canvas sizing, visible controls, or other screenshot-visible behavior.
+
 #### Running Tests
 
 Browser specs run in real browsers via [Testem](https://github.com/testem/testem). Vite is embedded in middleware mode via [`vite-plugin-testem`](https://www.npmjs.com/package/vite-plugin-testem) (see [`testem.cjs`](testem.cjs)) so specs can `import` ESM from `sources/`. **`testem.cjs`** runs **Node** checks first (`before_tests`), then loads **[`tests_run.html`](tests_run.html)** with Mocha and [`tests/tests.js`](tests/tests.js).
@@ -250,6 +273,17 @@ npm test
 ```
 
 This runs **`node ./node_modules/testem/testem.js ci`**, which loads **[`testem.cjs`](testem.cjs)** (via Testem’s default config search), executes **`before_tests`** (`node ./tests/node/run-node-tests.js`) then the browser suite (**Chrome** and **Firefox** in CI).
+
+For a full pre-PR verification sweep, run:
+
+```bash
+npm run lint
+npm run type-check
+npm run test:node
+npm test
+npm run build
+npm run test:visual
+```
 
 **Testem client URL vs config:** [`tests_run.html`](tests_run.html) loads **`<script src="/testem.js">`**. That path is the **Testem in-browser client** served by the Testem server from the **`testem`** npm package; it is **not** the repo’s config file. Local Testem settings live in **[`testem.cjs`](testem.cjs)** at the repository root.
 
@@ -336,7 +370,7 @@ describe("MyComponent", () => {
 });
 ```
 
-Node specs are listed and run via [`tests/node/run-node-tests.js`](tests/node/run-node-tests.js); add new generator tests alongside the existing `tests/node/scripts/**` files.
+Node specs are run via [`tests/node/run-node-tests.js`](tests/node/run-node-tests.js), which invokes Vitest directly with the current Node executable for cross-platform compatibility. Add new generator tests alongside the existing `tests/node/scripts/**` files.
 
 #### z-positions
 

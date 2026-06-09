@@ -37,12 +37,8 @@
     {
       "file": "hat/accessory/horns_short",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["bluecarrot16"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-helmets",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
@@ -51,12 +47,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "cloth.ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "cloth.ulpc", "all.lpcr"]
   },
   "type_name": "accessory"
 }

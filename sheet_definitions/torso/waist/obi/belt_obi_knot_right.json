@@ -57,17 +57,9 @@
     {
       "file": "torso/waist/obi/knot",
       "notes": "",
-      "authors": [
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-kimono-relm"
-      ]
+      "authors": ["JaidynReiman"],
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-kimono-relm"]
     }
   ],
   "type_name": "sash_tie"

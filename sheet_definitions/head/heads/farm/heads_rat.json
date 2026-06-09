@@ -1,9 +1,6 @@
 {
   "name": "Rat",
-  "tags": [
-    "animal",
-    "adult"
-  ],
+  "tags": ["animal", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/rat/adult/",
@@ -42,11 +39,7 @@
         "Napsio (Vitruvian Studio)",
         "JaidynReiman"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/bunny-rabbit-lpc-style-for-pixelfarm",
         "http://opengameart.org/content/lpc-folk"
@@ -56,11 +49,7 @@
   "recolors": {
     "material": "body",
     "base": "lpcr.ivory",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

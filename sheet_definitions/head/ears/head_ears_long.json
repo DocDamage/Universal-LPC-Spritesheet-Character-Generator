@@ -33,16 +33,8 @@
     {
       "file": "head/ears/long",
       "notes": "adapted to v3 base by bluecarrot16; expanded to other animations and child by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "bluecarrot16",
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "authors": ["JaidynReiman", "bluecarrot16", "Nila122"],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-long-ears",
         "http://opengameart.org/content/lpc-clothing-updates"
@@ -51,11 +43,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "ears"
 }

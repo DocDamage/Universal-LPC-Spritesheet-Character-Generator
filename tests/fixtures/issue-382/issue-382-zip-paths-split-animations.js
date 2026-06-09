@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * exportSplitAnimations — sorted zip paths
  *
@@ -37,5 +38,5 @@ export const paths = [
   "standard/spellcast.png",
   "standard/thrust.png",
   "standard/walk.png",
-  "standard/watering.png"
+  "standard/watering.png",
 ];

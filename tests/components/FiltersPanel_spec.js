@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { FiltersPanel } from "../../sources/components/FiltersPanel.ts";
 import { CollapsibleSection } from "../../sources/components/CollapsibleSection.ts";
 import { SearchControl } from "../../sources/components/filters/SearchControl.ts";

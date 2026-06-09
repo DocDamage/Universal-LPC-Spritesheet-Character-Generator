@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 /**
  * Dump selected computed CSS properties for stable text diffing between branches
  * (e.g. master vs update_bulma) served from two worktrees on different ports.

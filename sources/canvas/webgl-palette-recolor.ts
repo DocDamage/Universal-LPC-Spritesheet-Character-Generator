@@ -1,7 +1,7 @@
 // WebGL-accelerated palette recoloring for LPC sprites
 // Uses GPU shaders for fast color replacement
 
-import { get2DContext } from "./canvas-utils.ts";
+import { createCanvas } from "./canvas-utils.ts";
 import { debugLog } from "../utils/debug.ts";
 
 export type PaletteMapping = { source: string[]; target: string[] };
@@ -120,9 +120,9 @@ function hexToRgbNormalized(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return [0, 0, 0];
   return [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255,
+    parseInt(result[1]!, 16) / 255,
+    parseInt(result[2]!, 16) / 255,
+    parseInt(result[3]!, 16) / 255,
   ];
 }
 
@@ -143,13 +143,13 @@ function createPaletteTexture(
   for (const { source, target } of paletteMappings) {
     const n = Math.min(source.length, target.length);
     for (let i = 0; i < n && slot < 32; i++, slot++) {
-      const srcRgb = hexToRgbNormalized(source[i]);
+      const srcRgb = hexToRgbNormalized(source[i]!);
       data[slot * 4 + 0] = Math.round(srcRgb[0] * 255);
       data[slot * 4 + 1] = Math.round(srcRgb[1] * 255);
       data[slot * 4 + 2] = Math.round(srcRgb[2] * 255);
       data[slot * 4 + 3] = 255;
 
-      const tgtRgb = hexToRgbNormalized(target[i]);
+      const tgtRgb = hexToRgbNormalized(target[i]!);
       data[TARGET_ROW_OFFSET + slot * 4 + 0] = Math.round(tgtRgb[0] * 255);
       data[TARGET_ROW_OFFSET + slot * 4 + 1] = Math.round(tgtRgb[1] * 255);
       data[TARGET_ROW_OFFSET + slot * 4 + 2] = Math.round(tgtRgb[2] * 255);
@@ -330,10 +330,10 @@ export function recolorImageWebGL(
     gl.deleteTexture(paletteTexture);
 
     // Copy result to a new 2D canvas (so we can return it and free WebGL canvas)
-    const resultCanvas = document.createElement("canvas");
-    resultCanvas.width = canvas.width;
-    resultCanvas.height = canvas.height;
-    const ctx = get2DContext(resultCanvas);
+    const { canvas: resultCanvas, ctx } = createCanvas(
+      canvas.width,
+      canvas.height,
+    );
     ctx.drawImage(canvas, 0, 0);
 
     return resultCanvas;

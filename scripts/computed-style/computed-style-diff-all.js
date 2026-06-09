@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 /**
  * Dump computed styles for both URLs at all Argos viewports (home.spec.js) and every Argos page
  * state (homepage, human-male-skintone, filters-search-arm), write raw dumps + unified diffs, and

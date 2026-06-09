@@ -35,11 +35,7 @@
         "JaidynReiman",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "http://opengameart.org/content/lpc-revised-character-basics",
@@ -58,11 +54,7 @@
         "JaidynReiman",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-7-womens-shirts",
@@ -83,11 +75,7 @@
         "JaidynReiman",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
         "https://opengameart.org/content/lpc-7-womens-shirts",
@@ -102,10 +90,7 @@
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "clothes"
 }

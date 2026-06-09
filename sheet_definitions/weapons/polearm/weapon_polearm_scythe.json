@@ -34,27 +34,15 @@
     "female": "weapon/polearm/scythe/attack_slash/",
     "pregnant": "weapon/polearm/scythe/attack_slash/"
   },
-  "variants": [
-    "scythe"
-  ],
-  "animations": [
-    "walk",
-    "hurt",
-    "slash_oversize"
-  ],
+  "variants": ["scythe"],
+  "animations": ["walk", "hurt", "slash_oversize"],
   "credits": [
     {
       "file": "weapon/polearm/scythe",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-extended-weapon-animations"
-      ]
+      "authors": ["bluecarrot16"],
+      "licenses": ["CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-extended-weapon-animations"]
     }
   ],
   "type_name": "weapon"

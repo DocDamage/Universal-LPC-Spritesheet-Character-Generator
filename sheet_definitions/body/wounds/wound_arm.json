@@ -9,9 +9,7 @@
     "pregnant": "body/wound/arm/",
     "teen": "body/wound/arm/"
   },
-  "variants": [
-    "red"
-  ],
+  "variants": ["red"],
   "credits": [
     {
       "file": "body/wound/arm",
@@ -20,13 +18,8 @@
         "Benjamin K. Smith (BenCreating)",
         "Sander Frenken (castelonia)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-zombie"
-      ]
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-zombie"]
     }
   ],
   "type_name": "wound_arm"

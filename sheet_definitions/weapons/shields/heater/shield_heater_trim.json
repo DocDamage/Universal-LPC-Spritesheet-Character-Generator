@@ -1,9 +1,7 @@
 {
   "name": "Heater Shield Trim",
   "priority": 30,
-  "required_tags": [
-    "heater"
-  ],
+  "required_tags": ["heater"],
   "layer_2": {
     "zPos": 6,
     "male": "shield/heater/original/trim/bg/",
@@ -20,15 +18,7 @@
     "pregnant": "shield/heater/original/trim/fg/",
     "teen": "shield/heater/original/trim/fg/"
   },
-  "variants": [
-    "brass",
-    "bronze",
-    "copper",
-    "gold",
-    "iron",
-    "silver",
-    "steel"
-  ],
+  "variants": ["brass", "bronze", "copper", "gold", "iron", "silver", "steel"],
   "animations": [
     "spellcast",
     "thrust",
@@ -52,17 +42,9 @@
     {
       "file": "shield/heater/original/trim",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Sander Frenken (castelonia)",
-        "ElizaWy"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-shields"
-      ]
+      "authors": ["bluecarrot16", "Sander Frenken (castelonia)", "ElizaWy"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-shields"]
     }
   ],
   "type_name": "shield_trim"

@@ -1,11 +1,7 @@
 {
   "name": "Happy Alt",
-  "tags": [
-    "expression"
-  ],
-  "required_tags": [
-    "human"
-  ],
+  "tags": ["expression"],
+  "required_tags": ["human"],
   "layer_1": {
     "zPos": 106,
     "male": "head/faces/global/happy2/",
@@ -42,10 +38,7 @@
         "laetissima",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-base-character-expressions",
         "https://opengameart.org/content/ulpc-expanded-expressions"
@@ -54,11 +47,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "expression"
 }

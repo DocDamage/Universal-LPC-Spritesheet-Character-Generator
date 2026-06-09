@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "./vitest-setup.js";
 import { config } from "chai";
 
@@ -8,13 +9,20 @@ config.truncateThreshold = 0; // Disable truncation of assertion errors
 import "./canvas/canvas-utils_spec.js";
 import "./canvas/draw-frames_spec.js";
 import "./canvas/download_spec.js";
+import "./canvas/preview-gif_spec.js";
+import "./canvas/tween_spec.js";
+import "./components/App_spec.js";
 import "./canvas/load-images_spec.js";
 import "./canvas/mask_spec.js";
 import "./canvas/palette-recolor-cache_spec.js";
 import "./canvas/palette-recolor-merge_spec.js";
 import "./canvas/renderer-issue-364_spec.js";
 import "./components/CollapsibleSection_spec.js";
+import "./components/download/Download_spec.js";
 import "./components/FiltersPanel_spec.js";
+import "./components/desktop/PartEditor_spec.js";
+import "./components/desktop/custom-weapon-import_spec.js";
+import "./components/desktop/pixel-editor-tools_spec.js";
 import "./utils/render-result_spec.js";
 import "./components/filters/AnimationFilters_spec.js";
 import "./components/filters/LicenseFilters_spec.js";
@@ -31,13 +39,17 @@ import "./components/preview/PinchToZoom_spec.js";
 import "./components/selections/CurrentSelections_spec.js";
 import "./state/catalog_spec.js";
 import "./state/catalog-getters_spec.js";
+import "./state/commands_spec.js";
+import "./state/custom-parts-storage_spec.js";
 import "./state/filters_spec.js";
 import "./state/hash_spec.js";
 import "./state/json_spec.js";
 import "./state/meta_spec.js";
+import "./state/notifications_spec.js";
 import "./state/palettes_spec.js";
 import "./state/path_spec.js";
 import "./state/state_spec.js";
+import "./state/tween-settings_spec.js";
 import "./utils/fileName_spec.js";
 import "./utils/helpers_spec.js";
 import "./utils/credits_spec.js";
@@ -46,5 +58,10 @@ import "./utils/zip-export-ui-suspend_spec.js";
 import "./state/zip_spec.js";
 import "./state/zip-issue-382_spec.js";
 import "./performance-profiler_spec.js";
+
+import "./state/export-options_spec.js";
+import "./state/export-progress_spec.js";
+import "./state/custom-asset-validation_spec.js";
+import "./components/download/ExportWizard_spec.js";
 
 mocha.run();

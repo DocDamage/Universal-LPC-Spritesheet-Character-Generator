@@ -30,26 +30,14 @@
     "female": "weapon/blunt/mace/attack_slash/",
     "pregnant": "weapon/blunt/mace/attack_slash/"
   },
-  "variants": [
-    "mace"
-  ],
-  "animations": [
-    "walk",
-    "hurt",
-    "slash_oversize"
-  ],
+  "variants": ["mace"],
+  "animations": ["walk", "hurt", "slash_oversize"],
   "credits": [
     {
       "file": "weapon/blunt/mace",
       "notes": "",
-      "authors": [
-        "Johannes Sjölund (wulax)",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "authors": ["Johannes Sjölund (wulax)", "bluecarrot16"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-extended-weapon-animations"

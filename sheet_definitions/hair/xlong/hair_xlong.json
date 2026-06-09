@@ -39,16 +39,8 @@
     {
       "file": "hair/xlong",
       "notes": "Original by Nila122; cleaned up, resplit into separate layers, and added jump/run/sit/revised combat by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman", "Nila122"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-clothes-and-hair",
         "https://opengameart.org/content/lpc-expanded-xlong-hair"
@@ -57,11 +49,7 @@
   ],
   "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hair"
 }

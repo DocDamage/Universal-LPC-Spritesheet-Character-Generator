@@ -7,7 +7,7 @@ import type { LoadedImage } from "./load-image.ts";
 import { getSpritePath, type PathError } from "../state/path.ts";
 import { getImageToDraw } from "./palette-recolor.ts";
 import { getMultiRecolors } from "../state/palettes.ts";
-import { get2DContext, getZPos } from "./canvas-utils.ts";
+import { createCanvas, getZPos } from "./canvas-utils.ts";
 import { variantToFilename } from "../utils/helpers.ts";
 import { drawFramesToCustomAnimation } from "./draw-frames.ts";
 import {
@@ -20,18 +20,27 @@ import {
   setCurrentCustomAnimations,
   setCustomAnimYPositions,
 } from "./preview-animation.ts";
-import { getSortedLayersByAnim } from "../state/meta.ts";
+import { getSortedLayersByAnim, supportsAnimation } from "../state/meta.ts";
 import type { AnimationLayer } from "../state/meta.ts";
 import {
   catalogReady,
   defaultCatalog,
   formatLoadError,
   getItemMerged,
+  getCustomPart,
 } from "../state/catalog.ts";
 import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
-import type { Selections } from "../state/state.ts";
+import { state as appState, type Selections } from "../state/app-state.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
+import {
+  type CustomAreaItem,
+  type LayerSource,
+  renderState,
+} from "../state/render-state.ts";
+
+export const { drawCalls, addedCustomAnimations, customAreaItems } =
+  renderState;
 
 declare global {
   interface Window {
@@ -52,6 +61,7 @@ const animationConfigByName = ANIMATION_CONFIGS as Record<
   string,
   AnimationConfig | undefined
 >;
+const animationOffsetByName = ANIMATION_OFFSETS as Record<string, number>;
 
 function formatPathError(itemId: string, e: PathError): string {
   switch (e.kind) {
@@ -65,69 +75,39 @@ function formatPathError(itemId: string, e: PathError): string {
   }
 }
 
+function getRuntimeCustomPart(itemId: string) {
+  return (
+    getCustomPart(itemId) ??
+    (
+      globalThis as typeof globalThis & {
+        __LPC_customParts?: Record<string, ReturnType<typeof getCustomPart>>;
+      }
+    ).__LPC_customParts?.[itemId]
+  );
+}
+
 /**
  * Where the bytes for a drawable layer come from. The two cases converge on
  * `HTMLImageElement`: `catalog` items resolve a URL via `getSpritePath` and
  * fetch through `loadImage`; `custom` items carry the already-decoded image
  * from the user's file upload.
  */
-export type LayerSource =
-  | { kind: "catalog"; spritePath: string }
-  | { kind: "custom"; image: HTMLImageElement };
-
-/**
- * One queued draw operation produced by `runRenderCharacter`: one `(item,
- * layer, animation)` triple, corresponding 1:1 with a `drawImage` call in the
- * draw loop. The exported `drawCalls` array is `DrawCall[]`.
- */
-export type DrawCall = {
-  itemId: string;
-  name?: string;
-  variant: string | null;
-  recolors?: Recolors;
-  zPos: number;
-  layerNum: number;
-  animation: string;
-  yPos: number;
-  needsRecolor?: boolean;
-  source: LayerSource;
-};
-
 type CustomAnimationItem = {
   itemId: string;
   name?: string;
   variant: string | null;
   recolors: Recolors;
-  spritePath: string;
+  source: LayerSource;
   zPos: number;
   layerNum: number;
   customAnimation: string;
 };
 
-type CustomSpriteAreaItem = {
-  type: "custom_sprite";
-  zPos: number;
-  spritePath: string;
-  itemId: string;
-  animation: string;
-  recolors: Recolors;
-  variant: string | null;
-  name?: string;
+type LoadedCustomAreaImage = {
+  item: CustomAreaItem;
+  img: HTMLImageElement | HTMLCanvasElement | null;
+  success: boolean;
 };
-
-type ExtractedFramesAreaItem = {
-  type: "extracted_frames";
-  zPos: number;
-  spritePath: string;
-  itemId: string;
-  animation: string;
-  needsRecolor?: boolean;
-  recolors?: Recolors;
-  variant: string | null;
-  name?: string;
-};
-
-export type CustomAreaItem = CustomSpriteAreaItem | ExtractedFramesAreaItem;
 
 /**
  * When `zipProfiler` is set, records separate load/decode vs compositing phases; otherwise runs load then composite.
@@ -148,14 +128,31 @@ async function zipExportProfiledLoadComposite(
   }
 }
 
+async function loadCustomAreaImages(
+  items: CustomAreaItem[],
+): Promise<LoadedCustomAreaImage[]> {
+  const promises = items.map(async (item): Promise<LoadedCustomAreaImage> => {
+    const source = item.source;
+    if (source.kind === "custom") {
+      return { item, img: source.image, success: true };
+    }
+
+    return loadImage(source.spritePath)
+      .then((img) => ({ item, img, success: true }))
+      .catch(() => {
+        debugWarn(`Failed to load sprite: ${source.spritePath}`);
+        return { item, img: null, success: false };
+      });
+  });
+
+  return Promise.all(promises);
+}
+
 export const SHEET_HEIGHT = 3456; // Full universal sheet height
 export const SHEET_WIDTH = 832; // 13 frames * 64px
 
 export let canvas: HTMLCanvasElement | null = null;
 export let ctx: CanvasRenderingContext2D | null = null;
-export let drawCalls: DrawCall[] = [];
-export let addedCustomAnimations: Set<string> = new Set();
-export let customAreaItems: Record<string, CustomAreaItem[]> = {};
 /** True after `initCanvas()` — offscreen buffer exists (main bootstrap runs this after S1∧S2). */
 let offscreenCanvasInitialized = false;
 
@@ -163,10 +160,9 @@ let offscreenCanvasInitialized = false;
  * Initialize the canvas (creates offscreen canvas)
  */
 export function initCanvas(): void {
-  canvas = document.createElement("canvas");
-  ctx = get2DContext(canvas);
-  canvas.width = SHEET_WIDTH;
-  canvas.height = SHEET_HEIGHT;
+  const created = createCanvas(SHEET_WIDTH, SHEET_HEIGHT);
+  canvas = created.canvas;
+  ctx = created.ctx;
   offscreenCanvasInitialized = true;
 }
 
@@ -197,8 +193,9 @@ export function resetRenderCharacterQueueForTests(): void {
 /**
  * Render character based on selections. Waits for layers metadata (S5), then runs serialized so
  * hash, defaults, and App updates cannot overlap expensive full renders.
- * The `onLayersReady` wait, dynamic `import` of `state`, and the serialized render queue
- * are outside the `renderCharacter` performance measure; marks wrap compositing in `runRenderCharacter` only.
+ * The `onLayersReady` wait and serialized render queue are outside the
+ * `renderCharacter` performance measure; marks wrap compositing in
+ * `runRenderCharacter` only.
  */
 export async function renderCharacter(
   selections: Selections,
@@ -225,12 +222,9 @@ async function runRenderCharacter(
   const profiler = window.profiler;
 
   // Build list of draw calls
-  drawCalls = [];
-  addedCustomAnimations = new Set(); // Track which custom animations we've added
+  drawCalls.length = 0;
+  addedCustomAnimations.clear();
 
-  // Import state to access custom uploaded image (kept out of `renderCharacter` profile span)
-  const appState = await import("../state/state.ts").then((mod) => mod.state);
-  appState.renderCharacter.isRendering = true;
   appState.isRenderingCharacter = true;
   m.redraw();
 
@@ -255,7 +249,47 @@ async function runRenderCharacter(
 
     for (const [, selection] of Object.entries(selections)) {
       const { itemId, subId, variant } = selection;
-      const metaResult = getItemMerged(itemId);
+      const customPart = getRuntimeCustomPart(itemId);
+      if (customPart) {
+        const layerNum = customPart.drawLayerNum ?? 1;
+        const zPos = customPart.drawZPos ?? 100;
+        const recolors = getMultiRecolors(itemId, selections);
+        for (const [animation, sheet] of Object.entries(customPart.sheets)) {
+          const yPos = animationOffsetByName[animation];
+          if (yPos === undefined) {
+            if (customAnimations[animation]) {
+              addedCustomAnimations.add(animation);
+              customAnimationItems.push({
+                itemId,
+                name: selection.name,
+                variant: null,
+                recolors,
+                source: { kind: "custom", image: sheet },
+                zPos,
+                layerNum,
+                customAnimation: animation,
+              });
+            }
+            continue;
+          }
+          drawCalls.push({
+            itemId,
+            name: selection.name,
+            variant: null,
+            recolors,
+            source: { kind: "custom", image: sheet },
+            zPos,
+            layerNum,
+            animation,
+            yPos,
+            needsRecolor: false,
+          });
+        }
+        continue;
+      }
+
+      const assetItemId = itemId;
+      const metaResult = getItemMerged(assetItemId);
       if (metaResult.isErr() || subId) continue;
       const meta = metaResult.value;
 
@@ -274,7 +308,7 @@ async function runRenderCharacter(
         const layer = meta.layers?.[layerKey];
         if (!layer) break;
 
-        const zPos = getZPos(defaultCatalog, itemId, layerNum);
+        const zPos = getZPos(defaultCatalog, assetItemId, layerNum);
 
         // Check if this layer has a custom animation
         if (layer.custom_animation) {
@@ -297,7 +331,7 @@ async function runRenderCharacter(
             name: selection.name,
             variant: variant ?? null,
             recolors,
-            spritePath,
+            source: { kind: "catalog", spritePath },
             zPos,
             layerNum,
             customAnimation: customAnimName,
@@ -313,28 +347,10 @@ async function runRenderCharacter(
             continue;
           }
 
-          // Map folder name to metadata name for checking support
-          // e.g., "combat_idle" -> check for "combat" or "1h_slash" in metadata
-          if (animName === "combat_idle") {
-            // combat_idle is supported if item has "combat" in metadata
-            if (!meta.animations.includes("combat")) continue;
-          } else if (animName === "backslash") {
-            // backslash is supported if item has "1h_slash" OR "1h_backslash" in metadata
-            if (
-              !meta.animations.includes("1h_slash") &&
-              !meta.animations.includes("1h_backslash")
-            )
-              continue;
-          } else if (animName === "halfslash") {
-            // halfslash is supported if item has "1h_halfslash" in metadata
-            if (!meta.animations.includes("1h_halfslash")) continue;
-          } else {
-            // For all other animations, direct match required
-            if (!meta.animations.includes(animName)) continue;
-          }
+          if (!supportsAnimation(meta, animName)) continue;
 
           const pathResult = getSpritePath(
-            itemId,
+            assetItemId,
             variant ?? null,
             recolors,
             bodyType,
@@ -400,7 +416,7 @@ async function runRenderCharacter(
           const animHeight =
             customAnimDef.frameSize * customAnimDef.frames.length;
           const animWidth =
-            customAnimDef.frameSize * customAnimDef.frames[0].length;
+            customAnimDef.frameSize * customAnimDef.frames[0]!.length;
           totalHeight += animHeight;
           totalWidth = Math.max(totalWidth, animWidth);
           currentCustomAnimations[customAnimName] = customAnimDef;
@@ -470,7 +486,9 @@ async function runRenderCharacter(
       }
     }
 
-    customAreaItems = {};
+    for (const key of Object.keys(customAreaItems)) {
+      delete customAreaItems[key];
+    }
 
     // Now handle custom animations (wheelchair, etc.)
     if (addedCustomAnimations.size > 0 && customAnimations) {
@@ -494,7 +512,7 @@ async function runRenderCharacter(
             areaItems.push({
               type: "custom_sprite",
               zPos: item.zPos,
-              spritePath: item.spritePath,
+              source: item.source,
               itemId: item.itemId,
               animation: customAnimName,
               recolors: item.recolors,
@@ -513,7 +531,7 @@ async function runRenderCharacter(
               areaItems.push({
                 type: "extracted_frames",
                 zPos: item.zPos,
-                spritePath: item.source.spritePath,
+                source: item.source,
                 itemId: item.itemId,
                 animation: item.animation,
                 needsRecolor: item.needsRecolor,
@@ -529,7 +547,7 @@ async function runRenderCharacter(
         areaItems.sort((a, b) => a.zPos - b.zPos);
 
         // Load all custom area images in parallel
-        const loadedCustomImages = await loadImagesInParallel(areaItems);
+        const loadedCustomImages = await loadCustomAreaImages(areaItems);
 
         // Draw in zPos order
         for (const { item: areaItem, img, success } of loadedCustomImages) {
@@ -538,18 +556,20 @@ async function runRenderCharacter(
               img,
               areaItem.itemId,
               areaItem.recolors,
-              areaItem.spritePath,
+              areaItem.source.kind === "catalog"
+                ? areaItem.source.spritePath
+                : null,
             );
 
             if (areaItem.type === "custom_sprite") {
               // Draw custom sprite directly (wheelchair background or foreground)
-              renderCtx.drawImage(imageToUse, 0, offsetY);
+              renderCtx.drawImage(imageToUse, 0, offsetY!);
             } else if (areaItem.type === "extracted_frames") {
               // Extract and draw frames from standard sprite
               drawFramesToCustomAnimation(
                 renderCtx,
                 customAnimDef,
-                offsetY,
+                offsetY!,
                 imageToUse,
               );
             }
@@ -558,7 +578,6 @@ async function runRenderCharacter(
       }
     }
   } finally {
-    appState.renderCharacter.isRendering = false;
     appState.isRenderingCharacter = false;
     m.redraw();
 
@@ -596,10 +615,10 @@ export function extractAnimationFromCanvas(
   const srcHeight = num * FRAME_SIZE;
 
   // Create new canvas for this animation
-  const animCanvas = document.createElement("canvas");
-  animCanvas.width = SHEET_WIDTH;
-  animCanvas.height = srcHeight;
-  const animCtx = get2DContext(animCanvas);
+  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
+    SHEET_WIDTH,
+    srcHeight,
+  );
 
   // Copy animation from main canvas
   animCtx.drawImage(
@@ -638,6 +657,13 @@ export async function renderSingleItem(
   singleLayer: number | null = null,
   zipProfiler: ZipExportProfiler | null = null,
 ): Promise<HTMLCanvasElement | null> {
+  const customPart = getRuntimeCustomPart(itemId);
+  if (customPart) {
+    return (
+      customPart.sheets["walk"] ?? Object.values(customPart.sheets)[0] ?? null
+    );
+  }
+
   const metaResult = getItemMerged(itemId);
   if (metaResult.isErr()) {
     console.error("Item metadata not found:", itemId);
@@ -669,7 +695,7 @@ export async function renderSingleItem(
     }
 
     const animHeight = customAnimDef.frameSize * customAnimDef.frames.length;
-    const animWidth = customAnimDef.frameSize * customAnimDef.frames[0].length;
+    const animWidth = customAnimDef.frameSize * customAnimDef.frames[0]!.length;
 
     const customLayers = Object.values(meta.layers).filter(
       (l) => l.custom_animation,
@@ -683,10 +709,12 @@ export async function renderSingleItem(
       return SHEET_HEIGHT + index * animHeight;
     };
 
-    itemCanvas = document.createElement("canvas");
-    itemCanvas.width = animWidth;
-    itemCanvas.height = SHEET_HEIGHT + animHeight * numCustomAnims;
-    itemCtx = get2DContext(itemCanvas);
+    const createdItem = createCanvas(
+      animWidth,
+      SHEET_HEIGHT + animHeight * numCustomAnims,
+    );
+    itemCanvas = createdItem.canvas;
+    itemCtx = createdItem.ctx;
 
     // Render all layers of this custom animation item
     const customSprites: { spritePath: string; zPos: number; yPos: number }[] =
@@ -749,10 +777,9 @@ export async function renderSingleItem(
     );
   } else {
     // Standard animation item - use standard sheet size
-    itemCanvas = document.createElement("canvas");
-    itemCanvas.width = SHEET_WIDTH;
-    itemCanvas.height = SHEET_HEIGHT;
-    itemCtx = get2DContext(itemCanvas);
+    const createdItem = createCanvas(SHEET_WIDTH, SHEET_HEIGHT);
+    itemCanvas = createdItem.canvas;
+    itemCtx = createdItem.ctx;
   }
 
   // Build list of sprites to draw for this item
@@ -777,20 +804,7 @@ export async function renderSingleItem(
 
     // Add each animation for this layer
     for (const [animName, yPos] of Object.entries(ANIMATION_OFFSETS)) {
-      // Check animation support (same logic as renderCharacter)
-      if (animName === "combat_idle") {
-        if (!meta.animations.includes("combat")) continue;
-      } else if (animName === "backslash") {
-        if (
-          !meta.animations.includes("1h_slash") &&
-          !meta.animations.includes("1h_backslash")
-        )
-          continue;
-      } else if (animName === "halfslash") {
-        if (!meta.animations.includes("1h_halfslash")) continue;
-      } else {
-        if (!meta.animations.includes(animName)) continue;
-      }
+      if (!supportsAnimation(meta, animName)) continue;
 
       const pathResult = getSpritePath(
         itemId,
@@ -867,6 +881,11 @@ export async function renderSingleItemAnimation(
   singleLayer: number | null = null,
   zipProfiler: ZipExportProfiler | null = null,
 ): Promise<HTMLCanvasElement | null> {
+  const customPart = getRuntimeCustomPart(itemId);
+  if (customPart) {
+    return customPart.sheets[animationName] ?? null;
+  }
+
   const metaResult = getItemMerged(itemId);
   if (metaResult.isErr()) {
     console.error("Item metadata not found:", itemId);
@@ -880,7 +899,7 @@ export async function renderSingleItemAnimation(
   }
 
   // Check if this is a custom animation item
-  const layer1 = meta.layers?.layer_1;
+  const layer1 = meta.layers?.["layer_1"];
   const hasCustomAnimation = layer1 && layer1.custom_animation;
 
   if (hasCustomAnimation && customAnimations) {
@@ -907,10 +926,10 @@ export async function renderSingleItemAnimation(
   const animHeight = num * FRAME_SIZE;
 
   // Create a new canvas for this animation
-  const animCanvas = document.createElement("canvas");
-  animCanvas.width = SHEET_WIDTH;
-  animCanvas.height = animHeight;
-  const animCtx = get2DContext(animCanvas);
+  const { canvas: animCanvas, ctx: animCtx } = createCanvas(
+    SHEET_WIDTH,
+    animHeight,
+  );
 
   // Build list of sprites to draw for this item & animation
   type AnimSprite = {

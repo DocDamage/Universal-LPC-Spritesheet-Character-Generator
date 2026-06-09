@@ -50,13 +50,8 @@
         "laetissima",
         "Matthew Krohn (makrohn)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-2-characters"
-      ]
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-2-characters"]
     }
   ],
   "type_name": "dress"

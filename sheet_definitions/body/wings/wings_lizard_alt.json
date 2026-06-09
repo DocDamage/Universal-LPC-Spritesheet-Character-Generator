@@ -1,9 +1,7 @@
 {
   "name": "Lizard Wings (Alt Colors)",
   "priority": 30,
-  "tags": [
-    "wings"
-  ],
+  "tags": ["wings"],
   "layer_1": {
     "zPos": 105,
     "male": "body/wings/lizard/alt/adult/fg/",
@@ -78,16 +76,8 @@
     {
       "file": "body/wings/lizard",
       "notes": "edited for v3 bases and recolored by bluecarrot16, sit/jump/run/emote/revised combat by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "Nila122",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman", "Nila122", "bluecarrot16"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/drakes-and-lizardfolk",
         "https://opengameart.org/content/lpc-wings-new-animations"

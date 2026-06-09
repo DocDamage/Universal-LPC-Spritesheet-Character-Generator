@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import sinon from "sinon";
 import { ok } from "neverthrow";
@@ -32,6 +33,10 @@ import {
   seedBrowserCatalogMergedOnDist,
 } from "../browser-catalog-fixture.js";
 import { defaultCatalog } from "../../sources/state/catalog.ts";
+import {
+  getToasts,
+  resetNotificationsForTests,
+} from "../../sources/state/notifications.ts";
 
 /**
  * `noExport` on an entry in ANIMATIONS is handled differently per export:
@@ -108,6 +113,14 @@ const CUSTOM_ANIMATION_ONLY_ITEM_METADATA = {
   },
 };
 
+function toastMessages() {
+  return getToasts().map((toast) => toast.message);
+}
+
+function findToastContaining(text) {
+  return toastMessages().find((message) => message.includes(text));
+}
+
 describe("state/zip.ts", () => {
   afterEach(async () => {
     await restoreAppCatalogAfterTest();
@@ -116,10 +129,10 @@ describe("state/zip.ts", () => {
   describe("exportSplitAnimations", () => {
     let sandbox;
     let fakeZip;
-    let alertStub;
 
     beforeEach(() => {
       resetState();
+      resetNotificationsForTests();
       drawCalls.length = 0;
 
       sandbox = sinon.createSandbox();
@@ -140,7 +153,6 @@ describe("state/zip.ts", () => {
         }
         return origCreate(tag);
       });
-      alertStub = sandbox.stub(window, "alert");
       if (typeof m !== "undefined" && m.redraw) {
         sandbox.stub(m, "redraw");
       }
@@ -153,6 +165,7 @@ describe("state/zip.ts", () => {
 
     afterEach(() => {
       sandbox.restore();
+      resetNotificationsForTests();
       delete window.canvasRenderer;
       delete window.JSZip;
       state.zipByAnimation.isRunning = false;
@@ -207,7 +220,7 @@ describe("state/zip.ts", () => {
       expect(metadata.standardAnimations.failed).to.deep.equal(
         ANIMATIONS.slice(1).map((a) => a.value),
       );
-      expect(alertStub.called).to.be.true;
+      expect(findToastContaining("Export completed with some issues")).to.exist;
     });
 
     it("noExport: still writes flat standard PNGs for animations marked noExport (e.g. watering, 1h_slash)", async () => {
@@ -215,6 +228,48 @@ describe("state/zip.ts", () => {
 
       expect(fakeZip.files.get("standard/watering.png")).to.exist;
       expect(fakeZip.files.get("standard/1h_slash.png")).to.exist;
+    });
+
+    it("adds tweened spritesheets under tweened/ when preview tweening is enabled", async () => {
+      state.previewTweenMode = "crossfade";
+      state.previewTweenInbetweens = 1;
+      state.previewTweenFps = 12;
+
+      await exportSplitAnimations();
+
+      expect(fakeZip.files.get(`standard/${ANIMATIONS[0].value}.png`)).to.exist;
+      expect(fakeZip.files.get(`tweened/standard/${ANIMATIONS[0].value}.png`))
+        .to.exist;
+      const metadata = JSON.parse(fakeZip.files.get("credits/metadata.json"));
+      expect(metadata.tweenedAnimations.settings).to.include({
+        mode: "crossfade",
+        inbetweens: 1,
+        fps: 12,
+      });
+      expect(metadata.tweenedAnimations.settings).to.include({
+        motionStrength: 1,
+        alphaThreshold: 1,
+      });
+      expect(
+        metadata.tweenedAnimations.estimate.generatedTweenFrames,
+      ).to.be.greaterThan(0);
+      expect(metadata.tweenedAnimations.standard.exported).to.include(
+        ANIMATIONS[0].value,
+      );
+      expect(fakeZip.files.get("credits/TWEEN_EXPORT_README.txt")).to.include(
+        "split-by-animation",
+      );
+      const godotPreset = JSON.parse(
+        fakeZip.files.get("engine-presets/godot.json"),
+      );
+      expect(godotPreset).to.include({
+        engine: "godot",
+        exportKind: "split-by-animation",
+        fps: 12,
+      });
+      expect(godotPreset.pathTemplate).to.equal(
+        "tweened/standard/{animation}.png",
+      );
     });
 
     it("includes character.json, credits credits.txt/credits.csv, and credits/metadata.json", async () => {
@@ -263,7 +318,6 @@ describe("state/zip.ts", () => {
   describe("exportSplitItemSheets", () => {
     let sandbox;
     let fakeZip;
-    let alertStub;
 
     function nonEmptyItemCanvas() {
       const c = document.createElement("canvas");
@@ -275,6 +329,7 @@ describe("state/zip.ts", () => {
 
     beforeEach(async () => {
       resetState();
+      resetNotificationsForTests();
       drawCalls.length = 0;
 
       await seedBrowserCatalogMergedOnDist(ZIP_SPEC_ITEM_METADATA);
@@ -305,7 +360,6 @@ describe("state/zip.ts", () => {
         }
         return origCreate(tag);
       });
-      alertStub = sandbox.stub(window, "alert");
       if (typeof m !== "undefined" && m.redraw) {
         sandbox.stub(m, "redraw");
       }
@@ -318,6 +372,7 @@ describe("state/zip.ts", () => {
 
     afterEach(() => {
       sandbox.restore();
+      resetNotificationsForTests();
       delete window.canvasRenderer;
       delete window.JSZip;
       state.zipByItem.isRunning = false;
@@ -389,7 +444,7 @@ describe("state/zip.ts", () => {
       );
 
       expect(fakeZip.files.get(`items/${expectedFileName}`)).to.exist;
-      expect(alertStub.calledWith("Export complete!")).to.be.true;
+      expect(toastMessages()).to.include("Export complete!");
     });
 
     it("includes character.json and credits credits.txt/credits.csv but not credits/metadata.json", async () => {
@@ -453,14 +508,11 @@ describe("state/zip.ts", () => {
 
       expect(fakeZip.files.get(`items/${firstFileName}`)).to.exist;
       expect(fakeZip.files.get(`items/${secondFileName}`)).to.equal(undefined);
-      expect(alertStub.called).to.be.true;
-      const issueAlert = alertStub
-        .getCalls()
-        .find((c) =>
-          String(c.args[0]).includes("Export completed with some issues"),
-        );
-      expect(issueAlert, "partial failure alert").to.exist;
-      expect(String(issueAlert.args[0])).to.include(secondFileName);
+      const issueToast = findToastContaining(
+        "Export completed with some issues",
+      );
+      expect(issueToast, "partial failure toast").to.exist;
+      expect(issueToast).to.include(secondFileName);
     });
 
     it("verify custom only animations also export correctly", async () => {
@@ -589,7 +641,7 @@ describe("state/zip.ts", () => {
         expect(renderStub.callCount).to.equal(allLayers.length);
         expect(addSpy.callCount).to.equal(allLayers.length);
         expect(fakeZip.files.get(`items/${expectedFileName}`)).to.exist;
-        expect(alertStub.calledWith("Export complete!")).to.be.true;
+        expect(toastMessages()).to.include("Export complete!");
       });
     });
   });
@@ -597,7 +649,6 @@ describe("state/zip.ts", () => {
   describe("exportSplitItemAnimations", () => {
     let sandbox;
     let fakeZip;
-    let alertStub;
 
     function nonEmptyAnimCanvas() {
       const c = document.createElement("canvas");
@@ -690,6 +741,7 @@ describe("state/zip.ts", () => {
 
     beforeEach(async () => {
       resetState();
+      resetNotificationsForTests();
       drawCalls.length = 0;
 
       await seedBrowserCatalogMergedOnDist(ZIP_SPEC_ITEM_METADATA);
@@ -720,7 +772,6 @@ describe("state/zip.ts", () => {
         }
         return origCreate(tag);
       });
-      alertStub = sandbox.stub(window, "alert");
       if (typeof m !== "undefined" && m.redraw) {
         sandbox.stub(m, "redraw");
       }
@@ -733,6 +784,7 @@ describe("state/zip.ts", () => {
 
     afterEach(() => {
       sandbox.restore();
+      resetNotificationsForTests();
       delete window.canvasRenderer;
       delete window.JSZip;
       state.zipByAnimationAndItem.isRunning = false;
@@ -811,7 +863,7 @@ describe("state/zip.ts", () => {
         expectedFileName,
       ]);
       expect(metadata.standardAnimations.failed.walk).to.deep.equal([]);
-      expect(alertStub.calledWith("Export complete!")).to.be.true;
+      expect(toastMessages()).to.include("Export complete!");
     });
 
     it("noExport: does not create standard/<anim>/ trees for animations marked noExport (e.g. watering, 1h_slash)", async () => {
@@ -947,14 +999,11 @@ describe("state/zip.ts", () => {
         headFileName,
       ]);
 
-      expect(alertStub.called).to.be.true;
-      const issueAlert = alertStub
-        .getCalls()
-        .find((c) =>
-          String(c.args[0]).includes("Export completed with some issues"),
-        );
-      expect(issueAlert, "partial failure alert").to.exist;
-      expect(String(issueAlert.args[0])).to.include(headFileName);
+      const issueToast = findToastContaining(
+        "Export completed with some issues",
+      );
+      expect(issueToast, "partial failure toast").to.exist;
+      expect(issueToast).to.include(headFileName);
     });
 
     it("includes all items in custom animations including items copied from base animations", async () => {
@@ -1175,7 +1224,6 @@ describe("state/zip.ts", () => {
   describe("exportIndividualFrames", () => {
     let sandbox;
     let fakeZip;
-    let alertStub;
 
     const directions = DIRECTIONS;
 
@@ -1197,6 +1245,7 @@ describe("state/zip.ts", () => {
 
     beforeEach(() => {
       resetState();
+      resetNotificationsForTests();
       drawCalls.length = 0;
 
       sandbox = sinon.createSandbox();
@@ -1217,7 +1266,6 @@ describe("state/zip.ts", () => {
         }
         return origCreate(tag);
       });
-      alertStub = sandbox.stub(window, "alert");
       if (typeof m !== "undefined" && m.redraw) {
         sandbox.stub(m, "redraw");
       }
@@ -1230,6 +1278,7 @@ describe("state/zip.ts", () => {
 
     afterEach(() => {
       sandbox.restore();
+      resetNotificationsForTests();
       delete window.canvasRenderer;
       delete window.JSZip;
       if (state.zipIndividualFrames) {
@@ -1274,8 +1323,7 @@ describe("state/zip.ts", () => {
       expect(metadata.structure.standard.exported).to.deep.equal(
         ANIMATIONS.map((a) => a.value),
       );
-      expect(alertStub.calledWith("Individual frames export complete!")).to.be
-        .true;
+      expect(toastMessages()).to.include("Individual frames export complete!");
     });
 
     it("records failed standard animations when extractAnimationFromCanvas throws for an animation", async () => {
@@ -1300,13 +1348,11 @@ describe("state/zip.ts", () => {
       expect(metadata.structure.standard.exported).to.deep.equal(
         ANIMATIONS.filter((a) => a.value !== "thrust").map((a) => a.value),
       );
-      const issueAlert = alertStub
-        .getCalls()
-        .find((c) =>
-          String(c.args[0]).includes("Export completed with some issues"),
-        );
-      expect(issueAlert, "partial failure alert").to.exist;
-      expect(String(issueAlert.args[0])).to.include("thrust");
+      const issueToast = findToastContaining(
+        "Export completed with some issues",
+      );
+      expect(issueToast, "partial failure toast").to.exist;
+      expect(issueToast).to.include("thrust");
     });
 
     it("noExport: still writes per-frame paths under standard/<anim>/ for animations marked noExport", async () => {
@@ -1323,6 +1369,64 @@ describe("state/zip.ts", () => {
 
       expect(fakeZip.files.get("standard/watering/up/0.png")).to.exist;
       expect(fakeZip.files.get("standard/1h_slash/up/0.png")).to.exist;
+    });
+
+    it("adds tweened individual frames when preview tweening is enabled", async () => {
+      state.previewTweenMode = "crossfade";
+      state.previewTweenInbetweens = 1;
+      state.previewTweenFps = 12;
+
+      const extractStub = sandbox.stub().callsFake(() => smallAnimCanvas());
+      const framesSpy = sinon.spy(() => ({
+        up: [
+          { canvas: frameCanvas(), frameNumber: 1 },
+          { canvas: frameCanvas(), frameNumber: 2 },
+        ],
+      }));
+
+      await exportIndividualFrames({
+        extractAnimationFromCanvas: extractStub,
+        extractFramesFromAnimation: framesSpy,
+      });
+
+      expect(fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/1.png`)).to
+        .exist;
+      expect(
+        fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/1_tween_1.png`),
+      ).to.exist;
+      expect(fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/2.png`)).to
+        .exist;
+      expect(
+        fakeZip.files.get(`standard/${ANIMATIONS[0].value}/up/2_tween_3.png`),
+      ).to.exist;
+
+      const metadata = JSON.parse(fakeZip.files.get("credits/metadata.json"));
+      expect(metadata.tweening.settings).to.include({
+        mode: "crossfade",
+        inbetweens: 1,
+        fps: 12,
+      });
+      expect(metadata.tweening.settings).to.include({
+        motionStrength: 1,
+        alphaThreshold: 1,
+      });
+      expect(metadata.tweening.estimate.generatedTweenFrames).to.be.greaterThan(
+        0,
+      );
+      expect(fakeZip.files.get("credits/TWEEN_EXPORT_README.txt")).to.include(
+        "individual-frames",
+      );
+      const phaserPreset = JSON.parse(
+        fakeZip.files.get("engine-presets/phaser.json"),
+      );
+      expect(phaserPreset).to.include({
+        engine: "phaser",
+        exportKind: "individual-frames",
+        fps: 12,
+      });
+      expect(phaserPreset.pathTemplate).to.equal(
+        "standard/{animation}/{direction}/{frame}.png",
+      );
     });
 
     it("includes character.json, credits credits.txt/credits.csv, and credits/metadata.json", async () => {

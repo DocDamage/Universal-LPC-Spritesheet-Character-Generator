@@ -50,25 +50,13 @@
     "silver",
     "steel"
   ],
-  "animations": [
-    "walk",
-    "shoot",
-    "hurt",
-    "walk_128"
-  ],
+  "animations": ["walk", "shoot", "hurt", "walk_128"],
   "credits": [
     {
       "file": "weapon/ranged/bow/normal",
       "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+.",
-      "authors": [
-        "Johannes Sjölund (wulax)",
-        "Pierre Vigier (pvigier)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "GPL 3.0",
-        "CC-BY 4.0"
-      ],
+      "authors": ["Johannes Sjölund (wulax)", "Pierre Vigier (pvigier)"],
+      "licenses": ["OGA-BY 3.0+", "GPL 3.0", "CC-BY 4.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-walk-animations-for-bows"

@@ -1,5 +1,14 @@
 {
-    "priority": 40,
-    "required": ["male", "female", "teen"],
-    "animations": ["spellcast", "thrust", "walk", "slash", "shoot", "hurt", "watering", "idle"]
+  "priority": 40,
+  "required": ["male", "female", "teen"],
+  "animations": [
+    "spellcast",
+    "thrust",
+    "walk",
+    "slash",
+    "shoot",
+    "hurt",
+    "watering",
+    "idle"
+  ]
 }

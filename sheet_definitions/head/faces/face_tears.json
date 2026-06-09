@@ -1,11 +1,7 @@
 {
   "name": "Tears",
-  "tags": [
-    "expression"
-  ],
-  "required_tags": [
-    "human"
-  ],
+  "tags": ["expression"],
+  "required_tags": ["human"],
   "layer_1": {
     "zPos": 107,
     "male": "head/faces/global/tears/",
@@ -14,9 +10,7 @@
     "teen": "head/faces/global/tears/",
     "pregnant": "head/faces/global/tears/"
   },
-  "variants": [
-    "blue"
-  ],
+  "variants": ["blue"],
   "animations": [
     "spellcast",
     "thrust",
@@ -44,10 +38,7 @@
         "laetissima",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-base-character-expressions",
         "https://opengameart.org/content/ulpc-expanded-expressions"

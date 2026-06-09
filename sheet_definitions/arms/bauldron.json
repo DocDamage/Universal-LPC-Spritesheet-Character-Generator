@@ -24,28 +24,14 @@
     {
       "file": "shoulders/bauldron",
       "notes": "Original by Nila122, climb/emote by JaidynReiman",
-      "authors": [
-        "Nila122",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "GPL 2.0",
-        "GPL 3.0",
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/more-lpc-clothes-and-hair"
-      ]
+      "authors": ["Nila122", "JaidynReiman"],
+      "licenses": ["GPL 2.0", "GPL 3.0", "OGA-BY 3.0", "CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/more-lpc-clothes-and-hair"]
     }
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "metal.ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "metal.ulpc", "all.lpcr"]
   },
   "type_name": "bauldron"
 }

@@ -32,27 +32,17 @@
     {
       "file": "hair/extensions/bangs/xlong_bangl",
       "notes": "",
-      "authors": [
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman"],
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-relm-hair-xlong-ponytail",
         "https://opengameart.org/content/lpc-expanded-xlong-hair"
       ]
     }
   ],
-    "recolors": {
+  "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hairextl"
 }

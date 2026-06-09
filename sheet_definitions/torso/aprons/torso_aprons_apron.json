@@ -36,18 +36,9 @@
     {
       "file": "torso/aprons/apron",
       "notes": "",
-      "authors": [
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-aprons"
-      ]
+      "authors": ["Nila122"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-aprons"]
     }
   ],
   "type_name": "apron"

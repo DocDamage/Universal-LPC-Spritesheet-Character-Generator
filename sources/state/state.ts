@@ -1,24 +1,13 @@
 // Global state and state operations
 import m from "mithril";
-import { LICENSE_CONFIG, ANIMATIONS, BODY_TYPES } from "./constants.ts";
 import { syncSelectionsToHash, loadSelectionsFromHash } from "./hash.ts";
 import { getItemMerged, type ItemMerged } from "./catalog.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
+import { state } from "./app-state.ts";
+import type { Selections } from "./app-state.ts";
 
-/** A single item selection within a selection group (e.g. body, head, ears). */
-export type Selection = {
-  itemId: string;
-  name: string;
-  /** Index into the item's `recolors` array; `null` for top-level selections. */
-  subId?: number | null;
-  /** Set when the item exposes `variants`. Empty string represents "default". */
-  variant?: string | null;
-  /** Set when the item exposes `recolors`. Empty string represents "default". */
-  recolor?: string | null;
-};
-
-/** All selections, keyed by selection group (`type_name` of the item or recolor slot). */
-export type Selections = Record<string, Selection>;
+export { state };
+export type { Selection, Selections, State } from "./app-state.ts";
 
 /**
  * State.ts treats catalog metadata defensively — fields like `type_name` are
@@ -27,42 +16,6 @@ export type Selections = Record<string, Selection>;
  * exercise) typeable from JS.
  */
 type MetadataView = Partial<ItemMerged>;
-
-type ZipMode = { isRunning: boolean };
-
-/** Global application state. Mutated in place; Mithril views observe via redraw. */
-export type State = {
-  // saved in URL hash
-  selections: Selections;
-  bodyType: string;
-
-  // potentially saved in future
-  selectedAnimation: string;
-  expandedNodes: Record<string, boolean>;
-  searchQuery: string;
-  showTransparencyGrid: boolean;
-  applyTransparencyMask: boolean;
-  matchBodyColorEnabled: boolean;
-  compactDisplay: boolean;
-  customUploadedImage: HTMLImageElement | null;
-  customImageZPos: number;
-  previewCanvasZoomLevel: number;
-  fullSpritesheetCanvasZoomLevel: number;
-  /** True after `main.js` runs the first bootstrap `renderCharacter`. */
-  previewBootstrapRenderDone: boolean;
-  /** Mirrored from `renderCharacter` compositing (see `renderer.js`). */
-  isRenderingCharacter: boolean;
-  enabledLicenses: Record<string, boolean>;
-  enabledAnimations: Record<string, boolean>;
-
-  // transient (never saved)
-  zipByAnimation: ZipMode;
-  zipByItem: ZipMode;
-  zipByAnimationAndItem: ZipMode;
-  zipIndividualFrames: ZipMode;
-  /** Duplicate of `isRenderingCharacter` consumed by `renderer.js`. */
-  renderCharacter: { isRendering: boolean };
-};
 
 type StateDeps = {
   getItemMetadata: (itemId: string) => MetadataView | null;
@@ -101,41 +54,6 @@ export function resetStateDeps(): void {
 export function getStateDeps(): StateDeps {
   return stateDeps;
 }
-
-// Global state
-export const state: State = {
-  // state that is saved in url hash
-  selections: {},
-  bodyType: BODY_TYPES[0],
-
-  // State that is currently not saved but could be in future
-  selectedAnimation: "walk",
-  expandedNodes: {},
-  searchQuery: "",
-  showTransparencyGrid: true,
-  applyTransparencyMask: false,
-  matchBodyColorEnabled: true,
-  compactDisplay: false,
-  customUploadedImage: null,
-  customImageZPos: 0,
-  previewCanvasZoomLevel: 1,
-  fullSpritesheetCanvasZoomLevel: 1,
-  previewBootstrapRenderDone: false,
-  isRenderingCharacter: false,
-  enabledLicenses: Object.fromEntries(
-    LICENSE_CONFIG.map((lic) => [lic.key, true]),
-  ),
-  enabledAnimations: Object.fromEntries(
-    ANIMATIONS.map((anim) => [anim.value, false]),
-  ),
-
-  // Following transient state should never be saved
-  zipByAnimation: { isRunning: false },
-  zipByItem: { isRunning: false },
-  zipByAnimationAndItem: { isRunning: false },
-  zipIndividualFrames: { isRunning: false },
-  renderCharacter: { isRendering: false },
-};
 
 /**
  * Selection group = `type_name` (e.g. "body", "heads", "ears"). Ensures only

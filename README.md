@@ -1,5 +1,4 @@
-LPC Spritesheet Character Generator
-=============================================
+# LPC Spritesheet Character Generator
 
 #### Translations
 
@@ -13,6 +12,34 @@ The Liberated Pixel Effort is a collaborative effort from a number of different 
 **If you wish to use LPC sprites in your project, you will need to credit everyone who helped contribute to the LPC sprites you are using.** See [below](#licensing-and-attribution-credits) for how to do this.
 
 Although this particular repository focuses on character sprites, LPC includes many tilesets and some other artwork as well. Tileset collections can be found on [OpenGameArt.org](https://opengameart.org)
+
+### Current App Capabilities
+
+The generator now includes a desktop sprite-building workflow with an integrated pixel editor, custom asset imports, keyboard shortcuts, in-app notifications, autosave recovery, and a customizable shortcut map. See [Sprite Editor Features](EDITOR_FEATURES.md) for the detailed editor guide.
+
+Highlights:
+
+- Compose LPC characters from body, clothing, armor, weapons, tools, and accessory slots with animation-aware previews.
+- Edit selected parts directly in the browser and save the result as a new custom part without modifying the original LPC asset.
+- **Autosave & recovery:** drafts are saved to IndexedDB automatically and can be recovered after a refresh or crash.
+- **Status bar:** live cursor position, zoom, active layer, brush size, and frame info at the bottom of the editor.
+- Zoom the preview and editor canvas with shortcuts, controls, and mouse-wheel zoom in the editor.
+- Open a fullscreen pro editor with selection tools, shape drawing, flood fill, color replacement, transform tools, symmetry toggles, layers, and an animation-frame tab.
+- **Selection upgrades:** copy/paste across directions (with auto-mirror), arrow-key nudging (1px / 10px with Shift), and transform-only-on-selection.
+- **Animation polish:** live playback, scrubbable timeline thumbnails, per-frame dirty indicators, and "Apply Global to Frame".
+- **Tweened animation preview:** smooth generated playback with presets, Off/Hold/Crossfade/Pixel Motion modes, per-animation overrides, in-between frames, FPS, and Pixel Motion tuning.
+- Add as many editor layers as needed, with visibility, opacity, rename, duplicate, merge, flatten, pixel lock, and alpha lock controls.
+- Edit animation frames in a dedicated Animation tab with timeline controls and onion-skin previews.
+- **Mobile / touch editing:** two-finger pan & pinch-zoom, larger touch targets, and a stacked layout for narrow viewports.
+- Import custom weapons and tools from PNG files, align them automatically to built-in references, tune offset/scale with a side-by-side preview and guide crosshairs, and save them to a persistent IndexedDB-backed custom asset library.
+- **Custom asset library management:** tag assets, filter by tag, duplicate, rename, delete, and export/import backup ZIPs.
+- **Customizable shortcuts:** rebind any shortcut from the help modal; conflicts are highlighted and preferences persist in localStorage.
+- Use `Ctrl+K` for the command palette and `Ctrl+/` for shortcut help.
+- **Export wizard:** choose a target workflow (Generic, Godot, Phaser, RPG Maker, Preview GIF/WebP, Raw PNG, Individual frames) and see the output format, file paths, and frame estimate before exporting.
+- **Export preview & inspector:** a structured summary shows the file tree, estimated source/tween frame counts, per-animation overrides, and warnings about large exports.
+- **Custom asset import validation:** imported images are checked for empty content, missing transparency, dimension correctness, and edge bleeding; errors block saving, warnings show a prompt.
+- **Unified animation settings management:** global tween settings with clear-all-overrides, copy-settings-to-all-animations, and reset-defaults commands; override count badge and per-animation override markers visible in the UI.
+- **Progress reporting & cancellation:** long exports show progress phases (preparing, rendering, tweening, encoding, archiving) and can be cancelled mid-flight with an AbortController-backed signal.
 
 ### History
 
@@ -81,6 +108,36 @@ If you don't want to _show_ the entire credits file directly, should include a s
 You can look at [the Animation Guide in Eliza's repository](https://github.com/ElizaWy/LPC/blob/f07f7f5892e67c932c68f70bb04472f2c64e46bc/Characters/_%20Guides%20%26%20Palettes/Animation%20Guides) for a detailed suggested guide to how she recommends you display your animations.
 
 Also, each animation has a frame cycle documented which you can see next to the animation preview.
+
+The animation preview also includes tween controls. **Original**, **Smooth**,
+**Pixel Art**, and **Presentation** presets configure the global tween settings;
+individual animations can override those settings when a cycle needs different
+timing. **Off** preserves the original LPC frame timing, **Hold** repeats each
+source frame, **Crossfade** blends between neighboring frames, and **Pixel
+Motion** shifts opaque pixels for pixel-art-friendly motion without soft
+blending. Pixel Motion exposes motion-strength and alpha-threshold controls.
+
+When tweening is enabled, individual-frame ZIP exports add tween PNGs beside the
+original frames, and split-by-animation ZIP exports keep the original
+`standard/` and `custom/` sheets while adding expanded sheets under
+`tweened/standard/` and `tweened/custom/`. Export metadata records global tween
+settings, per-animation overrides, estimates, and FPS. Tween-enabled ZIP exports
+also include `credits/TWEEN_EXPORT_README.txt` with path and game-engine import
+notes plus `engine-presets/*.json` manifests for generic importers, Godot,
+Phaser, and RPG Maker style workflows. The Download panel can export the
+current animation preview as an animated GIF or animated WebP and warns before
+very large tween exports.
+
+### Sprite Editing and Custom Imports
+
+Open the editor from a selected desktop slot to paint directly on a sprite part. The normal editor includes pencil, eraser, eyedropper, undo/redo, direction thumbnails, front-view propagation, canvas zoom controls, mouse-wheel zoom, and a live status bar showing cursor position, zoom, layer, brush size, and frame info.
+
+Fullscreen mode adds the pro workspace:
+
+- **Edit tab:** marquee selection (with cross-direction copy/paste and arrow-key nudging), shape tools, flood fill, palette extraction, color replacement, transforms, symmetry, layer management, pixel grid controls, and higher-zoom editing.
+- **Animation tab:** global vs frame editing, live play/pause playback, a scrubbable timeline with per-frame dirty indicators, "Apply Global to Frame", animation and frame selection, neighboring-frame onion skins, and frame navigation shortcuts.
+
+Weapon and tool slots include an importer for custom PNG assets. Choose a built-in weapon/tool as the alignment reference, import either a single image or compatible sheet, and adjust x-offset, y-offset, and scale after auto-alignment. A side-by-side preview with hand/socket guide crosshairs, reset/center buttons, and 1px nudge arrows makes fine-tuning easy. Imported parts are saved locally and can be renamed, duplicated, tagged, filtered, deleted, exported as a backup ZIP, or selected again from the saved imports list.
 
 ### Run This Project Locally for Development
 
@@ -156,7 +213,10 @@ If an engine is not listed above, try Google. However, it is very likely that yo
 
 - **Lint:** `npm run lint`
 - **Format:** `npm run format:check` (verify) or `npm run format` (apply)
-- **Tests:** `npm test` (Node checks plus browser tests). Visual regression: `npm run test:visual`. Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Type check:** `npm run type-check`
+- **Tests:** `npm run test:node` for Vitest-backed Node/generator checks; `npm test` for Node checks plus the Testem browser suite. Visual regression: `npm run test:visual`. Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Build:** `npm run build`
+- **Editor feature map:** [EDITOR_FEATURES.md](EDITOR_FEATURES.md) lists the sprite editor, importer, shortcut, notification, and custom-part persistence surfaces added to the desktop app.
 
 **Generated files:** [CREDITS.csv](CREDITS.csv) and the z-position CSV under **`scripts/zPositioning/`** are updated by **`npm run validate-site-sources`**. **Vite** runs the metadata plugin; when inputs or **`dist/`** output warrant it, it can refresh those CSVs and always writes the **five** modules under **`dist/`** (`index-`, `palette-`, `item-`, `credits-`, `layers-metadata.js`). The app registers them in **`sources/state/catalog.ts`**. The **`dist/`** tree is gitignored—do not edit generated files by hand. **`npm run dev`** pretty-prints embedded JSON; **`npm run build`** writes compact (see [PR #432](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/pull/432)). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow, catalog API, and staged loading.
 

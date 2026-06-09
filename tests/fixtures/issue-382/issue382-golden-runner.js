@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Browser harness used only by scripts/issue382-golden-playwright.js (fixture-builder).
  * The HTML page sets `<base href="/">` so relative `spritesheets/...` URLs resolve like

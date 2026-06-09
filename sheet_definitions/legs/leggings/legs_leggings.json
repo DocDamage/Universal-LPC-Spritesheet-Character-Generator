@@ -38,10 +38,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
         "https://opengameart.org/content/lpc-expanded-pants"
@@ -59,9 +56,7 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "http://opengameart.org/content/sara-wizard",
         "https://opengameart.org/content/lpc-sara",
@@ -71,10 +66,7 @@
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "legs"
 }

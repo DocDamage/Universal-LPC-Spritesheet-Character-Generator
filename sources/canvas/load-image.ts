@@ -67,7 +67,7 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   };
   img.onerror = () => {
     inFlight.delete(src);
-    console.error(`Failed to load image: ${src}`);
+    debugWarn(`Failed to load image: ${src}`);
     reject(new Error(`Failed to load ${src}`));
   };
   img.src = src;

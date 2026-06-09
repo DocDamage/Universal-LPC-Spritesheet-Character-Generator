@@ -1,11 +1,7 @@
 {
   "name": "Blush",
-  "tags": [
-    "expression"
-  ],
-  "required_tags": [
-    "human"
-  ],
+  "tags": ["expression"],
+  "required_tags": ["human"],
   "replace_in_path": {
     "head": {
       "Human_Male": "male",
@@ -49,14 +45,8 @@
     {
       "file": "head/faces",
       "notes": "Original by Redshrike, Expressions by ElizaWy, mapped to all frames by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "ElizaWy",
-        "Stephen Challener (Redshrike)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["JaidynReiman", "ElizaWy", "Stephen Challener (Redshrike)"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Head",
         "https://opengameart.org/content/ulpc-expanded-expressions"
@@ -65,14 +55,8 @@
     {
       "file": "head/faces/elderly/blush",
       "notes": "Original by Redshrike, Blush Expression by ElizaWy, mapped to all frames by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "ElizaWy",
-        "Stephen Challener (Redshrike)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["JaidynReiman", "ElizaWy", "Stephen Challener (Redshrike)"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Head",
         "https://opengameart.org/content/ulpc-expanded-expressions"
@@ -81,14 +65,8 @@
     {
       "file": "head/faces/female/blush",
       "notes": "Original by Redshrike, Blush Expression by ElizaWy, mapped to all frames by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "ElizaWy",
-        "Stephen Challener (Redshrike)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["JaidynReiman", "ElizaWy", "Stephen Challener (Redshrike)"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Head",
         "https://opengameart.org/content/ulpc-expanded-expressions"
@@ -97,14 +75,8 @@
     {
       "file": "head/faces/male/blush",
       "notes": "Original by Redshrike, Blush Expression by ElizaWy, mapped to all frames by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "ElizaWy",
-        "Stephen Challener (Redshrike)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["JaidynReiman", "ElizaWy", "Stephen Challener (Redshrike)"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://github.com/ElizaWy/LPC/tree/main/Characters/Head",
         "https://opengameart.org/content/ulpc-expanded-expressions"
@@ -113,11 +85,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "expression"
 }

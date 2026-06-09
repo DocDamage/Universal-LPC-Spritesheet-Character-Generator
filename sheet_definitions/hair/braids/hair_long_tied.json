@@ -39,14 +39,8 @@
     {
       "file": "hair/long_tied",
       "notes": "",
-      "authors": [
-        "JaidynReiman",
-        "thecilekli",
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC0"
-      ],
+      "authors": ["JaidynReiman", "thecilekli", "bluecarrot16"],
+      "licenses": ["CC0"],
       "urls": [
         "https://opengameart.org/content/lpc-long-tied-hair-with-12-colors",
         "https://opengameart.org/content/lpc-hair",
@@ -57,22 +51,22 @@
   "recolors": {
     "color_1": {
       "material": "hair",
-      "palettes": [
-        "ulpc",
-        "lpcr",
-        "all.lpcr"
-      ]
+      "palettes": ["ulpc", "lpcr", "all.lpcr"]
     },
     "color_2": {
       "type_name": "hair_tie",
       "label": "Hair Tie",
       "material": "cloth",
       "base": null,
-      "source": ["#1d131e", "#54242E", "#6C3536", "#8c288b", "#b75ea5", "#d27abc"],
-      "palettes": [
-        "ulpc",
-        "all.lpcr"
-      ]
+      "source": [
+        "#1d131e",
+        "#54242E",
+        "#6C3536",
+        "#8c288b",
+        "#b75ea5",
+        "#d27abc"
+      ],
+      "palettes": ["ulpc", "all.lpcr"]
     }
   },
   "type_name": "hair"

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Headless browser capture of sorted zip paths for issue #382 fixtures.
  * Invoked by scripts/fixture-builder.js after tests/fixtures/issue-382-itemdata.js

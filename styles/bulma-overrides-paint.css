@@ -20,12 +20,12 @@
   --bulma-radius-large: 6px;
   --bulma-family-primary:
     BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica",
+    "Arial", sans-serif;
   --bulma-family-secondary:
     BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial",
-    sans-serif;
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica",
+    "Arial", sans-serif;
   --bulma-primary-h: 171deg;
   --bulma-primary-s: 100%;
   --bulma-primary-l: 41%;
@@ -231,11 +231,14 @@
  * (1,2,0), which left border-color on Bulma's hsl() while our focus box-shadow still applied.
  */
 #mithril-filters input.input:-webkit-autofill:not(:focus):not(:focus-visible),
-#mithril-filters input.input:-webkit-autofill:hover:not(:focus):not(:focus-visible),
-#mithril-filters input.input:-webkit-autofill:active:not(:focus):not(:focus-visible) {
+#mithril-filters
+  input.input:-webkit-autofill:hover:not(:focus):not(:focus-visible),
+#mithril-filters
+  input.input:-webkit-autofill:active:not(:focus):not(:focus-visible) {
   border-color: rgb(219, 219, 219) !important;
   -webkit-text-fill-color: rgb(54, 54, 54) !important;
-  box-shadow: rgba(10, 10, 10, 0.05) 0px 1px 2px 0px inset,
+  box-shadow:
+    rgba(10, 10, 10, 0.05) 0px 1px 2px 0px inset,
     0 0 0 1000px rgb(255, 255, 255) inset !important;
 }
 

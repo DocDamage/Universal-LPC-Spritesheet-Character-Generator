@@ -14,23 +14,14 @@
     "female": "shield/scutum_trim/fg/female/",
     "pregnant": "shield/scutum_trim/fg/female/"
   },
-  "variants": [
-    "scutum_trim"
-  ],
+  "variants": ["scutum_trim"],
   "credits": [
     {
       "file": "shield",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "Sander Frenken (castelonia)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-shields"
-      ]
+      "authors": ["bluecarrot16", "Sander Frenken (castelonia)"],
+      "licenses": ["OGA-BY 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-shields"]
     }
   ],
   "type_name": "shield_trim"

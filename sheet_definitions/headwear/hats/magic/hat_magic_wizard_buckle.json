@@ -1,12 +1,7 @@
 {
   "name": "Wizard Hat Buckle",
-  "tags": [
-    "wizard",
-    "hat_buckle"
-  ],
-  "required_tags": [
-    "pointed_wizard"
-  ],
+  "tags": ["wizard", "hat_buckle"],
+  "required_tags": ["pointed_wizard"],
   "layer_1": {
     "zPos": 132,
     "male": "hat/magic/wizard/buckle/adult/",
@@ -53,11 +48,7 @@
         "Tuomo Untinen (reemax)",
         "JaidynReiman"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-items-and-game-effects",
         "https://opengameart.org/content/lpc-pointed-hats",

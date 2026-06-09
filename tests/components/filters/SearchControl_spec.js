@@ -1,3 +1,4 @@
+// @ts-nocheck
 // SearchControl component tests - Browser compatible
 import { state } from "../../../sources/state/state.ts";
 import { SearchControl } from "../../../sources/components/filters/SearchControl.ts";

@@ -31,26 +31,14 @@
     {
       "file": "shoulders/epaulets",
       "notes": "Original by bluecarrot16, jump/run/sit/emote/revised combat frames and female by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-pirates"
-      ]
+      "authors": ["bluecarrot16", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-pirates"]
     }
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "metal.ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "metal.ulpc", "all.lpcr"]
   },
   "aliases": {
     "Epaulets_bronze": "metal.bronze",

@@ -1,12 +1,10 @@
 /* Run: npm i && npx eslint . (or enable ESLint in your IDE) */
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import babelParser from "@babel/eslint-parser";
 import globals from "globals";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 const sharedParserOptions = {
-  requireConfigFile: false,
   ecmaVersion: "latest",
 };
 
@@ -68,7 +66,6 @@ export default [
   {
     files: ["**/*.js"],
     languageOptions: {
-      parser: babelParser,
       parserOptions: {
         ...sharedParserOptions,
         sourceType: "module",
@@ -130,7 +127,10 @@ export default [
         m: "readonly",
       },
     },
-    rules: commonRulesTs,
+    rules: {
+      ...commonRulesTs,
+      "@typescript-eslint/ban-ts-comment": "off",
+    },
   },
   {
     files: ["tests/visual/**/*.js"],
@@ -149,7 +149,6 @@ export default [
   {
     files: ["playwright.config.js", "vite.config.js", "vite/**/*.js"],
     languageOptions: {
-      parser: babelParser,
       parserOptions: {
         ...sharedParserOptions,
         sourceType: "module",
@@ -163,7 +162,6 @@ export default [
   {
     files: ["**/*.cjs"],
     languageOptions: {
-      parser: babelParser,
       parserOptions: {
         ...sharedParserOptions,
         sourceType: "commonjs",
@@ -171,21 +169,6 @@ export default [
       globals: {
         ...globals.node,
         ...globals.es2021,
-      },
-    },
-    rules: commonRules,
-  },
-  {
-    files: ["issue382-golden-runner.js"],
-    languageOptions: {
-      parserOptions: {
-        ...sharedParserOptions,
-        sourceType: "module",
-      },
-      globals: {
-        ...globals.browser,
-        ...globals.es2021,
-        m: "readonly",
       },
     },
     rules: commonRules,

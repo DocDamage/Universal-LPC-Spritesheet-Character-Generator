@@ -1,13 +1,7 @@
 {
   "name": "Tricorne Thatching",
-  "tags": [
-    "tricorne",
-    "hat_trim",
-    "thatching"
-  ],
-  "required_tags": [
-    "tricorne_basic"
-  ],
+  "tags": ["tricorne", "hat_trim", "thatching"],
+  "required_tags": ["tricorne_basic"],
   "layer_1": {
     "zPos": 131,
     "male": "hat/pirate/tricorne/basic/thatching/adult/",
@@ -65,12 +59,8 @@
     {
       "file": "hat/pirate/tricorne",
       "notes": "Pirate Hat by Bluecarrot16, layers and added animations by JaidynReiman",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["bluecarrot16"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-pirates",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

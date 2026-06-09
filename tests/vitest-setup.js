@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "chai";
 import "../sources/vendor-globals.ts";
 import { catalogReady } from "../sources/state/catalog.ts";

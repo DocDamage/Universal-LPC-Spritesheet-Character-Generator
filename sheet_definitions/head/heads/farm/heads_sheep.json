@@ -1,9 +1,6 @@
 {
   "name": "Sheep",
-  "tags": [
-    "animal",
-    "adult"
-  ],
+  "tags": ["animal", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/sheep/adult/",
@@ -42,10 +39,7 @@
         "Napsio (Vitruvian Studio)",
         "JaidynReiman"
       ],
-      "licenses": [
-        "CC-BY 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-style-farm-animals",
         "http://opengameart.org/content/lpc-folk"
@@ -55,11 +49,7 @@
   "recolors": {
     "material": "body",
     "base": "lpcr.ivory",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

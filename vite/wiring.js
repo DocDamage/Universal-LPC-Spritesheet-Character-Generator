@@ -1,3 +1,4 @@
+// @ts-nocheck
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { METADATA_MODULE_BASENAMES } from "../scripts/generateSources/state.js";

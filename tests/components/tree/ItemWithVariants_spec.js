@@ -1,3 +1,4 @@
+// @ts-nocheck
 import m from "mithril";
 import { assert } from "chai";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
@@ -113,14 +114,30 @@ describe("ItemWithVariants", function () {
     assert.ok(host.textContent.includes("Red"));
   });
 
-  // TODO (unimplemented): Enable when the category row reliably receives clicks after variant
-  // canvases mount. With the grid open, each canvas uses oncreate + Promise.all + m.redraw(); in
-  // Testem, a subsequent native click() on `.tree-label` often did not run Mithril's toggle
-  // (expand-from-collapsed — e.g. Body Color — still works). Intended checks:
-  //   assert.strictEqual(state.expandedNodes.iwv_cloak, false);
-  //   assert.strictEqual(host.querySelectorAll(".variant-item").length, 0);
   it("row label collapses when expanded (expandedNodes keyed by item id)", function () {
-    this.skip();
+    const meta = seedVariantItem();
+    state.expandedNodes.iwv_cloak = true;
+
+    const view = () =>
+      m(ItemWithVariants, {
+        itemId: "iwv_cloak",
+        meta,
+        isSearchMatch: false,
+        isCompatible: true,
+        tooltipText: "tip",
+        showItemTooltips: true,
+      });
+
+    m.render(host, view());
+    assert.strictEqual(host.querySelectorAll(".variant-item").length, 2);
+
+    host
+      .querySelector(".tree-label")
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    m.render(host, view());
+
+    assert.strictEqual(state.expandedNodes.iwv_cloak, false);
+    assert.strictEqual(host.querySelectorAll(".variant-item").length, 0);
   });
 
   it("uses body-body as expandedNodes key when the display name is Body Color", function () {

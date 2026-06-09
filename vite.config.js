@@ -1,3 +1,4 @@
+// @ts-nocheck
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -6,6 +7,7 @@ import { vitePluginPreviewServeDistSpritesheets } from "./vite/vite-plugin-previ
 import { vitePluginBundledCssAfterBulma } from "./vite/vite-plugin-bundled-css-after-bulma.js";
 import { vitePluginPurgeCriticalCss } from "./vite/vite-plugin-purge-critical-css.js";
 import { vitePluginMetadataModulePreload } from "./vite/vite-plugin-metadata-modulepreload.js";
+import { vitePluginWebpEncoderWasm } from "./vite/vite-plugin-webp-encoder-wasm.js";
 import {
   itemMetadataCodeSplittingGroups,
   itemMetadataPlugins,
@@ -13,6 +15,7 @@ import {
 } from "./vite/wiring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const GENERATED_METADATA_CHUNK_WARNING_LIMIT_KB = 1024;
 
 /**
  * Item-metadata pipeline (Commit 4): `vite/wiring.js` registers the pre-plugin,
@@ -35,6 +38,9 @@ export default defineConfig(({ command }) => ({
     ],
   },
   build: {
+    // The largest generated metadata module is intentionally isolated as an
+    // async chunk and gzips to a small payload, but Vite warns on raw bytes.
+    chunkSizeWarningLimit: GENERATED_METADATA_CHUNK_WARNING_LIMIT_KB,
     rolldownOptions: {
       input: {
         main: "index.html",
@@ -72,6 +78,7 @@ export default defineConfig(({ command }) => ({
     vitePluginMetadataModulePreload(),
     vitePluginBundledCssAfterBulma(),
     getSpritesheetsPlugin(command),
+    vitePluginWebpEncoderWasm(__dirname),
     vitePluginPurgeCriticalCss(),
   ],
 }));

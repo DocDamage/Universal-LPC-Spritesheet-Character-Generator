@@ -27,26 +27,15 @@
     {
       "file": "arms/hands/ring/stud",
       "notes": "original by bluecarrot16, climb/jump/sit/emote/run by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-jewelry"
-      ]
+      "authors": ["bluecarrot16", "JaidynReiman"],
+      "licenses": ["CC0"],
+      "urls": ["https://opengameart.org/content/lpc-jewelry"]
     }
   ],
   "recolors": {
     "material": "cloth",
     "base": "teal",
-    "palettes": [
-      "ulpc",
-      "metal.ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "metal.ulpc", "all.lpcr"]
   },
   "type_name": "ring"
 }

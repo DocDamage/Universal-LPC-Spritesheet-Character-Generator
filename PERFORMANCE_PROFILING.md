@@ -55,14 +55,14 @@ Query param note: only **`?debug=true`** and **`?debug=false`** are recognized a
 
 Suggested **read order** (core behavior → profiling → automation):
 
-| Order | File | What to check |
-| ----- | ---- | ------------- |
-| 1 | `sources/state/zip.js` | Four exports (`exportSplitAnimations`, `exportSplitItemSheets`, `exportSplitItemAnimations`, `exportIndividualFrames`): `createZipExportProfiler`, `beginZipExportUiSuspend` / `endZipExportUiSuspend` in `try`/`finally`, `zipGenerateBlobWithProfiler` |
-| 2 | `sources/utils/zip-helpers.js` | `addAnimationToZipFolder`, `addStandardAnimationToZipCustomFolder`, `zipGenerateBlobWithProfiler`; phases `drawAndSlice` → `pngEncode` → `zipFile` |
-| 3 | `sources/canvas/renderer.js` | `zipExportProfiledLoadComposite` — splits **image load/decode** vs **composite** for item renders when `zipProfiler` is passed |
-| 4 | `sources/performance-profiler.js` | `createZipExportProfiler`, `ZIP_EXPORT_COUNTER_KEYS`, `toMetadata()` |
-| 5 | `sources/utils/zip-export-ui-suspend.js` | Mithril redraw + preview rAF suspend during export |
-| 6 | `scripts/zip/*` | Headless profile runner, `diff-zip-profile`, default hash |
+| Order | File                                     | What to check                                                                                                                                                                                                                                            |
+| ----- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | `sources/state/zip.js`                   | Four exports (`exportSplitAnimations`, `exportSplitItemSheets`, `exportSplitItemAnimations`, `exportIndividualFrames`): `createZipExportProfiler`, `beginZipExportUiSuspend` / `endZipExportUiSuspend` in `try`/`finally`, `zipGenerateBlobWithProfiler` |
+| 2     | `sources/utils/zip-helpers.js`           | `addAnimationToZipFolder`, `addStandardAnimationToZipCustomFolder`, `zipGenerateBlobWithProfiler`; phases `drawAndSlice` → `pngEncode` → `zipFile`                                                                                                       |
+| 3     | `sources/canvas/renderer.js`             | `zipExportProfiledLoadComposite` — splits **image load/decode** vs **composite** for item renders when `zipProfiler` is passed                                                                                                                           |
+| 4     | `sources/performance-profiler.js`        | `createZipExportProfiler`, `ZIP_EXPORT_COUNTER_KEYS`, `toMetadata()`                                                                                                                                                                                     |
+| 5     | `sources/utils/zip-export-ui-suspend.js` | Mithril redraw + preview rAF suspend during export                                                                                                                                                                                                       |
+| 6     | `scripts/zip/*`                          | Headless profile runner, `diff-zip-profile`, default hash                                                                                                                                                                                                |
 
 **Phase name vocabulary** (strings in `phasesMs` / metadata):
 

@@ -4,6 +4,7 @@ import { state } from "../../state/state.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import { isItemLicenseCompatible } from "../../state/filters.ts";
 import { LICENSE_CONFIG } from "../../state/constants.ts";
+import { showToast } from "../../state/notifications.ts";
 
 type LicenseOption = {
   key: string;
@@ -71,9 +72,11 @@ export const LicenseFilters: m.Component<
 
       if (toRemove.length > 0) {
         toRemove.forEach((key) => delete state.selections[key]);
-        alert(`Removed ${toRemove.length} incompatible item(s)`);
+        showToast(`Removed ${toRemove.length} incompatible item(s)`, {
+          kind: "success",
+        });
       } else {
-        alert("No incompatible items found");
+        showToast("No incompatible items found", { kind: "info" });
       }
     };
 

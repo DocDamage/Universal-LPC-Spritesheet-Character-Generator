@@ -73,10 +73,7 @@
         "Thane Brimhall (pennomi)",
         "laetissima"
       ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-base-character-expressions",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

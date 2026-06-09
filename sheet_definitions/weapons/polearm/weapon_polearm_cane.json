@@ -9,27 +9,15 @@
     "female": "weapon/polearm/cane/female/",
     "pregnant": "weapon/polearm/cane/female/"
   },
-  "variants": [
-    "cane"
-  ],
-  "animations": [
-    "walk",
-    "thrust"
-  ],
+  "variants": ["cane"],
+  "animations": ["walk", "thrust"],
   "credits": [
     {
       "file": "weapon/polearm/cane",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-gentleman"
-      ]
+      "authors": ["bluecarrot16"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-gentleman"]
     }
   ],
   "type_name": "weapon"

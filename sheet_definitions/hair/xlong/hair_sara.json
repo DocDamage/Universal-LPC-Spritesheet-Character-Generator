@@ -45,10 +45,7 @@
         "Mandi Paugh",
         "bluecarrot16"
       ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY 3.0"
-      ],
+      "licenses": ["OGA-BY 3.0", "CC-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-sara",
         "https://opengameart.org/content/lpc-hair",
@@ -58,11 +55,7 @@
   ],
   "recolors": {
     "material": "hair",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hair"
 }

@@ -31,17 +31,8 @@
     {
       "file": "hat/visor/pigface",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "ElizaWy",
-        "Sander Frenken (castelonia)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 4.0",
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "ElizaWy", "Sander Frenken (castelonia)"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 4.0", "CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-realistic-helmet-pack",
         "https://opengameart.org/content/lpc-helmets-mega-pack",
@@ -51,11 +42,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "visor"
 }

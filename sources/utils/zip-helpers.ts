@@ -12,15 +12,23 @@ import {
 } from "../custom-animations.ts";
 import {
   canvasToBlob,
+  createCanvas,
   get2DContext,
   hasContentInRegion,
 } from "../canvas/canvas-utils.ts";
 import { debugLog, debugWarn } from "../utils/debug.ts";
 import { getAllCredits, creditsToTxt, creditsToCsv } from "./credits.ts";
 import { exportStateAsJSON, serializeLayersForJson } from "../state/json.ts";
+import { showToast } from "../state/notifications.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 import type { State } from "../state/state.ts";
-import type { DrawCall } from "../canvas/renderer.ts";
+import type { DrawCall } from "../state/render-state.ts";
+import {
+  buildTweenSteps,
+  drawTweenedCanvas,
+  normalizeTweenSettings,
+} from "../canvas/tween.ts";
+import type { TweenSettings } from "../canvas/tween.ts";
 
 /**
  * Subset of the JSZip folder API consumed by these helpers and downstream
@@ -66,10 +74,11 @@ function createFrameCanvasPool(
 ): FrameCanvas[] {
   const canvasPool: FrameCanvas[] = [];
   for (let i = 0; i < poolSize; i++) {
-    const frameCanvas = document.createElement("canvas");
-    frameCanvas.width = frameWidth;
-    frameCanvas.height = frameHeight;
-    const frameCtx = get2DContext(frameCanvas, true);
+    const { canvas: frameCanvas, ctx: frameCtx } = createCanvas(
+      frameWidth,
+      frameHeight,
+      true,
+    );
     if (frameCtx) {
       canvasPool.push({ canvas: frameCanvas, ctx: frameCtx });
     }
@@ -313,11 +322,9 @@ export function newStandardAnimationForCustomAnimation(
   src: HTMLCanvasElement | HTMLImageElement,
   custAnim: CustomAnimationDefinition,
 ): HTMLCanvasElement {
-  const custCanvas = document.createElement("canvas");
   const { width: custWidth, height: custHeight } =
     customAnimationSize(custAnim);
-  custCanvas.width = custWidth;
-  custCanvas.height = custHeight;
+  const { canvas: custCanvas } = createCanvas(custWidth, custHeight);
   const custCtx = get2DContext(custCanvas, true);
   if (!custCtx) {
     throw new Error("Failed to get canvas context");
@@ -362,8 +369,97 @@ export async function addStandardAnimationToZipCustomFolder(
 
 export type ExtractedFrames = Record<
   string,
-  Array<{ canvas: HTMLCanvasElement; frameNumber: number }>
+  Array<{ canvas: HTMLCanvasElement; frameNumber: number | string }>
 >;
+
+export function expandExtractedFramesWithTweens(
+  frames: ExtractedFrames,
+  settings: TweenSettings,
+): ExtractedFrames {
+  const normalizedSettings = normalizeTweenSettings(settings);
+
+  if (normalizedSettings.mode === "off") {
+    return frames;
+  }
+
+  const expandedFrames: ExtractedFrames = {};
+
+  for (const [direction, frameList] of Object.entries(frames)) {
+    if (frameList.length === 0) {
+      expandedFrames[direction] = [];
+      continue;
+    }
+
+    const tweenSteps = buildTweenSteps(frameList, normalizedSettings);
+    expandedFrames[direction] = tweenSteps.map((step, stepIndex) => {
+      if (!step.isTween) {
+        return step.from;
+      }
+
+      const { canvas: tweenCanvas, ctx: tweenCtx } = createCanvas(
+        step.from.canvas.width,
+        step.from.canvas.height,
+        true,
+      );
+      drawTweenedCanvas(
+        tweenCtx,
+        step.from.canvas,
+        step.to.canvas,
+        normalizedSettings.mode,
+        step.t,
+        normalizedSettings,
+      );
+
+      return {
+        canvas: tweenCanvas,
+        frameNumber: `${step.from.frameNumber}_tween_${stepIndex}`,
+      };
+    });
+  }
+
+  return expandedFrames;
+}
+
+export function composeFrameRowsToSpritesheet(
+  frames: ExtractedFrames,
+  directions: readonly string[] = DIRECTIONS,
+): HTMLCanvasElement | null {
+  const populatedDirections = directions.filter(
+    (direction) => (frames[direction] ?? []).length > 0,
+  );
+  if (populatedDirections.length === 0) {
+    return null;
+  }
+
+  const firstFrame = frames[populatedDirections[0]!]?.[0]?.canvas;
+  if (!firstFrame) {
+    return null;
+  }
+
+  const frameWidth = firstFrame.width;
+  const frameHeight = firstFrame.height;
+  const maxFrameCount = Math.max(
+    ...populatedDirections.map((direction) => frames[direction]?.length ?? 0),
+  );
+  const { canvas: spritesheet, ctx: spritesheetCtx } = createCanvas(
+    maxFrameCount * frameWidth,
+    directions.length * frameHeight,
+    true,
+  );
+
+  directions.forEach((direction, directionIndex) => {
+    const frameList = frames[direction] ?? [];
+    frameList.forEach((frame, frameIndex) => {
+      spritesheetCtx.drawImage(
+        frame.canvas,
+        frameIndex * frameWidth,
+        directionIndex * frameHeight,
+      );
+    });
+  });
+
+  return spritesheet;
+}
 
 /**
  * Splits a built-in LPC animation canvas (rows = directions, 13 frames per row)
@@ -403,7 +499,7 @@ export function extractFramesFromAnimation(
     dirIndex < directions.length && dirIndex < config.num;
     dirIndex++
   ) {
-    const direction = directions[dirIndex];
+    const direction = directions[dirIndex]!;
     frames[direction] = [];
 
     const sourceY = dirIndex * frameHeight;
@@ -426,7 +522,7 @@ export function extractFramesFromAnimation(
       );
 
       if (hasContent && poolIndex < canvasPool.length) {
-        const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++];
+        const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++]!;
 
         blitFrameFromSheet(
           frameCtx,
@@ -436,7 +532,7 @@ export function extractFramesFromAnimation(
           frameWidth,
         );
 
-        frames[direction].push({
+        frames[direction!]!.push({
           canvas: frameCanvas,
           frameNumber: frameIndex + 1,
         });
@@ -463,7 +559,7 @@ export function checkFrameContentFromImageData(
   for (let y = 0; y < frameHeight; y++) {
     for (let x = startX; x < startX + frameWidth && x < imageWidth; x++) {
       const pixelIndex = (y * imageWidth + x) * 4;
-      const alpha = data[pixelIndex + 3];
+      const alpha = data[pixelIndex + 3]!;
       if (alpha > 0) {
         return true;
       }
@@ -509,6 +605,10 @@ export function extractFramesFromCustomAnimation(
 
   for (const direction of directions) {
     const dirIndex = CUSTOM_ANIM_DIRECTION_TO_ROW[direction];
+    if (dirIndex === undefined) {
+      debugLog(`Skipping direction ${direction} - not found in direction map`);
+      continue;
+    }
     if (dirIndex >= animationFrames.length) {
       debugLog(
         `Skipping direction ${direction} (index ${dirIndex}) - not enough rows in animation frames`,
@@ -517,7 +617,7 @@ export function extractFramesFromCustomAnimation(
     }
 
     frames[direction] = [];
-    const frameRow = animationFrames[dirIndex];
+    const frameRow = animationFrames[dirIndex]!;
     const sourceY = dirIndex * frameSize;
 
     debugLog(`Processing direction ${direction} (row ${dirIndex}):`, frameRow);
@@ -534,7 +634,7 @@ export function extractFramesFromCustomAnimation(
 
       if (poolIndex >= canvasPool.length) break;
 
-      const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++];
+      const { canvas: frameCanvas, ctx: frameCtx } = canvasPool[poolIndex++]!;
 
       blitFrameFromSheet(
         frameCtx,
@@ -570,7 +670,7 @@ type WindowWithZipDeps = Window & {
 export function guardZipExportEnvironment(): boolean {
   const w = window as WindowWithZipDeps;
   if (!w.canvasRenderer || !w.JSZip) {
-    alert("JSZip library not loaded");
+    showToast("JSZip library not loaded", { kind: "warning" });
     return false;
   }
   return true;

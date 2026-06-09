@@ -1,12 +1,7 @@
 {
   "name": "Celestial Wizard Moon Hat Second Color",
-  "tags": [
-    "wizard",
-    "hat_trim"
-  ],
-  "required_tags": [
-    "celestial_moon"
-  ],
+  "tags": ["wizard", "hat_trim"],
+  "required_tags": ["celestial_moon"],
   "layer_1": {
     "zPos": 131,
     "male": "hat/magic/celestial_moon/trim/adult/",
@@ -77,9 +72,7 @@
         "Michael Whitlock (bigbeargames)",
         "Tracy"
       ],
-      "licenses": [
-        "CC-BY 3.0"
-      ],
+      "licenses": ["CC-BY 3.0"],
       "urls": [
         "https:/opengameart.org/content/lpc-celestial-wizard-hats",
         "https:/opengameart.org/content/lpc-expanded-hats-facial-helmets"

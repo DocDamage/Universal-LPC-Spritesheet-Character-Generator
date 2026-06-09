@@ -6,7 +6,7 @@ import {
 import { getAllCredits } from "../utils/credits.ts";
 import { state } from "./state.ts";
 import type { Selections, State } from "./state.ts";
-import type { DrawCall } from "../canvas/renderer.ts";
+import type { DrawCall } from "./render-state.ts";
 
 /** Shape of a layer as it appears in the exported `character.json` manifest.
  *  The live `HTMLImageElement` carried by `DrawCall.source` for custom uploads

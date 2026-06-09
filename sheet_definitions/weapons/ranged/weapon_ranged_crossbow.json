@@ -18,28 +18,15 @@
     "female": "weapon/ranged/crossbow/foreground/",
     "pregnant": "weapon/ranged/crossbow/foreground/"
   },
-  "variants": [
-    "crossbow"
-  ],
-  "animations": [
-    "thrust",
-    "walk",
-    "hurt"
-  ],
+  "variants": ["crossbow"],
+  "animations": ["thrust", "walk", "hurt"],
   "credits": [
     {
       "file": "weapon/ranged/crossbow",
       "notes": "original by drjamgo, modified for v3 character bases and split into layers by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "drjamgo@hotmail.com"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-crossbow-final"
-      ]
+      "authors": ["bluecarrot16", "drjamgo@hotmail.com"],
+      "licenses": ["CC0"],
+      "urls": ["https://opengameart.org/content/lpc-crossbow-final"]
     }
   ],
   "type_name": "weapon"

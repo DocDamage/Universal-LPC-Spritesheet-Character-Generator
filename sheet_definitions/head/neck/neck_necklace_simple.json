@@ -32,15 +32,9 @@
     {
       "file": "neck/necklace/simple",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-jewelry"
-      ]
+      "authors": ["bluecarrot16"],
+      "licenses": ["CC0"],
+      "urls": ["https://opengameart.org/content/lpc-jewelry"]
     }
   ],
   "type_name": "necklace"

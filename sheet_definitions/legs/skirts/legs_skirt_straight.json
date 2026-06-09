@@ -22,25 +22,14 @@
     {
       "file": "legs/skirts/straight",
       "notes": "original skirt by ElizaWy, extended to all animation frames and edited for v3 bases by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "ElizaWy"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "http://opengameart.org/content/lpc-clothing-updates"
-      ]
+      "authors": ["bluecarrot16", "ElizaWy"],
+      "licenses": ["OGA-BY 3.0", "GPL 3.0"],
+      "urls": ["http://opengameart.org/content/lpc-clothing-updates"]
     }
   ],
   "recolors": {
     "material": "cloth",
-    "palettes": [
-      "ulpc",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "all.lpcr"]
   },
   "type_name": "legs"
 }

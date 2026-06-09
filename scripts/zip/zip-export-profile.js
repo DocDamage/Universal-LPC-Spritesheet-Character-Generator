@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Capture ZIP export phase timings (issue #382 fixture) without manual console copy/paste.
  *

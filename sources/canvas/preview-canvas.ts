@@ -4,7 +4,11 @@ import {
   SHEET_HEIGHT,
   isOffscreenCanvasInitialized,
 } from "./renderer.ts";
-import { drawTransparencyBackground, get2DContext } from "./canvas-utils.ts";
+import {
+  createCanvas,
+  drawTransparencyBackground,
+  get2DContext,
+} from "./canvas-utils.ts";
 import { FRAME_SIZE } from "../state/constants.ts";
 import { applyTransparencyMaskToCanvas } from "./mask.ts";
 import {
@@ -79,10 +83,10 @@ export function copyToPreviewCanvas(
   if (applyTransparencyMask) {
     // using a tmpCanvas here to avoid modifying the original offscreen canvas
     // which causes a bug if the user toggles the checkbox multiple times
-    const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = canvas.width;
-    tmpCanvas.height = canvas.height;
-    const tmpCtx = get2DContext(tmpCanvas);
+    const { canvas: tmpCanvas, ctx: tmpCtx } = createCanvas(
+      canvas.width,
+      canvas.height,
+    );
     tmpCtx.drawImage(canvas, 0, 0);
     applyTransparencyMaskToCanvas(tmpCanvas, tmpCtx);
     previewCtx.drawImage(tmpCanvas, 0, 0);

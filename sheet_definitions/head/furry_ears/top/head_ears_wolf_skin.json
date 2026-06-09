@@ -42,14 +42,8 @@
     {
       "file": "head/ears/wolf",
       "notes": "",
-      "authors": [
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0+",
-        "CC-BY 3.0+",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman"],
+      "licenses": ["OGA-BY 3.0+", "CC-BY 3.0+", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-furry-ears-tails-for-rpg-sprites"
       ]
@@ -57,11 +51,7 @@
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "furry_ears_skin"
 }

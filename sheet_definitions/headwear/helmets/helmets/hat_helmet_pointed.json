@@ -31,10 +31,7 @@
     {
       "file": "hat/helmet/pointed",
       "notes": "original version by bluecarrot16, color reduction by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
+      "authors": ["bluecarrot16", "JaidynReiman"],
       "licenses": [
         "CC-BY 3.0",
         "CC-BY 4.0",
@@ -50,11 +47,7 @@
   ],
   "recolors": {
     "material": "metal",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "hat"
 }

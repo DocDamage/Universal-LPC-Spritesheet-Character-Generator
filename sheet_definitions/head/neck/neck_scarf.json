@@ -9,14 +9,7 @@
     "muscular": "neck/scarf/",
     "teen": "neck/scarf/"
   },
-  "variants": [
-    "black",
-    "blue",
-    "brown",
-    "gray",
-    "red",
-    "white"
-  ],
+  "variants": ["black", "blue", "brown", "gray", "red", "white"],
   "animations": [
     "spellcast",
     "thrust",
@@ -35,15 +28,8 @@
         "Johannes Sjölund (wulax)",
         "Stephen Challener (Redshrike)"
       ],
-      "licenses": [
-        "OGA-SA 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/more-lpc-clothes-and-hair"
-      ]
+      "licenses": ["OGA-SA 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/more-lpc-clothes-and-hair"]
     }
   ],
   "type_name": "neck"

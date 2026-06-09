@@ -46,10 +46,8 @@ export function writeZPositionsFromSheetsSync(opts = {}) {
       const layer = `layer_${jdx}`;
       const zPos = layerDefinition.zPos;
       let images = "";
-      let bodyIndex = 0;
       let firstImage = true;
-      for (const _key in possibleBodies) {
-        const body = possibleBodies[bodyIndex];
+      for (const body of possibleBodies) {
         const imageRef = layerDefinition[`${body}`];
         if (imageRef !== undefined) {
           if (!firstImage) {
@@ -58,7 +56,6 @@ export function writeZPositionsFromSheetsSync(opts = {}) {
           images += imageRef;
           firstImage = false;
         }
-        bodyIndex += 1;
       }
       csvEntries.push(`${baseName},${layer},${zPos},${images}`);
     }

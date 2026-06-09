@@ -30,12 +30,17 @@
  */
 
 import { ok, err, type Result } from "neverthrow";
+import { createCanvas } from "../canvas/canvas-utils.ts";
 import {
   buildItemsByTypeNameLite,
   expandInternedItemLite,
   expandMetadataIndexesWithInternedArrays,
   isInternedItemLite,
 } from "./resolve-hash-param.ts";
+import {
+  loadStoredCustomParts,
+  persistCustomParts,
+} from "./custom-parts-storage.ts";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Error shape
@@ -55,6 +60,125 @@ export function formatLoadError(e: LoadError): string {
       return `chunk "${e.chunk}" not loaded`;
     case "not-found":
       return `item ${e.id} not in catalog`;
+  }
+}
+
+export type CustomPart = {
+  itemId: string;
+  name: string;
+  type_name: string;
+  baseItemId: string;
+  sheets: Record<string, HTMLCanvasElement>;
+  image?: HTMLCanvasElement | HTMLImageElement;
+  drawLayerNum?: number;
+  drawZPos?: number;
+  tags?: string[];
+};
+
+const customPartGlobal = globalThis as typeof globalThis & {
+  __LPC_customParts?: Record<string, CustomPart>;
+};
+
+export const customParts: Record<string, CustomPart> =
+  (customPartGlobal.__LPC_customParts ??= {});
+
+type RegisterCustomPartOptions = {
+  persist?: boolean;
+};
+
+export function registerCustomPart(
+  part: CustomPart,
+  options: RegisterCustomPartOptions = {},
+): void {
+  customParts[part.itemId] = part;
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+}
+
+export function getCustomPart(id: string): CustomPart | undefined {
+  return customParts[id];
+}
+
+export function renameCustomPart(
+  id: string,
+  name: string,
+  options: RegisterCustomPartOptions = {},
+): boolean {
+  const part = customParts[id];
+  if (!part) return false;
+
+  part.name = name;
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+  return true;
+}
+
+export function duplicateCustomPart(
+  id: string,
+  options: RegisterCustomPartOptions = {},
+): CustomPart | null {
+  const part = customParts[id];
+  if (!part) return null;
+
+  const newItemId = `custom_${part.type_name}_${Date.now()}`;
+  const newSheets: Record<string, HTMLCanvasElement> = {};
+  for (const [animation, sheet] of Object.entries(part.sheets)) {
+    const { canvas: newCanvas, ctx } = createCanvas(
+      sheet.width,
+      sheet.height,
+      true,
+    );
+    ctx.drawImage(sheet, 0, 0);
+    newSheets[animation] = newCanvas;
+  }
+
+  const firstSheet = newSheets["walk"] ?? Object.values(newSheets)[0];
+  const duplicated: CustomPart = {
+    itemId: newItemId,
+    name: `${part.name} (Copy)`,
+    type_name: part.type_name,
+    baseItemId: part.baseItemId,
+    drawLayerNum: part.drawLayerNum,
+    drawZPos: part.drawZPos,
+    tags: part.tags ? [...part.tags] : undefined,
+    sheets: newSheets,
+    image: firstSheet,
+  };
+
+  registerCustomPart(duplicated, options);
+  return duplicated;
+}
+
+export function deleteCustomPart(
+  id: string,
+  options: RegisterCustomPartOptions = {},
+): boolean {
+  if (!customParts[id]) return false;
+
+  delete customParts[id];
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+  return true;
+}
+
+export function clearCustomParts(
+  options: RegisterCustomPartOptions = {},
+): void {
+  for (const itemId of Object.keys(customParts)) {
+    delete customParts[itemId];
+  }
+  if (options.persist !== false) {
+    persistCustomParts(customParts);
+  }
+}
+
+export async function hydrateCustomPartsFromStorage(): Promise<void> {
+  const parts = await loadStoredCustomParts();
+  for (const part of parts) {
+    registerCustomPart(part, { persist: false });
   }
 }
 
@@ -89,6 +213,15 @@ export type ItemLite = {
   variants: string[];
   path: string[];
   preview_row?: number;
+};
+
+/** Complete item metadata as emitted by the build pipeline (includes layers,
+ *  credits, and optional interned indices `v` / `r`). */
+export type FullItemMetadata = ItemLite & {
+  layers?: Record<string, LayerEntry>;
+  credits?: Credit[];
+  v?: number;
+  r?: number;
 };
 
 export type Credit = {
@@ -230,7 +363,7 @@ export type CatalogWriter = {
     itemLayers: Record<string, Record<string, LayerEntry>>;
   }): void;
   loadCatalogFromFixtures(fixtureGlobals: {
-    itemMetadata: Record<string, unknown>;
+    itemMetadata: Record<string, FullItemMetadata>;
     aliasMetadata: AliasMetadata;
     categoryTree: CategoryTree;
     metadataIndexes: MetadataIndexes;
@@ -268,7 +401,7 @@ function makeStage(): Stage {
 }
 
 function splitFullItemMetadataForCatalog(
-  fullItemMetadata: Record<string, unknown>,
+  fullItemMetadata: Record<string, FullItemMetadata>,
 ): {
   itemMetadataLite: Record<string, ItemLite>;
   itemCredits: Record<string, Credit[]>;
@@ -279,11 +412,8 @@ function splitFullItemMetadataForCatalog(
   const itemLayers: Record<string, Record<string, LayerEntry>> = {};
 
   for (const [itemId, meta] of Object.entries(fullItemMetadata)) {
-    const { layers, credits, ...lite } = meta as {
-      layers?: Record<string, LayerEntry>;
-      credits?: Credit[];
-    } & Omit<ItemLite, "layers" | "credits">;
-    itemMetadataLite[itemId] = lite as ItemLite;
+    const { layers, credits, ...lite } = meta;
+    itemMetadataLite[itemId] = lite;
     itemCredits[itemId] = credits ?? [];
     itemLayers[itemId] = layers ?? {};
   }
@@ -327,7 +457,7 @@ export function createCatalog(): Catalog {
       return;
     }
     for (const itemId of Object.keys(itemLiteStore)) {
-      const cur = itemLiteStore[itemId];
+      const cur = itemLiteStore[itemId]!;
       if (isInternedItemLite(cur)) {
         itemLiteStore[itemId] = expandInternedItemLite(
           cur,
@@ -391,19 +521,44 @@ export function createCatalog(): Catalog {
     // result-returning getters
     getItemLite(id) {
       if (!liteStage.resolved) return err(loading("lite"));
-      const item = itemLiteStore?.[id];
-      return item ? ok(item) : err(notFound(id));
+      const custom = customParts[id];
+      const lookupId = custom ? custom.baseItemId : id;
+      const item = itemLiteStore?.[lookupId];
+      if (!item) return err(notFound(id));
+      if (custom) {
+        return ok({
+          ...item,
+          itemId: id,
+          name: custom.name,
+          type_name: custom.type_name,
+        });
+      }
+      return ok(item);
     },
 
     getItemMerged(id) {
       if (!liteStage.resolved) return err(loading("lite"));
-      const lite = itemLiteStore?.[id];
+      const custom = customParts[id];
+      const lookupId = custom ? custom.baseItemId : id;
+      const lite = itemLiteStore?.[lookupId];
       if (!lite) return err(notFound(id));
-      const layers = layersStage.resolved ? (itemLayersStore?.[id] ?? {}) : {};
+      const layers = layersStage.resolved
+        ? (itemLayersStore?.[lookupId] ?? {})
+        : {};
       const credits = creditsStage.resolved
-        ? (itemCreditsStore?.[id] ?? [])
+        ? (itemCreditsStore?.[lookupId] ?? [])
         : [];
-      return ok({ ...lite, layers, credits });
+      const merged: ItemMerged & { itemId?: string } = {
+        ...lite,
+        layers,
+        credits,
+      };
+      if (custom) {
+        merged.itemId = id;
+        merged.name = custom.name;
+        merged.type_name = custom.type_name;
+      }
+      return ok(merged);
     },
 
     getItemCredits(id) {
@@ -451,19 +606,19 @@ export function createCatalog(): Catalog {
       for (const [id, lite] of Object.entries(itemLiteStore)) {
         synthetic[id] = { ...lite, layers: {}, credits: [] };
       }
-      return buildItemsByTypeNameLite(synthetic) as Record<
-        string,
-        SlimByTypeNameRow[]
-      >;
+      return buildItemsByTypeNameLite(synthetic);
     },
 
     // writer — only `install-item-metadata.ts` and test setup should call these
     registerFromIndexModule(exports_) {
       aliasMetadataStore = exports_.aliasMetadata;
       categoryTreeStore = exports_.categoryTree;
-      metadataIndexesStore = expandMetadataIndexesWithInternedArrays(
+      const expanded = expandMetadataIndexesWithInternedArrays(
         exports_.metadataIndexes,
-      ) as MetadataIndexes;
+      );
+      if (expanded) {
+        metadataIndexesStore = expanded;
+      }
       indexStage.resolve();
       expandInternedItemLitesInStore();
     },
@@ -534,6 +689,7 @@ export function createCatalog(): Catalog {
       itemCreditsStore = null;
       itemLayersStore = null;
       paletteMetadataStore = null;
+      clearCustomParts({ persist: false });
     },
   };
 }
@@ -614,16 +770,18 @@ export const registerFromLayersModule = (exports_: {
 }): void => defaultCatalog.registerFromLayersModule(exports_);
 
 export const loadCatalogFromFixtures = (fixtureGlobals: {
-  itemMetadata: Record<string, unknown>;
+  itemMetadata: Record<string, FullItemMetadata>;
   aliasMetadata: AliasMetadata;
   categoryTree: CategoryTree;
   metadataIndexes: MetadataIndexes;
   paletteMetadata: PaletteMetadata;
 }): void => defaultCatalog.loadCatalogFromFixtures(fixtureGlobals);
 
-// TODO (Catalog DI migration): once every consumer migrates to receive
-// `catalog: CatalogReader` via DI, drop this — tests will construct a fresh
-// `createCatalog()` per case instead of resetting a shared one.
+/**
+ * Reset the shared compatibility catalog. New isolated tests should prefer
+ * `createCatalog()`, while suites that intentionally exercise module-level
+ * helper exports reset this singleton between cases.
+ */
 export const resetCatalogForTests = (): void => defaultCatalog.resetForTests();
 
 // ────────────────────────────────────────────────────────────────────────────

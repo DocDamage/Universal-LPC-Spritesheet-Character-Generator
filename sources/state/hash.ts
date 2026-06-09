@@ -10,6 +10,8 @@ import {
   getMetadataIndexes,
   isIndexReady,
   isLiteReady,
+  customParts,
+  getCustomPart,
   type AliasMetadata,
   type ItemLite,
   type SlimByTypeNameRow,
@@ -38,6 +40,30 @@ type HashDeps = {
 function createDefaultHashDeps(): HashDeps {
   return {
     resolveHashParam: ({ typeName, nameAndVariant }) => {
+      for (const part of Object.values(customParts)) {
+        if (part.type_name !== typeName) continue;
+        const customName = part.name.replaceAll(" ", "_");
+        if (nameAndVariant === customName) {
+          return {
+            foundItemId: part.itemId,
+            matchedVariant: "",
+            matchedRecolor: "",
+          };
+        }
+        if (!nameAndVariant.startsWith(`${customName}_`)) continue;
+
+        const suffix = nameAndVariant.slice(customName.length + 1);
+        const [variantOrRecolor = "", recolor = ""] = suffix.split("|");
+        const baseMeta = getItemLite(part.baseItemId).unwrapOr(null);
+        const suffixIsVariant =
+          !!variantOrRecolor && baseMeta?.variants?.includes(variantOrRecolor);
+        return {
+          foundItemId: part.itemId,
+          matchedVariant: recolor || suffixIsVariant ? variantOrRecolor : "",
+          matchedRecolor: recolor || (!suffixIsVariant ? variantOrRecolor : ""),
+        };
+      }
+
       let itemsByTypeName: Record<string, SlimByTypeNameRow[]>;
       if (isIndexReady()) {
         const idx = getMetadataIndexes().unwrapOr(null);
@@ -83,6 +109,13 @@ export function updateState(updates: Partial<typeof state>): void {
 export function resetState(): void {
   state.bodyType = "male";
   state.selections = {};
+  state.previewTweenMode = "off";
+  state.previewTweenInbetweens = 1;
+  state.previewTweenFps = 8;
+  state.previewTweenMotionStrength = 1;
+  state.previewTweenAlphaThreshold = 1;
+  state.previewTweenPreset = "original";
+  state.previewTweenOverrides = {};
 }
 
 // `window.location.hash` is immutable in tests, this is so we can use a stub to manage it.
@@ -171,19 +204,28 @@ export function buildNewSelection(
   matchedRecolor: string,
   subId: number | null = null,
 ): Selection {
+  const custom = getCustomPart(foundItemId);
   // Get meta data for itemId. Existing JS assumes meta is non-null at this
   // point (resolveHashParam returned a hit); preserve that contract.
-  const meta = hashDeps.getItemLite(foundItemId)!;
+  const meta =
+    hashDeps.getItemLite(foundItemId) ??
+    (custom ? hashDeps.getItemLite(custom.baseItemId) : null)!;
   const subMeta = meta.recolors?.[subId ?? 0];
 
+  const isCustom = !!custom;
   const newSelection: Selection = {
     itemId: foundItemId,
     subId,
-    variant:
-      matchedVariant || (matchedRecolor != "" ? "" : meta.variants?.[0] || ""),
-    recolor:
-      matchedRecolor ||
-      ((meta.variants?.length ?? 0) === 0 ? subMeta?.variants?.[0] || "" : ""),
+    variant: isCustom
+      ? matchedVariant || ""
+      : matchedVariant ||
+        (matchedRecolor != "" ? "" : meta.variants?.[0] || ""),
+    recolor: isCustom
+      ? matchedRecolor || ""
+      : matchedRecolor ||
+        ((meta.variants?.length ?? 0) === 0
+          ? subMeta?.variants?.[0] || ""
+          : ""),
     name: subId ? (subMeta?.label ?? "") : meta.name,
   };
 
@@ -212,19 +254,31 @@ export function getHashParamsforSelections(
   const params: Record<string, string> = {};
 
   // Add body type (using 'sex' for backwards compatibility with old URLs).
-  params.sex = state.bodyType;
+  params["sex"] = state.bodyType;
 
   // Add selections — old format: `type_name=Name_variant`.
   // e.g., "body=Body_color_light", "shoes=Sara_sara".
   const aliasMetadata = getAliasMetadata().unwrapOr({} as AliasMetadata);
   for (const [typeName, selection] of Object.entries(selections)) {
+    const custom = getCustomPart(selection.itemId);
+    if (custom) {
+      const namePart = custom.name.replaceAll(" ", "_");
+      const variantPart = selection.variant ?? "";
+      const recolorPart = selection.recolor ?? "";
+      const uscorePart = variantPart || recolorPart ? "_" : "";
+      const splitPart = variantPart && recolorPart ? "|" : "";
+      params[custom.type_name || typeName] =
+        namePart + uscorePart + variantPart + splitPart + recolorPart;
+      continue;
+    }
+
     const meta = getItemLite(selection.itemId).unwrapOr(null);
     // Defensive: real production data has type_name, but a few test fixtures
     // (and possibly malformed URLs) might lack it. Treat as alias-fallback.
     if (!meta || !meta.type_name) {
       // Check if an alias is overriding this entry
       // (e.g., "sash=Waistband_rose" instead of "waistband=Waistband_rose").
-      const name = selection.name.split(" (")[0]; // Get base name without variant
+      const name = selection.name.split(" (")[0]!; // Get base name without variant
       const nameAndVariant =
         name.replaceAll(" ", "_") +
         (selection.variant ? `_${selection.variant}` : "");
@@ -383,7 +437,7 @@ export function loadSelectionsFromHash(hashString: string | null = null): void {
     const parts = nameAndVariant.split("_");
     for (let i = 1; i <= parts.length; i++) {
       const variants = parts.slice(i).join("_");
-      const recolorToMatch = variants.split("|")[1] ?? variants.split("|")[0];
+      const recolorToMatch = variants.split("|")[1] ?? variants.split("|")[0]!;
       const lookupKey = `${subType}${subItemKeySeparator}${recolorToMatch}`;
       const subItem = subItemLookup.get(lookupKey);
 
@@ -411,8 +465,8 @@ export function loadSelectionsFromHash(hashString: string | null = null): void {
   state.selections = newSelections;
 
   // Load body type
-  if (params.bodyType) {
-    state.bodyType = params.bodyType;
+  if (params["bodyType"]) {
+    state.bodyType = params["bodyType"];
   }
 
   // Ensure hash is in sync with loaded selections (handles any normalization).

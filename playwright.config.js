@@ -5,8 +5,8 @@ export default defineConfig({
   testDir: "./tests/visual",
   webServer: {
     command: process.env.CI
-      ? "npm run build && npm run preview -- --port 5173 && sleep 3"
-      : "npm run dev && sleep 10",
+      ? "npm run build && npm run preview -- --port 5173"
+      : "npm run dev",
     timeout: 120000,
     url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
@@ -29,4 +29,14 @@ export default defineConfig({
     screenshot: "only-on-failure",
     bypassCSP: true,
   },
+  projects: [
+    {
+      name: "chromium",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "firefox",
+      use: { browserName: "firefox" },
+    },
+  ],
 });

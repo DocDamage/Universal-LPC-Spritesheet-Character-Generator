@@ -1,13 +1,7 @@
 {
   "name": "Bicorne Foreaft Commodore Trim",
-  "tags": [
-    "bicorne",
-    "foreaft",
-    "commodore_trim"
-  ],
-  "required_tags": [
-    "foreaft_commodore"
-  ],
+  "tags": ["bicorne", "foreaft", "commodore_trim"],
+  "required_tags": ["foreaft_commodore"],
   "layer_1": {
     "zPos": 131,
     "male": "hat/pirate/bicorne/foreaft/commodore/trim/adult/",
@@ -74,13 +68,8 @@
     {
       "file": "hat/pirate/bicorne/foreaft/commodore",
       "notes": "Pirate Hat by Bluecarrot16, layers and added animations by JaidynReiman",
-      "authors": [
-        "bluecarrot16",
-        "JaidynReiman"
-      ],
-      "licenses": [
-        "OGA-BY 3.0"
-      ],
+      "authors": ["bluecarrot16", "JaidynReiman"],
+      "licenses": ["OGA-BY 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-pirates",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"

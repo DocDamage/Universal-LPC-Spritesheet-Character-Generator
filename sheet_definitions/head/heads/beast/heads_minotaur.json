@@ -1,9 +1,6 @@
 {
   "name": "Minotaur",
-  "tags": [
-    "minotaur",
-    "adult"
-  ],
+  "tags": ["minotaur", "adult"],
   "layer_1": {
     "zPos": 100,
     "male": "head/heads/minotaur/male/",
@@ -36,15 +33,8 @@
     {
       "file": "head/heads/minotaur",
       "notes": "original cow by daneeklu, combined with horns by Nila122 and adapted to minotaur by Evert",
-      "authors": [
-        "Evert",
-        "Nila122",
-        "Daniel Eddeland (daneeklu)"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["Evert", "Nila122", "Daniel Eddeland (daneeklu)"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-style-farm-animals",
         "https://opengameart.org/content/lpc-lizard-headgear",
@@ -55,11 +45,7 @@
   "recolors": {
     "material": "body",
     "base": "ulpc.fur_tan",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "head"
 }

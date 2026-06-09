@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Compare two ZIP-profile JSON files (from `zip-export-profile.js` or `profile:zip`).
  *

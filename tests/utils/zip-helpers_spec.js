@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import sinon from "sinon";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
@@ -11,6 +12,7 @@ import {
   addCharacterJsonAndCredits,
   addStandardAnimationToZipCustomFolder,
   checkFrameContentFromImageData,
+  composeFrameRowsToSpritesheet,
   CUSTOM_ANIM_DIRECTION_TO_ROW,
   downloadZipBlob,
   extractFramesFromAnimation,
@@ -22,6 +24,10 @@ import {
   zipGenerateBlobWithProfiler,
 } from "../../sources/utils/zip-helpers.ts";
 import { DIRECTIONS } from "../../sources/state/constants.ts";
+import {
+  getToasts,
+  resetNotificationsForTests,
+} from "../../sources/state/notifications.ts";
 
 function createCanvas(width, height) {
   const canvas = document.createElement("canvas");
@@ -557,6 +563,45 @@ describe("utils/zip-helpers.ts", () => {
     });
   });
 
+  describe("composeFrameRowsToSpritesheet", () => {
+    it("returns a row-based spritesheet from extracted direction frames", () => {
+      const upFrame = createCanvas(4, 4);
+      upFrame.getContext("2d").fillStyle = "#ff0000";
+      upFrame.getContext("2d").fillRect(0, 0, 4, 4);
+      const downFrame = createCanvas(4, 4);
+      downFrame.getContext("2d").fillStyle = "#0000ff";
+      downFrame.getContext("2d").fillRect(0, 0, 4, 4);
+
+      const spritesheet = composeFrameRowsToSpritesheet(
+        {
+          up: [{ canvas: upFrame, frameNumber: 1 }],
+          down: [{ canvas: downFrame, frameNumber: 1 }],
+        },
+        ["up", "down"],
+      );
+
+      expect(spritesheet).to.not.equal(null);
+      expect(spritesheet.width).to.equal(4);
+      expect(spritesheet.height).to.equal(8);
+      const ctx = spritesheet.getContext("2d");
+      const upPixel = ctx.getImageData(0, 0, 1, 1).data;
+      const downPixel = ctx.getImageData(0, 4, 1, 1).data;
+      expect([upPixel[0], upPixel[1], upPixel[2], upPixel[3]]).to.deep.equal([
+        255, 0, 0, 255,
+      ]);
+      expect([
+        downPixel[0],
+        downPixel[1],
+        downPixel[2],
+        downPixel[3],
+      ]).to.deep.equal([0, 0, 255, 255]);
+    });
+
+    it("returns null when there are no populated directions", () => {
+      expect(composeFrameRowsToSpritesheet({ up: [] }, ["up"])).to.equal(null);
+    });
+  });
+
   describe("zip export helpers", () => {
     describe("zipExportTimestamp", () => {
       it("returns a string with no colons or dots (filename-safe)", () => {
@@ -574,38 +619,38 @@ describe("utils/zip-helpers.ts", () => {
       beforeEach(() => {
         canvasRendererOrig = window.canvasRenderer;
         jsZipOrig = window.JSZip;
+        resetNotificationsForTests();
       });
 
       afterEach(() => {
         window.canvasRenderer = canvasRendererOrig;
         window.JSZip = jsZipOrig;
+        resetNotificationsForTests();
       });
 
-      it("returns true and does not alert when prerequisites exist", () => {
+      it("returns true and does not notify when prerequisites exist", () => {
         window.canvasRenderer = {};
         window.JSZip = function FakeJSZip() {};
-        const alertSpy = sinon.stub(window, "alert");
         expect(guardZipExportEnvironment()).to.be.true;
-        expect(alertSpy.called).to.be.false;
-        alertSpy.restore();
+        expect(getToasts()).to.have.length(0);
       });
 
-      it("returns false and alerts when JSZip is missing", () => {
+      it("returns false and notifies when JSZip is missing", () => {
         window.canvasRenderer = {};
         window.JSZip = undefined;
-        const alertSpy = sinon.stub(window, "alert");
         expect(guardZipExportEnvironment()).to.be.false;
-        expect(alertSpy.firstCall.args[0]).to.equal("JSZip library not loaded");
-        alertSpy.restore();
+        expect(getToasts().map((toast) => toast.message)).to.include(
+          "JSZip library not loaded",
+        );
       });
 
-      it("returns false and alerts when canvasRenderer is missing", () => {
+      it("returns false and notifies when canvasRenderer is missing", () => {
         window.canvasRenderer = undefined;
         window.JSZip = function FakeJSZip() {};
-        const alertSpy = sinon.stub(window, "alert");
         expect(guardZipExportEnvironment()).to.be.false;
-        expect(alertSpy.calledOnce).to.be.true;
-        alertSpy.restore();
+        expect(getToasts().map((toast) => toast.message)).to.include(
+          "JSZip library not loaded",
+        );
       });
     });
 

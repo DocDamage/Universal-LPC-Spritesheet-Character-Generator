@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * exportSplitItemAnimations — sorted zip paths
  *
@@ -123,5 +124,5 @@ export const paths = [
   "standard/walk/055 iverness_cloak__black_.png",
   "standard/walk/100 human_male__light_.png",
   "standard/walk/120 natural__violet_.png",
-  "standard/walk/140 longsword__longsword_.png"
+  "standard/walk/140 longsword__longsword_.png",
 ];

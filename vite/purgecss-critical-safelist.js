@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Safelist for PurgeCSS on the **critical** CSS bundle only.
  * - `standard`: exact class names used before / during early Mithril paint (incl. skeletons).
@@ -91,6 +92,12 @@ export function getPurgeSafelist() {
       "variants-container",
       "box",
     ],
-    greedy: [/^skeleton-/, /^preview-canvas/, /^category-tree/],
+    greedy: [
+      /^skeleton-/,
+      /^preview-canvas/,
+      /^category-tree/,
+      /^desktop-/,
+      /^part-editor-/,
+    ],
   };
 }

@@ -66,17 +66,8 @@
     {
       "file": "feet/boots/basic",
       "notes": "original by Nila122, edited for male and v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "bluecarrot16",
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman", "bluecarrot16", "Nila122"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-clothes-and-hair",
         "https://opengameart.org/content/lpc-expanded-socks-shoes"
@@ -85,17 +76,8 @@
     {
       "file": "feet/boots/basic/thin",
       "notes": "original by Nila122, edited for v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
-      "authors": [
-        "JaidynReiman",
-        "bluecarrot16",
-        "Nila122"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0",
-        "GPL 2.0",
-        "GPL 3.0"
-      ],
+      "authors": ["JaidynReiman", "bluecarrot16", "Nila122"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0", "GPL 2.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-clothes-and-hair",
         "https://opengameart.org/content/lpc-expanded-socks-shoes"

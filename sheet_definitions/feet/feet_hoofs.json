@@ -45,28 +45,15 @@
     {
       "file": "feet/hoofs",
       "notes": "",
-      "authors": [
-        "Evert"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-faun-and-minotaur"
-      ]
+      "authors": ["Evert"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-faun-and-minotaur"]
     },
     {
       "file": "feet/hoofs/female",
       "notes": "edited for v3 female bases by bluecarrot16",
-      "authors": [
-        "bluecarrot16",
-        "Evert"
-      ],
-      "licenses": [
-        "CC-BY-SA 3.0",
-        "GPL 3.0"
-      ],
+      "authors": ["bluecarrot16", "Evert"],
+      "licenses": ["CC-BY-SA 3.0", "GPL 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-faun-and-minotaur",
         "http://opengameart.org/content/lpc-clothing-updates"

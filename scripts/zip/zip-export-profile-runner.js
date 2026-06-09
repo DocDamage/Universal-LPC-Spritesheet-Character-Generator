@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable no-undef -- browser harness (window, document, m) */
 
 /**

@@ -37,22 +37,13 @@
         "laetissima",
         "Matthew Krohn (makrohn)"
       ],
-      "licenses": [
-        "GPL 3.0",
-        "CC-BY-SA 3.0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-base-character-expressions"
-      ]
+      "licenses": ["GPL 3.0", "CC-BY-SA 3.0"],
+      "urls": ["https://opengameart.org/content/lpc-base-character-expressions"]
     }
   ],
   "recolors": {
     "material": "body",
-    "palettes": [
-      "ulpc",
-      "lpcr",
-      "all.lpcr"
-    ]
+    "palettes": ["ulpc", "lpcr", "all.lpcr"]
   },
   "type_name": "nose"
 }

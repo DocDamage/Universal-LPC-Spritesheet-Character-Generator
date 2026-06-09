@@ -67,15 +67,9 @@
     {
       "file": "facial/earrings/simple",
       "notes": "",
-      "authors": [
-        "bluecarrot16"
-      ],
-      "licenses": [
-        "CC0"
-      ],
-      "urls": [
-        "https://opengameart.org/content/lpc-pirates"
-      ]
+      "authors": ["bluecarrot16"],
+      "licenses": ["CC0"],
+      "urls": ["https://opengameart.org/content/lpc-pirates"]
     }
   ],
   "type_name": "earring_left"

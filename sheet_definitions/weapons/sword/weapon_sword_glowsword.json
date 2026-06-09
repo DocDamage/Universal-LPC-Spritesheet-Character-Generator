@@ -30,28 +30,14 @@
     "female": "weapon/sword/glowsword/attack_slash/",
     "pregnant": "weapon/sword/glowsword/attack_slash/"
   },
-  "variants": [
-    "blue",
-    "red"
-  ],
-  "animations": [
-    "walk",
-    "hurt",
-    "slash_oversize"
-  ],
+  "variants": ["blue", "red"],
+  "animations": ["walk", "hurt", "slash_oversize"],
   "credits": [
     {
       "file": "weapon/sword/glowsword",
       "notes": "",
-      "authors": [
-        "bluecarrot16",
-        "tskaufma",
-        "Johannes Sjölund (wulax)"
-      ],
-      "licenses": [
-        "OGA-BY 3.0",
-        "CC-BY-SA 3.0"
-      ],
+      "authors": ["bluecarrot16", "tskaufma", "Johannes Sjölund (wulax)"],
+      "licenses": ["OGA-BY 3.0", "CC-BY-SA 3.0"],
       "urls": [
         "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
         "https://opengameart.org/content/lpc-glow-sword",

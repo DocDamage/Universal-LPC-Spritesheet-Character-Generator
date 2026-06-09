@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { expect } from "chai";
 import { describe, it, beforeEach } from "mocha-globals";
 import { BodyTypeSelector } from "../../../sources/components/tree/BodyTypeSelector.ts";

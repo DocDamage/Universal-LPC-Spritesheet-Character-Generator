@@ -9,13 +9,12 @@ import { getImageToDraw } from "./palette-recolor.ts";
 import { getMultiRecolors } from "../state/palettes.ts";
 import { createCanvas, getZPos } from "./canvas-utils.ts";
 import { variantToFilename } from "../utils/helpers.ts";
-import { drawFramesToCustomAnimation } from "./draw-frames.ts";
 import {
   FRAME_SIZE,
   ANIMATION_OFFSETS,
   ANIMATION_CONFIGS,
 } from "../state/constants.ts";
-import { customAnimations, customAnimationBase } from "../custom-animations.ts";
+import { customAnimations } from "../custom-animations.ts";
 import {
   setCurrentCustomAnimations,
   setCustomAnimYPositions,
@@ -31,11 +30,7 @@ import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
 import { state as appState, type Selections } from "../state/app-state.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
-import {
-  type CustomAreaItem,
-  type LayerSource,
-  renderState,
-} from "../state/render-state.ts";
+import { renderState } from "../state/render-state.ts";
 import {
   SHEET_HEIGHT,
   SHEET_WIDTH,
@@ -45,7 +40,6 @@ import {
   getRuntimeCustomPart,
   initCanvas,
   isOffscreenCanvasInitialized,
-  loadCustomAreaImages,
   resetOffscreenCanvasStateForTests,
   setOffscreenCanvasInitializedForTests,
   zipExportProfiledLoadComposite,
@@ -53,6 +47,10 @@ import {
 import { drawStandardDrawCalls } from "./renderer-draw.ts";
 import { extractAnimationFromSheet } from "./animation-extract.ts";
 import { calculateCustomAnimationLayout } from "./renderer-custom-animation-layout.ts";
+import {
+  drawCustomAnimationAreas,
+  type CustomAnimationItem,
+} from "./renderer-custom-areas.ts";
 
 export {
   SHEET_HEIGHT,
@@ -88,23 +86,6 @@ const animationConfigByName = ANIMATION_CONFIGS as Record<
   AnimationConfig | undefined
 >;
 const animationOffsetByName = ANIMATION_OFFSETS as Record<string, number>;
-
-/**
- * Where the bytes for a drawable layer come from. The two cases converge on
- * `HTMLImageElement`: `catalog` items resolve a URL via `getSpritePath` and
- * fetch through `loadImage`; `custom` items carry the already-decoded image
- * from the user's file upload.
- */
-type CustomAnimationItem = {
-  itemId: string;
-  name?: string;
-  variant: string | null;
-  recolors: Recolors;
-  source: LayerSource;
-  zPos: number;
-  layerNum: number;
-  customAnimation: string;
-};
 
 /** Commit 10: one render at a time; new calls wait behind the in-flight one. */
 let renderCharacterSerial: Promise<void> = Promise.resolve();
@@ -347,98 +328,15 @@ async function runRenderCharacter(
 
     await drawStandardDrawCalls(renderCtx, drawCalls);
 
-    for (const key of Object.keys(customAreaItems)) {
-      delete customAreaItems[key];
-    }
-
-    // Now handle custom animations (wheelchair, etc.)
-    if (addedCustomAnimations.size > 0 && customAnimations) {
-      // For each custom animation area, we need to draw layers in zPos order
-      for (const customAnimName of addedCustomAnimations) {
-        const customAnimDef = customAnimations[customAnimName];
-        if (!customAnimDef) continue;
-
-        const offsetY =
-          customAnimationLayout.customAnimYPositions[customAnimName];
-        const baseAnim = customAnimationBase
-          ? customAnimationBase(customAnimDef)
-          : null;
-
-        // Collect all items that need to be drawn in this custom animation area
-        const areaItems: CustomAreaItem[] = [];
-        customAreaItems[customAnimName] = areaItems;
-
-        // 1. Add custom animation sprite layers (wheelchair background/foreground)
-        for (const item of customAnimationItems) {
-          if (item.customAnimation === customAnimName) {
-            areaItems.push({
-              type: "custom_sprite",
-              zPos: item.zPos,
-              source: item.source,
-              itemId: item.itemId,
-              animation: customAnimName,
-              recolors: item.recolors,
-              variant: item.variant,
-              name: item.name,
-            });
-          }
-        }
-
-        // 2. Add standard items that need to be extracted into this custom animation
-        // (e.g., body "sit" frames go into wheelchair custom animation).
-        // Custom-source items have no spritePath to extract frames from, so skip them.
-        if (baseAnim) {
-          for (const item of drawCalls) {
-            if (item.animation === baseAnim && item.source.kind === "catalog") {
-              areaItems.push({
-                type: "extracted_frames",
-                zPos: item.zPos,
-                source: item.source,
-                itemId: item.itemId,
-                animation: item.animation,
-                needsRecolor: item.needsRecolor,
-                recolors: item.recolors,
-                variant: item.variant,
-                name: item.name,
-              });
-            }
-          }
-        }
-
-        // Sort by zPos to get correct layer order
-        areaItems.sort((a, b) => a.zPos - b.zPos);
-
-        // Load all custom area images in parallel
-        const loadedCustomImages = await loadCustomAreaImages(areaItems);
-
-        // Draw in zPos order
-        for (const { item: areaItem, img, success } of loadedCustomImages) {
-          if (success && img) {
-            const imageToUse = await getImageToDraw(
-              img,
-              areaItem.itemId,
-              areaItem.recolors,
-              areaItem.source.kind === "catalog"
-                ? areaItem.source.spritePath
-                : null,
-            );
-
-            if (areaItem.type === "custom_sprite") {
-              // Draw custom sprite directly (wheelchair background or foreground)
-              renderCtx.drawImage(imageToUse, 0, offsetY!);
-            } else if (areaItem.type === "extracted_frames") {
-              // Extract and draw frames from standard sprite
-              drawFramesToCustomAnimation(
-                renderCtx,
-                customAnimDef,
-                offsetY!,
-                imageToUse,
-              );
-            }
-          }
-        }
-      }
-    }
+    await drawCustomAnimationAreas({
+      renderCtx,
+      addedCustomAnimations,
+      customAnimations,
+      customAnimationItems,
+      drawCalls,
+      customAreaItems,
+      customAnimYPositions: customAnimationLayout.customAnimYPositions,
+    });
   } finally {
     appState.isRenderingCharacter = false;
     m.redraw();

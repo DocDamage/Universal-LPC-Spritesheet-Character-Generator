@@ -31,7 +31,11 @@ export function buildSlotViewData(
 ) {
   // ── Slot options & selection ──────────────────────────────────────
 
-  const options = getSlotOptions(slot, catalog);
+  let options = getSlotOptions(slot, catalog);
+  const filterText = stateObj.slotItemFilter.trim().toLowerCase();
+  if (filterText) {
+    options = options.filter(opt => opt.label.toLowerCase().includes(filterText));
+  }
   const selectedValue = getSlotSelectedValue(slot, catalog);
   const hasSelection = selectedValue !== "";
   const isBodyType = slot.kind === "bodyType";

@@ -67,6 +67,20 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
             " Cast Shadow",
           ],
         ),
+        m(
+          "label.desktop-toggle",
+          { title: "Toggle Multi-Scale Preview Strip" },
+          [
+            m("input[type=checkbox]", {
+              checked: state.showScaleStrip,
+              onchange: (e: Event) => {
+                state.showScaleStrip = (e.target as HTMLInputElement).checked;
+                m.redraw();
+              },
+            }),
+            " Multi-Scale Strip",
+          ],
+        ),
       ]),
       // Buttons row
       m("div.desktop-buttons", [
@@ -95,6 +109,32 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
             ),
           },
           "💾 Save",
+        ),
+        m(
+          "button.desktop-btn",
+          {
+            onclick: () => {
+              executeCommand("app.share.url");
+            },
+            title: getCommandTitle(
+              "app.share.url",
+              "Copy character URL to clipboard",
+            ),
+          },
+          "🔗 Share",
+        ),
+        m(
+          "button.desktop-btn",
+          {
+            onclick: () => {
+              executeCommand("app.export.json");
+            },
+            title: getCommandTitle(
+              "app.export.json",
+              "Download character configuration as a JSON file",
+            ),
+          },
+          "⬇ JSON",
         ),
         m(
           "button.desktop-btn",

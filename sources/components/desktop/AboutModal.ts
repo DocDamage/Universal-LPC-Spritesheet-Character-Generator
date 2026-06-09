@@ -7,8 +7,16 @@ import {
   APP_PACKAGING_NOTES,
   APP_VERSION,
 } from "../../state/app-metadata.ts";
-import { BUILD_REQUIRES_LICENSE } from "../../state/build-config.ts";
-import { getLicenseState, clearLicense } from "../../state/license-state.ts";
+import {
+  BUILD_REQUIRES_LICENSE,
+  ITCH_GAME_ID,
+} from "../../state/build-config.ts";
+import {
+  getLicenseState,
+  clearLicense,
+  isLicenseValid,
+} from "../../state/license-state.ts";
+import { showToast } from "../../state/notifications.ts";
 
 export const AboutModal: m.Component = {
   view() {
@@ -17,6 +25,10 @@ export const AboutModal: m.Component = {
     const close = () => {
       state.showAbout = false;
     };
+
+    const purchaseUrl = ITCH_GAME_ID
+      ? `https://itch.io/s/${ITCH_GAME_ID}`
+      : "https://docroshi.itch.io/custom_LPC_character_creation_studio";
 
     return m("div.about-overlay", { onclick: close }, [
       m(
@@ -56,13 +68,21 @@ export const AboutModal: m.Component = {
               "Pro: advanced editor, imports, ZIP/batch exports, animation exports, and engine presets.",
               "Studio: project libraries, thumbnails, reports, contact sheets, and production handoff workflows.",
             ]),
-            BUILD_REQUIRES_LICENSE ? renderLicenseSection() : null,
+            BUILD_REQUIRES_LICENSE ? renderLicenseSection(purchaseUrl) : null,
           ]),
           m("div.about-footer", [
-            m(
-              "span",
-              "Credits and license information are part of the app workflow so exported characters can be attributed correctly.",
-            ),
+            m("div.about-footer-links", [
+              m(
+                "a.button.is-small.is-light",
+                {
+                  href: purchaseUrl,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  title: "Check for updates and purchase on itch.io",
+                },
+                "🔄 Check for Updates on itch.io",
+              ),
+            ]),
             m(
               "button.button.is-small.is-light",
               {
@@ -88,11 +108,12 @@ function renderSection(title: string, items: readonly string[]): m.Children {
   ]);
 }
 
-function renderLicenseSection(): m.Children {
+function renderLicenseSection(purchaseUrl: string): m.Children {
   const license = getLicenseState();
   let statusText = "No active license";
   let details: string[] = [];
   let showDeactivate = false;
+  let showReverify = false;
 
   if (license.kind === "valid") {
     statusText = "Licensed (Active)";
@@ -102,22 +123,43 @@ function renderLicenseSection(): m.Children {
       `Key Hash: ${license.downloadKeyHash.substring(0, 10)}...`,
     ];
     showDeactivate = true;
+    showReverify = true;
   } else if (license.kind === "offline-grace") {
-    statusText = "Offline Grace Period";
+    statusText = "Offline Grace Period (Re-verify to refresh)";
     details = [
       `Edition: ${license.edition.toUpperCase()}`,
       `Expires: ${new Date(license.expiresAt).toLocaleDateString()} (Grace active)`,
     ];
     showDeactivate = true;
+    showReverify = true;
   } else if (license.kind === "invalid") {
     statusText = "Invalid License Key";
     details = [`Reason: ${license.reason}`];
+    showReverify = true;
   } else if (license.kind === "checking") {
     statusText = "Checking License...";
   } else if (license.kind === "required") {
     statusText = "Key Required";
     details = ["Please enter your itch.io key in the startup gate."];
+    showReverify = true;
   }
+
+  const handleCopyDiagnostics = () => {
+    const info = [
+      `App: LPC Character Generator v${APP_VERSION}`,
+      `License status: ${statusText}`,
+      ...details,
+      `Valid: ${isLicenseValid()}`,
+    ].join("\n");
+    navigator.clipboard
+      .writeText(info)
+      .then(() =>
+        showToast("Diagnostics copied to clipboard.", { kind: "success" }),
+      )
+      .catch(() =>
+        showToast("Could not copy to clipboard.", { kind: "warning" }),
+      );
+  };
 
   return m("article.about-section", [
     m("h3", "License Information"),
@@ -131,17 +173,53 @@ function renderLicenseSection(): m.Children {
           details.map((item) => m("li", item)),
         )
       : null,
-    showDeactivate
-      ? m(
-          "button.button.is-danger.is-small.mt-2",
-          {
-            type: "button",
-            onclick: () => {
-              clearLicense();
+    m("div.buttons.mt-2", [
+      showReverify
+        ? m(
+            "button.button.is-info.is-small",
+            {
+              type: "button",
+              title: "Clear cached license and re-enter your key",
+              onclick: () => {
+                clearLicense();
+                state.showAbout = false;
+                // The LicenseGateModal will reappear on next render
+              },
             },
-          },
-          "Deactivate License",
-        )
-      : null,
+            "Re-verify License",
+          )
+        : null,
+      showDeactivate
+        ? m(
+            "button.button.is-danger.is-small",
+            {
+              type: "button",
+              onclick: () => {
+                clearLicense();
+              },
+            },
+            "Deactivate License",
+          )
+        : null,
+      m(
+        "button.button.is-light.is-small",
+        {
+          type: "button",
+          title: "Copy license and app info for support",
+          onclick: handleCopyDiagnostics,
+        },
+        "Copy Diagnostics",
+      ),
+      m(
+        "a.button.is-light.is-small",
+        {
+          href: purchaseUrl,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          title: "Purchase or manage your license on itch.io",
+        },
+        "itch.io Page",
+      ),
+    ]),
   ]);
 }

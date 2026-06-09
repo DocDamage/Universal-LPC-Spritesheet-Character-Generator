@@ -1,40 +1,40 @@
-/* ============================================================
-   Desktop-style UI for LPC Character Generator
-   Premium Dark Theme — Professional Pixel Art Workspace
-   ============================================================ */
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@font-face {
+  font-family: "CuteFantasy";
+  src: url("./cute-fantasy-ui/CuteFantasy-5x9.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
 
 /* ─── CSS Custom Properties ─── */
 :root {
-  --bg-darkest: #0d0d12;
-  --bg-dark: #13131e;
-  --bg-mid: #1a1a2e;
-  --bg-panel: #1e1e32;
-  --bg-raised: #252540;
-  --bg-hover: #2d2d50;
-  --bg-active: #353568;
+  --bg-darkest: #1b120c;
+  --bg-dark: #291b10;
+  --bg-mid: #382516;
+  --bg-panel: #47301c;
+  --bg-raised: #593c23;
+  --bg-hover: #704c2c;
+  --bg-active: #8c5f37;
 
-  --accent-primary: #7c6df0;
-  --accent-secondary: #a855f7;
+  --accent-primary: #df9e57;
+  --accent-secondary: #c07830;
   --accent-gold: #f59e0b;
-  --accent-emerald: #10b981;
-  --accent-rose: #f43f5e;
-  --accent-sky: #38bdf8;
+  --accent-emerald: #5c9e31;
+  --accent-rose: #a73e3e;
+  --accent-sky: #4ba3cd;
 
-  --border-subtle: rgba(124, 109, 240, 0.15);
-  --border-mid: rgba(124, 109, 240, 0.3);
-  --border-bright: rgba(124, 109, 240, 0.6);
+  --border-subtle: rgba(223, 158, 87, 0.15);
+  --border-mid: rgba(223, 158, 87, 0.35);
+  --border-bright: rgba(223, 158, 87, 0.75);
 
-  --text-primary: #f0eeff;
-  --text-secondary: #a9a4cc;
-  --text-muted: #6b6890;
-  --text-accent: #b0a4ff;
+  --text-primary: #f5eae0;
+  --text-secondary: #d9c7b8;
+  --text-muted: #8c7664;
+  --text-accent: #ffd8a8;
 
   --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px rgba(124, 109, 240, 0.25);
+  --shadow-glow: 0 0 20px rgba(223, 158, 87, 0.2);
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -42,6 +42,30 @@
 
   --transition-fast: 0.15s ease;
   --transition-mid: 0.25s ease;
+}
+
+/* Custom Webkit scrollbar for fantasy theme */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-darkest);
+  border: 3px solid var(--bg-mid);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border: 3px solid var(--bg-darkest);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-accent);
+}
+
+/* Custom Cursors */
+body, button, select, input, label, a {
+  cursor: url("./cute-fantasy-ui/Pointer_Click_Anim.png"), auto !important;
 }
 
 /* ─── Global Reset ─── */
@@ -59,16 +83,21 @@
   width: 100vw;
   background: var(--bg-darkest);
   color: var(--text-primary);
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
-  font-size: 13px;
+  font-family: "CuteFantasy", monospace;
+  font-size: 16px;
+  line-height: 1.2;
   overflow: hidden;
   position: relative;
+  image-rendering: pixelated;
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
 
-  /* Subtle grid background */
+  /* Fantasy grid background */
   background-image:
-    linear-gradient(rgba(124, 109, 240, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 109, 240, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(223, 158, 87, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(223, 158, 87, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* ─── Title Bar ─── */
@@ -126,31 +155,31 @@
 .desktop-title-btn {
   width: 26px;
   height: 22px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-raised);
+  background: transparent;
+  border: 5px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_grey_normal.png") 5 fill repeat;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: all var(--transition-fast);
+  image-rendering: pixelated;
 
   &:hover {
-    background: var(--bg-hover);
+    filter: brightness(1.2);
     color: var(--text-primary);
-    border-color: var(--border-mid);
+  }
+
+  &:active {
+    border-image: url("./cute-fantasy-ui/buttons/btn_grey_pressed.png") 5 fill repeat;
+    padding-top: 1px;
   }
 }
 
 .desktop-title-btn-close:hover {
-  background: var(--accent-rose) !important;
-  border-color: var(--accent-rose) !important;
-  color: white !important;
-  box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+  filter: hue-rotate(-50deg) brightness(1.2) !important;
 }
 
 /* ─── Palette Bar ─── */
@@ -175,20 +204,28 @@
 
 .desktop-palette-select {
   background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  padding: 1px 6px;
-  font-size: 11px;
+  border: 4px solid transparent;
+  border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
+  color: var(--text-primary);
+  padding: 1px 4px;
+  font-size: 14px;
   min-width: 100px;
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  image-rendering: pixelated;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23df9e57' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 2px center;
+  background-size: 16px;
+  padding-right: 18px;
 
-  &:hover,
+  &:hover {
+    filter: brightness(1.1);
+  }
+
   &:focus {
-    border-color: var(--border-mid);
     outline: none;
-    color: var(--text-primary);
+    border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 8 fill repeat;
   }
 }
 
@@ -210,22 +247,16 @@
 /* ─── Panels ─── */
 .desktop-panel {
   background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 6px 8px;
+  border: 12px solid transparent;
+  border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 24 fill repeat;
+  padding: 0px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   min-width: 0;
   position: relative;
-  box-shadow:
-    var(--shadow-md),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  transition: border-color var(--transition-mid);
-
-  &:hover {
-    border-color: var(--border-mid);
-  }
+  box-shadow: var(--shadow-md);
+  image-rendering: pixelated;
 }
 
 .desktop-panel-managed {
@@ -240,14 +271,14 @@
   gap: 8px;
   min-height: 28px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 2px solid var(--bg-darkest);
   background: rgba(13, 13, 18, 0.44);
   flex-shrink: 0;
 }
 
 .desktop-panel-layout-title {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.7px;
   text-transform: uppercase;
@@ -265,9 +296,9 @@
 .desktop-panel-layout-btn {
   width: 22px;
   height: 20px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-raised);
+  background: transparent;
+  border: 5px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_grey_normal.png") 5 fill repeat;
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -276,12 +307,16 @@
   padding: 0;
   font-size: 14px;
   line-height: 1;
-  transition: all var(--transition-fast);
+  image-rendering: pixelated;
 
   &:hover:not(:disabled) {
-    background: var(--bg-hover);
-    border-color: var(--border-mid);
+    filter: brightness(1.2);
     color: var(--text-primary);
+  }
+
+  &:active:not(:disabled) {
+    border-image: url("./cute-fantasy-ui/buttons/btn_grey_pressed.png") 5 fill repeat;
+    padding-top: 1px;
   }
 
   &:disabled {
@@ -368,32 +403,34 @@
 .desktop-tab-btn {
   flex: 1;
   background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  padding: 6px 4px;
-  font-size: 11px;
+  border: 5px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_brown_normal.png") 5 fill repeat;
+  color: var(--text-secondary);
+  padding: 2px 4px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
-  transition: all var(--transition-mid);
-  letter-spacing: 0.2px;
+  image-rendering: pixelated;
 
   &:hover {
-    background: var(--bg-raised);
-    color: var(--text-secondary);
+    filter: brightness(1.15);
+    color: var(--text-primary);
+  }
+
+  &:active {
+    border-image: url("./cute-fantasy-ui/buttons/btn_brown_pressed.png") 5 fill repeat;
   }
 
   &.active {
-    background: linear-gradient(
-      135deg,
-      var(--accent-primary),
-      var(--accent-secondary)
-    );
+    border-image: url("./cute-fantasy-ui/buttons/btn_gold_normal.png") 5 fill repeat;
     color: white;
-    box-shadow:
-      var(--shadow-sm),
-      0 0 12px rgba(124, 109, 240, 0.3);
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+
+    &:active {
+      border-image: url("./cute-fantasy-ui/buttons/btn_gold_pressed.png") 5 fill repeat;
+    }
   }
 }
 
@@ -428,15 +465,15 @@
 .desktop-slot-search {
   width: 100%;
   background: var(--bg-darkest);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  padding: 4px 8px;
-  font-size: 11px;
+  border: 4px solid transparent;
+  border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
+  color: var(--text-primary);
+  padding: 2px 6px;
+  font-size: 14px;
   font-family: inherit;
   margin-bottom: 6px;
   flex-shrink: 0;
-  transition: border-color var(--transition-fast);
+  image-rendering: pixelated;
 
   &::placeholder {
     color: var(--text-muted);
@@ -445,10 +482,8 @@
 
   &:hover,
   &:focus {
-    border-color: var(--accent-primary);
     outline: none;
-    color: var(--text-primary);
-    box-shadow: 0 0 0 2px rgba(124, 109, 240, 0.1);
+    border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 8 fill repeat;
   }
 }
 
@@ -506,26 +541,30 @@
 .desktop-slot-select {
   flex: 1;
   background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border: 4px solid transparent;
+  border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
   color: var(--text-primary);
-  padding: 2px 6px;
-  font-size: 11px;
+  padding: 1px 4px;
+  font-size: 14px;
   min-width: 0;
   cursor: pointer;
-  height: 22px;
-  transition: all var(--transition-fast);
+  height: 24px;
   font-family: inherit;
+  image-rendering: pixelated;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23df9e57' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 2px center;
+  background-size: 16px;
+  padding-right: 18px;
 
   &:hover {
-    border-color: var(--border-mid);
-    background: var(--bg-hover);
+    filter: brightness(1.1);
   }
 
   &:focus {
     outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(124, 109, 240, 0.2);
+    border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 8 fill repeat;
   }
 
   option {
@@ -534,82 +573,69 @@
   }
 }
 
-.desktop-slot-dice {
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-raised);
+.desktop-slot-dice,
+.desktop-slot-edit {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 5px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_grey_normal.png") 5 fill repeat;
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  image-rendering: pixelated;
+  transition: transform var(--transition-fast);
 
   &:hover {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-    color: white;
-    transform: rotate(20deg) scale(1.1);
-    box-shadow: 0 0 8px rgba(124, 109, 240, 0.4);
+    filter: brightness(1.2);
+    color: var(--text-primary);
   }
 
   &:active {
-    transform: rotate(180deg) scale(0.95);
+    border-image: url("./cute-fantasy-ui/buttons/btn_grey_pressed.png") 5 fill repeat;
+    padding-top: 1px;
   }
 }
 
-.desktop-slot-edit {
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-raised);
-  color: var(--text-secondary);
-  font-size: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  transition: all var(--transition-fast);
+.desktop-slot-dice:hover {
+  transform: rotate(20deg) scale(1.1);
+}
 
-  &:hover {
-    background: var(--accent-emerald);
-    border-color: var(--accent-emerald);
-    color: white;
-    transform: scale(1.1);
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-  }
+.desktop-slot-dice:active {
+  transform: rotate(180deg) scale(0.95);
 }
 
 .desktop-slot-import {
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-raised);
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 5px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_grey_normal.png") 5 fill repeat;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  image-rendering: pixelated;
+  transition: transform var(--transition-fast);
 
   &:hover {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-    color: white;
+    filter: brightness(1.2);
+    color: var(--text-primary);
     transform: scale(1.08);
-    box-shadow: 0 0 8px rgba(124, 109, 240, 0.35);
+  }
+
+  &:active {
+    border-image: url("./cute-fantasy-ui/buttons/btn_grey_pressed.png") 5 fill repeat;
+    padding-top: 1px;
   }
 }
 
@@ -1210,21 +1236,29 @@
 
 .desktop-anim-select {
   background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border: 4px solid transparent;
+  border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
   color: var(--text-primary);
-  padding: 2px 8px;
-  font-size: 11px;
+  padding: 1px 4px;
+  font-size: 14px;
   min-width: 130px;
   cursor: pointer;
   font-family: inherit;
-  transition: border-color var(--transition-fast);
+  image-rendering: pixelated;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23df9e57' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 2px center;
+  background-size: 16px;
+  padding-right: 18px;
 
-  &:hover,
+  &:hover {
+    filter: brightness(1.1);
+  }
+
   &:focus {
-    border-color: var(--accent-primary);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(124, 109, 240, 0.15);
+    border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 8 fill repeat;
   }
 
   option {
@@ -1400,10 +1434,27 @@
   }
 
   input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    accent-color: var(--accent-primary);
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--bg-darkest);
+    border: 4px solid transparent;
+    border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
+    image-rendering: pixelated;
+    position: relative;
     cursor: pointer;
+    vertical-align: middle;
+
+    &:checked::after {
+      content: "";
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent-primary);
+      border-radius: 1px;
+    }
   }
 }
 
@@ -1416,63 +1467,42 @@
 }
 
 .desktop-btn {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  padding: 5px 14px;
-  font-size: 12px;
+  background: transparent;
+  border: 6px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_brown_normal.png") 6 fill repeat;
+  color: var(--text-primary);
+  padding: 2px 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   min-width: 72px;
-  transition: all var(--transition-fast);
-  font-family: inherit;
-  letter-spacing: 0.2px;
+  image-rendering: pixelated;
 
   &:hover {
-    background: var(--bg-hover);
-    border-color: var(--border-mid);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    filter: brightness(1.15);
   }
 
   &:active {
-    transform: translateY(0);
+    border-image: url("./cute-fantasy-ui/buttons/btn_brown_pressed.png") 6 fill repeat;
+    padding: 3px 14px 1px 14px;
   }
 }
 
 .desktop-btn-random {
-  background: linear-gradient(
-    135deg,
-    rgba(124, 109, 240, 0.2),
-    rgba(168, 85, 247, 0.2)
-  );
-  border-color: rgba(124, 109, 240, 0.4);
-  color: var(--text-accent);
+  border-image: url("./cute-fantasy-ui/buttons/btn_gold_normal.png") 6 fill repeat;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 
-  &:hover {
-    background: linear-gradient(
-      135deg,
-      var(--accent-primary),
-      var(--accent-secondary)
-    );
-    border-color: var(--accent-secondary);
-    color: white;
-    box-shadow: 0 0 16px rgba(124, 109, 240, 0.4);
+  &:active {
+    border-image: url("./cute-fantasy-ui/buttons/btn_gold_pressed.png") 6 fill repeat;
   }
 }
 
 .desktop-btn-danger {
-  background: rgba(244, 63, 94, 0.15);
-  border-color: rgba(244, 63, 94, 0.3);
-  color: #fb7185;
+  filter: hue-rotate(-50deg) saturate(1.5) brightness(0.9);
 
   &:hover {
-    background: var(--accent-rose);
-    border-color: var(--accent-rose);
-    color: white;
-    box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);
+    filter: hue-rotate(-50deg) saturate(1.8) brightness(1.1);
   }
 }
 
@@ -1606,6 +1636,88 @@
 .studio-panel-locked {
   color: var(--text-muted);
 }
+
+.studio-upsell-card {
+  margin-top: 10px;
+  border: 1px solid rgba(124, 109, 240, 0.3);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    160deg,
+    rgba(124, 109, 240, 0.08) 0%,
+    rgba(168, 85, 247, 0.05) 100%
+  );
+  padding: 14px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.studio-upsell-price {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.studio-upsell-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-accent, #a78bfa);
+  letter-spacing: -0.5px;
+}
+
+.studio-upsell-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.studio-upsell-tagline {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.studio-upsell-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.studio-upsell-features li {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.studio-check {
+  color: #57c785;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.studio-upsell-actions {
+  margin-top: 2px;
+}
+
+.studio-upsell-actions .button.is-info {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 12px rgba(124, 109, 240, 0.35);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+
+  &:hover {
+    box-shadow: 0 4px 20px rgba(124, 109, 240, 0.55);
+    transform: translateY(-1px);
+  }
+}
+
 
 .studio-panel-header,
 .studio-project-save,
@@ -2946,11 +3058,10 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-panel);
-  border: 1px solid var(--border-bright);
-  border-radius: var(--radius-md);
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 1px rgba(255, 255, 255, 0.03);
+  border: 12px solid transparent;
+  border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 24 fill repeat;
+  box-shadow: var(--shadow-lg);
+  image-rendering: pixelated;
 }
 
 .confirm-dialog {
@@ -2981,6 +3092,21 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.about-footer {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.about-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .onboarding-header h2,

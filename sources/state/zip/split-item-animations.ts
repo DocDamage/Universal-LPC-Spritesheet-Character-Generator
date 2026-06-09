@@ -52,6 +52,9 @@ export const exportSplitItemAnimations = async (
 
         for (const [, selection] of Object.entries(state.selections)) {
           const { itemId, variant, name } = selection;
+          if (state.excludeHiddenLayersFromExports && state.hiddenLayerIds.has(itemId)) {
+            continue;
+          }
           const metaResult = defaultCatalog.getItemMerged(itemId);
           if (
             metaResult.isErr() ||
@@ -72,13 +75,20 @@ export const exportSplitItemAnimations = async (
             defaultCatalog,
             itemId,
           ).unwrapOr([]);
+          const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
+          const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+          const proSettings = loadProSettings();
+
           for (const layer of itemLayers) {
-            const fileName = getItemFileName(
+            const defaultFileName = getItemFileName(
               itemId,
               String(variant),
               name,
               layer.layerNum,
             );
+            const fileName = proSettings.namingTemplate
+              ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: anim.value, direction: "all", frame: "spritesheet", zpos: layer.zPos, slot: itemId }) + ".png"
+              : defaultFileName;
 
             try {
               const animCanvas = await renderSingleItemAnimationFn(

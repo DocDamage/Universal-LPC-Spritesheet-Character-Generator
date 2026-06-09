@@ -24,8 +24,15 @@ export const exportSplitItemSheets = async (
       const exportedItems: string[] = [];
       const failedItems: string[] = [];
 
+      const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
+      const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+      const proSettings = loadProSettings();
+
       for (const [, selection] of Object.entries(state.selections)) {
         const { itemId, variant, name } = selection;
+        if (state.excludeHiddenLayersFromExports && state.hiddenLayerIds.has(itemId)) {
+          continue;
+        }
         const itemLayers = getSortedLayersWithCustomFallback(
           defaultCatalog,
           itemId,
@@ -34,12 +41,15 @@ export const exportSplitItemSheets = async (
         const recolors = getMultiRecolors(itemId, state.selections);
 
         for (const layer of itemLayers) {
-          const fileName = getItemFileName(
+          const defaultFileName = getItemFileName(
             itemId,
             String(variant),
             name,
             layer.layerNum,
           );
+          const fileName = proSettings.namingTemplate
+            ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: "spritesheet", direction: "all", frame: "spritesheet", zpos: layer.zPos, slot: itemId }) + ".png"
+            : defaultFileName;
           try {
             const itemCanvas = await renderSingleItemFn(
               itemId,

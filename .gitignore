@@ -13,3 +13,6 @@ computed-style-diff-output/
 **/__screenshots__/
 /.vitest-attachments/
 .tool-versions
+# License keypair notes — contains private key, must NEVER be committed
+KEYPAIR_NOTES.md
+scratch/

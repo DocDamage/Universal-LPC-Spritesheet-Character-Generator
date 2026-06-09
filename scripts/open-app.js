@@ -2,7 +2,10 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const host = process.env["VITE_DEV_HOST"] || "127.0.0.1";
 const port = Number(process.env["VITE_DEV_PORT"] || 5173);
 const url = `http://${host}:${port}/`;

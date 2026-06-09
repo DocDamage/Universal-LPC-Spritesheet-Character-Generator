@@ -47,7 +47,8 @@ export async function saveCustomPartFromEditor(
 
     const customPartId = `custom_part_${Date.now()}`;
     const currentSelection =
-      editorState.draftPreviewOriginalSelection ?? state.selections[meta.type_name];
+      editorState.draftPreviewOriginalSelection ??
+      state.selections[meta.type_name];
     const customName = editorState.name.trim() || `Custom ${meta.name}`;
 
     registerCustomPart({

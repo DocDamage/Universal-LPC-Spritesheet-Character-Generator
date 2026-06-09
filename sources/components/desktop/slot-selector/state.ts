@@ -20,4 +20,5 @@ export function initializeSlotSelectorState(state: SlotSelectorState): void {
   state.customAssetFilter = "";
   state.customAssetTagInput = "";
   state.editingTagsPartId = null;
+  state.slotItemFilter = "";
 }

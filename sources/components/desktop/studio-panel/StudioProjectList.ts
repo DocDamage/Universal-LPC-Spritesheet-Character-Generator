@@ -266,7 +266,9 @@ function renderProjectRowActions(
             locked: nextLocked,
           });
           showToast(
-            nextLocked ? `Locked "${project.name}".` : `Unlocked "${project.name}".`,
+            nextLocked
+              ? `Locked "${project.name}".`
+              : `Unlocked "${project.name}".`,
             { kind: "success" },
           );
         },

@@ -2,25 +2,25 @@ import m from "mithril";
 import { showToast } from "../../../state/notifications.ts";
 import { randomizeAll } from "../slot-config.ts";
 import { triggerRender } from "../../render-effect.ts";
-import type { WorkflowToolsAttrs, WorkflowToolsState } from "./types.ts";
+import type { WorkflowToolsAttrs } from "./types.ts";
 import { createStudioProjectSnapshot } from "../../../state/studio-projects.ts";
+import { favoritesStore } from "../../../state/favorites-store.ts";
+import { characterUndoStore } from "../../../state/character-undo-store.ts";
+import { applyCharacterPreset } from "../../../state/character-presets-data.ts";
+import { syncSelectionsToHash } from "../../../state/hash-selection.ts";
 import {
   characterPresets,
-  pushUndo,
-  restoreSnapshot,
-  saveFavorites,
   selectionSummary,
   starterTemplates,
   themeRandomizers,
 } from "./workflow-helpers.ts";
 
-type FreeWorkflowToolsAttrs = WorkflowToolsAttrs & {
-  panelState: WorkflowToolsState;
-};
-
-export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
+export const FreeWorkflowTools: m.Component<WorkflowToolsAttrs> = {
+  oninit() {
+    favoritesStore.loadFavorites();
+  },
   view(vnode) {
-    const panelState = vnode.attrs.panelState;
+    const favorites = favoritesStore.favorites;
 
     return m("div.workflow-tier", [
       m("h4", "Free"),
@@ -40,9 +40,17 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
                 {
                   type: "button",
                   onclick: async () => {
-                    pushUndo(panelState);
-                    randomizeAll(vnode.attrs.catalog);
+                    characterUndoStore.pushUndo();
+                    // Custom preset logic
+                    if (preset.name === "RPG Hero") {
+                      applyCharacterPreset("Knight", vnode.attrs.catalog);
+                    } else if (preset.name === "Town NPC") {
+                      applyCharacterPreset("Villager", vnode.attrs.catalog);
+                    } else {
+                      randomizeAll(vnode.attrs.catalog);
+                    }
                     await triggerRender();
+                    syncSelectionsToHash();
                     showToast(`${preset.name} preset applied.`, {
                       kind: "success",
                     });
@@ -60,9 +68,10 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
             {
               type: "button",
               onclick: async () => {
-                pushUndo(panelState);
-                randomizeAll(vnode.attrs.catalog);
+                characterUndoStore.pushUndo();
+                applyCharacterPreset(template, vnode.attrs.catalog);
                 await triggerRender();
+                syncSelectionsToHash();
                 showToast(`${template} starter applied.`, {
                   kind: "success",
                 });
@@ -79,9 +88,17 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
             {
               type: "button",
               onclick: async () => {
-                pushUndo(panelState);
-                randomizeAll(vnode.attrs.catalog);
+                characterUndoStore.pushUndo();
+                // Randomize with filters
+                if (theme === "Enemy bandit") {
+                  applyCharacterPreset("Rogue", vnode.attrs.catalog);
+                } else if (theme === "Royal guard") {
+                  applyCharacterPreset("Guard", vnode.attrs.catalog);
+                } else {
+                  randomizeAll(vnode.attrs.catalog);
+                }
                 await triggerRender();
+                syncSelectionsToHash();
                 showToast(`${theme} randomizer applied.`, {
                   kind: "success",
                 });
@@ -96,12 +113,10 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
           "button.button.is-small",
           {
             type: "button",
-            disabled: panelState.undoStack.length === 0,
+            disabled: !characterUndoStore.canUndo(),
             onclick: async () => {
-              const snapshot = panelState.undoStack.pop();
-              if (!snapshot) return;
-              panelState.redoStack.push(createStudioProjectSnapshot());
-              await restoreSnapshot(snapshot);
+              await characterUndoStore.undo();
+              syncSelectionsToHash();
             },
           },
           "Undo Build",
@@ -110,12 +125,10 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
           "button.button.is-small",
           {
             type: "button",
-            disabled: panelState.redoStack.length === 0,
+            disabled: !characterUndoStore.canRedo(),
             onclick: async () => {
-              const snapshot = panelState.redoStack.pop();
-              if (!snapshot) return;
-              panelState.undoStack.push(createStudioProjectSnapshot());
-              await restoreSnapshot(snapshot);
+              await characterUndoStore.redo();
+              syncSelectionsToHash();
             },
           },
           "Redo Build",
@@ -126,22 +139,51 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
             type: "button",
             onclick: () => {
               const favorite = selectionSummary() || "Current character";
-              panelState.favorites = [favorite, ...panelState.favorites].slice(
-                0,
-                8,
-              );
-              saveFavorites(panelState.favorites);
+              favoritesStore.addFavorite(favorite, createStudioProjectSnapshot());
+              showToast("Character saved to favorites.", { kind: "success" });
             },
           },
           "Favorite Build",
         ),
       ]),
-      m(
-        "p.studio-empty",
-        panelState.favorites.length === 0
-          ? "No favorite builds yet."
-          : `Favorites: ${panelState.favorites.join(" | ")}`,
-      ),
+      m("div.favorites-list", [
+        m("h5", "Saved Favorites"),
+        favorites.length === 0
+          ? m("p.studio-empty", "No favorite builds yet.")
+          : m("div.favorites-grid", [
+              favorites.map((fav, index) =>
+                m("div.favorite-item", { key: index }, [
+                  m("span.favorite-label", fav.label),
+                  m("div.favorite-buttons", [
+                    m(
+                      "button.button.is-small.is-primary",
+                      {
+                        type: "button",
+                        onclick: async () => {
+                          characterUndoStore.pushUndo();
+                          await favoritesStore.loadFavorite(fav);
+                          syncSelectionsToHash();
+                          showToast("Favorite loaded.", { kind: "success" });
+                        },
+                      },
+                      "Load",
+                    ),
+                    m(
+                      "button.button.is-small.is-danger",
+                      {
+                        type: "button",
+                        onclick: () => {
+                          favoritesStore.removeFavorite(index);
+                          showToast("Favorite deleted.", { kind: "success" });
+                        },
+                      },
+                      "×",
+                    ),
+                  ]),
+                ]),
+              ),
+            ]),
+      ]),
     ]);
   },
 };

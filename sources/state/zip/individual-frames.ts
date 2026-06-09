@@ -108,6 +108,13 @@ export const exportIndividualFrames = async (
               "render_composite_extractFramesFromAnimation",
               async () => {
                 const animFolder = standardFolder.folder(animationName)!;
+                // Get layers for current build and filter out hidden layers if configured
+                const filteredSelections: Record<string, typeof state.selections[string]> = {};
+                for (const [key, sel] of Object.entries(state.selections)) {
+                  if (!(state.excludeHiddenLayersFromExports && state.hiddenLayerIds.has(sel.itemId))) {
+                    filteredSelections[key] = sel;
+                  }
+                }
                 const extractedFrames = extractFramesFromAnimationFn(
                   animCanvas,
                   animationName,
@@ -120,6 +127,10 @@ export const exportIndividualFrames = async (
                   tweenSettings,
                 );
 
+                const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
+                const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+                const proSettings = loadProSettings();
+
                 for (const [direction, frameList] of Object.entries(frames)) {
                   if (frameList.length > 0) {
                     const directionFolder = animFolder.folder(direction)!;
@@ -128,10 +139,13 @@ export const exportIndividualFrames = async (
                       canvas: frameCanvas,
                       frameNumber,
                     } of frameList) {
+                      const filenameVal = proSettings.namingTemplate
+                        ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: animationName, direction, frame: frameNumber }) + ".png"
+                        : `${frameNumber}.png`;
                       blobTasks.push({
                         encode: () => canvasToBlobFn(frameCanvas),
                         folder: directionFolder,
-                        filename: `${frameNumber}.png`,
+                        filename: filenameVal,
                         debugPath: `standard/${animationName}/${direction}/${frameNumber}.png`,
                       });
                     }
@@ -182,6 +196,10 @@ export const exportIndividualFrames = async (
             },
           );
           if (custAnimCanvas) {
+            const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
+            const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+            const proSettings = loadProSettings();
+
             profiler.syncPhase(
               "render_composite_extractFramesFromCustomAnimation",
               () => {
@@ -207,10 +225,13 @@ export const exportIndividualFrames = async (
                       canvas: frameCanvas,
                       frameNumber,
                     } of frameList) {
+                      const filenameVal = proSettings.namingTemplate
+                        ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: animName, direction, frame: frameNumber }) + ".png"
+                        : `${frameNumber}.png`;
                       blobTasks.push({
                         encode: () => canvasToBlobFn(frameCanvas),
                         folder: directionFolder,
-                        filename: `${frameNumber}.png`,
+                        filename: filenameVal,
                         debugPath: `custom/${animName}/${direction}/${frameNumber}.png`,
                       });
                     }

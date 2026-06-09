@@ -65,6 +65,17 @@ export const StudioWorkflowTools: m.Component<StudioWorkflowToolsAttrs> = {
           "button.button.is-small",
           {
             type: "button",
+            onclick: () => {
+              const { executeCommand } = require("../../../state/commands.ts");
+              executeCommand("app.export.referenceSheet");
+            }
+          },
+          "Reference Sheet"
+        ),
+        m(
+          "button.button.is-small",
+          {
+            type: "button",
             disabled: projects.length === 0,
             onclick: async () => {
               if (!requireFeature("studio-tools")) return;

@@ -6,6 +6,8 @@ import { showToast } from "../../state/notifications.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import { randomizeAll } from "./slot-config.ts";
 import { triggerRender } from "../render-effect.ts";
+import { canUseFeature } from "../../state/feature-gates.ts";
+import { ITCH_GAME_ID } from "../../state/build-config.ts";
 
 type OnboardingModalAttrs = {
   catalog: CatalogReader;
@@ -42,7 +44,17 @@ const starterActions: StarterAction[] = [
     label: "Open Studio",
     detail: "Use project saves, thumbnails, reports, and batch workflows.",
     action: () => {
-      state.appPlan = "studio";
+      if (canUseFeature("studio-tools")) {
+        state.appPlan = "studio";
+      } else {
+        const purchaseUrl = ITCH_GAME_ID
+          ? `https://itch.io/s/${ITCH_GAME_ID}`
+          : "https://docroshi.itch.io/custom_LPC_character_creation_studio";
+        showToast(
+          `Studio features require the Studio edition. Get it at ${purchaseUrl}`,
+          { kind: "warning", timeoutMs: 8000 },
+        );
+      }
     },
   },
   {

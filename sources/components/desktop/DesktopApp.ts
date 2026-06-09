@@ -396,6 +396,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       m(ShortcutHelpModal),
       m(OnboardingModal, { catalog }),
       m(AboutModal),
+      m(require("./CreditsPreviewModal.ts").CreditsPreviewModal),
       m(LicenseGateModal),
       m(ConfirmDialogModal),
       m(NotificationCenter),

@@ -21,6 +21,9 @@ export function getAllCredits(
 
   for (const [, selection] of Object.entries(selections)) {
     const { itemId } = selection;
+    if (state.excludeHiddenLayersFromExports && state.hiddenLayerIds.has(itemId)) {
+      continue;
+    }
     const metaResult = defaultCatalog.getItemMerged(itemId);
     if (metaResult.isErr()) continue;
     const meta = metaResult.value;

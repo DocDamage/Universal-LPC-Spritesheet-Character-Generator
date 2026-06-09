@@ -31,7 +31,9 @@ export async function drawStandardDrawCalls(
   renderCtx: CanvasRenderingContext2D,
   drawCalls: DrawCall[],
 ): Promise<void> {
-  const loadedItems = await Promise.all(drawCalls.map(loadDrawCallImage));
+  const { state } = await import("../state/state.ts");
+  const filteredCalls = drawCalls.filter(call => !state.hiddenLayerIds.has(call.itemId));
+  const loadedItems = await Promise.all(filteredCalls.map(loadDrawCallImage));
 
   for (const { item, img, success } of loadedItems) {
     if (success && img) {

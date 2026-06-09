@@ -2,7 +2,7 @@ import m from "mithril";
 import { state } from "../../state/state.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import type { SlotDef } from "./slot-config.ts";
-import { randomizeSlot } from "./slot-config.ts";
+import { randomizeSlot, getSlotOptions } from "./slot-config.ts";
 import type { SlotOption } from "./slot-config.ts";
 import { requireFeature, paidFeatureTitle } from "../../state/feature-gates.ts";
 import type { SlotSelectorState } from "./slot-selector/types.ts";
@@ -64,6 +64,18 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
       [
         m("label.desktop-slot-label", slot.label),
         m("div.desktop-slot-control", [
+          // Render search/filter input if there are more than 8 total options or if slotItemFilter is active
+          (getSlotOptions(slot, catalog).length > 8 || vnode.state.slotItemFilter)
+            ? m("input.input.is-small.desktop-slot-item-filter", {
+                type: "text",
+                placeholder: `Filter ${slot.label}...`,
+                value: vnode.state.slotItemFilter,
+                oninput: (e: Event) => {
+                  vnode.state.slotItemFilter = (e.target as HTMLInputElement).value;
+                },
+                style: { marginBottom: "4px", width: "100%" }
+              })
+            : null,
           m(
             "select.desktop-slot-select",
             {

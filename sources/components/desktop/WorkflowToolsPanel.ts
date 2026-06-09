@@ -47,7 +47,6 @@ export const WorkflowToolsPanel: m.Component<
       ]),
       m(FreeWorkflowTools, {
         catalog: vnode.attrs.catalog,
-        panelState: vnode.state,
       }),
       m(ProWorkflowTools, {
         enabled: proEnabled,

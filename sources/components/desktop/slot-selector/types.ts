@@ -20,6 +20,7 @@ export type SlotSelectorState = {
   customAssetFilter: string;
   customAssetTagInput: string;
   editingTagsPartId: string | null;
+  slotItemFilter: string;
 };
 
 export const IMPORT_OFFSET_MIN = -256;

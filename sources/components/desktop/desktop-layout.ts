@@ -54,9 +54,7 @@ export function normalizeDesktopLayout(
   candidate: Partial<DesktopPanelLayout> | null | undefined,
 ): DesktopPanelLayout {
   const defaults = getDefaultDesktopLayout();
-  const candidateOrder = Array.isArray(candidate?.order)
-    ? candidate.order
-    : [];
+  const candidateOrder = Array.isArray(candidate?.order) ? candidate.order : [];
   const order = [
     ...candidateOrder.filter((id): id is DesktopPanelId =>
       PANEL_IDS.includes(id as DesktopPanelId),

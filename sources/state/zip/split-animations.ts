@@ -40,6 +40,10 @@ export const exportSplitAnimations = async (
     async ({ zip, timestamp, state, bodyType, profiler }: ZipExportContext) => {
       const { addCanvas, addSlice } = makeZipAdders(profiler, deps);
 
+      const { loadProSettings } = await import("../../components/desktop/workflow-tools/workflow-helpers.ts");
+      const { applyNamingTemplate } = await import("../../utils/fileName.ts");
+      const proSettings = loadProSettings();
+
       const standardFolder = zip.folder("standard")!;
       const customFolder = zip.folder("custom")!;
       const tweenedFolder = zip.folder("tweened")!;
@@ -66,9 +70,13 @@ export const exportSplitAnimations = async (
             failedStandard.push(anim.value);
             continue;
           }
+          const exportFilename = proSettings.namingTemplate
+            ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: anim.value, direction: "all", frame: "spritesheet" }) + ".png"
+            : `${anim.value}.png`;
+
           const result = await addCanvas(
             standardFolder,
-            `${anim.value}.png`,
+            exportFilename,
             animCanvas,
           );
           if (result.isOk()) {
@@ -92,9 +100,12 @@ export const exportSplitAnimations = async (
                 DIRECTIONS,
               );
               if (tweenedCanvas) {
+                const tweenedFilename = proSettings.namingTemplate
+                  ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: anim.value, direction: "all", frame: "tweened" }) + ".png"
+                  : `${anim.value}.png`;
                 const tweenedResult = await addCanvas(
                   tweenedStandardFolder,
-                  `${anim.value}.png`,
+                  tweenedFilename,
                   tweenedCanvas,
                 );
                 if (tweenedResult.isOk()) {
@@ -132,9 +143,12 @@ export const exportSplitAnimations = async (
           if (!canvas) {
             throw new Error("Canvas not initialized");
           }
+          const customExportFilename = proSettings.namingTemplate
+            ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: animName, direction: "all", frame: "spritesheet" }) + ".png"
+            : `${animName}.png`;
           const result = await addSlice(
             customFolder,
-            `${animName}.png`,
+            customExportFilename,
             canvas,
             srcRect,
           );
@@ -162,9 +176,12 @@ export const exportSplitAnimations = async (
                   DIRECTIONS,
                 );
                 if (tweenedCanvas) {
+                  const customTweenedFilename = proSettings.namingTemplate
+                    ? applyNamingTemplate(proSettings.namingTemplate, { character: "character", animation: animName, direction: "all", frame: "tweened" }) + ".png"
+                    : `${animName}.png`;
                   const tweenedResult = await addCanvas(
                     tweenedCustomFolder,
-                    `${animName}.png`,
+                    customTweenedFilename,
                     tweenedCanvas,
                   );
                   if (tweenedResult.isOk()) {

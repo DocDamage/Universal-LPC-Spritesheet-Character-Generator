@@ -72,6 +72,10 @@ export type State = {
   showShortcutHelp: boolean;
   showOnboarding: boolean;
   showAbout: boolean;
+  showCreditsPreview: boolean;
+  showScaleStrip: boolean;
+  excludeHiddenLayersFromExports: boolean;
+  hiddenLayerIds: Set<string>;
   zipByAnimation: ZipMode;
   zipByItem: ZipMode;
   zipByAnimationAndItem: ZipMode;
@@ -121,6 +125,10 @@ export const state: State = {
   showShortcutHelp: false,
   showOnboarding: false,
   showAbout: false,
+  showCreditsPreview: false,
+  showScaleStrip: true,
+  excludeHiddenLayersFromExports: false,
+  hiddenLayerIds: new Set<string>(),
   zipByAnimation: { isRunning: false },
   zipByItem: { isRunning: false },
   zipByAnimationAndItem: { isRunning: false },

@@ -1,6 +1,5 @@
 import m from "mithril";
 import { downloadAsPNG, downloadFile } from "../../canvas/download.ts";
-import { getAllCredits, creditsToCsv } from "../../utils/credits.ts";
 import {
   exportStateAsJSON,
   importStateFromJSON,
@@ -88,10 +87,41 @@ export function getFileCommands(): Command[] {
       shortcut: "Ctrl+Shift+C",
       keyCombo: { key: "c", ctrlKey: true, shiftKey: true },
       action: () => {
-        const allCredits = getAllCredits(state.selections, state.bodyType);
-        const csvContent = creditsToCsv(allCredits);
-        downloadFile(csvContent, "credits.csv", "text/csv");
-        showToast("Credits CSV exported.", { kind: "success" });
+        state.showCreditsPreview = true;
+      },
+    },
+    {
+      id: "app.export.json",
+      label: "Export Character JSON",
+      category: "File",
+      tooltip: "Download character selections as JSON file",
+      shortcut: "Ctrl+Shift+J",
+      keyCombo: { key: "j", ctrlKey: true, shiftKey: true },
+      action: () => {
+        const json = exportStateAsJSON(
+          state,
+          serializeLayersForJson(renderState.drawCalls),
+        );
+        downloadFile(json, "character.json", "application/json");
+        showToast("Character JSON exported.", { kind: "success" });
+      },
+    },
+    {
+      id: "app.export.referenceSheet",
+      label: "Export Reference Sheet PNG",
+      category: "File",
+      tooltip: "Export character reference sheet with scales, directions, and credits",
+      shortcut: "Ctrl+Shift+R",
+      keyCombo: { key: "r", ctrlKey: true, shiftKey: true },
+      action: async () => {
+        const { exportReferenceSheet } = await import("../../canvas/reference-sheet.ts");
+        try {
+          await exportReferenceSheet("character", state.bodyType);
+          showToast("Reference sheet exported.", { kind: "success" });
+        } catch (err) {
+          console.error(err);
+          showToast("Failed to export reference sheet.", { kind: "error" });
+        }
       },
     },
   ];

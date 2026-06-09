@@ -60,8 +60,11 @@ const safeStorage =
         },
       };
 
+// Ed25519 public key (raw 32-byte, hex encoded).
+// The matching private key (PKCS8) is stored ONLY in Netlify env var LICENSE_SIGNING_SECRET.
+// See KEYPAIR_NOTES.md for setup instructions (file is gitignored).
 const PUBLIC_KEY_HEX =
-  "a11f5d2f8372dbcf5ef85d4468dad351acd321dc55b67435a7b7ee0fbd07b41d";
+  "7d0ece14787d88e82cfd900db8a98b8fbce8b6861e49589d20cf5de6f77514bd";
 const STORAGE_KEY = `lpc_license_grant_${BUILD_TIER}`;
 
 let testBuildRequiresLicense: boolean | null = null;

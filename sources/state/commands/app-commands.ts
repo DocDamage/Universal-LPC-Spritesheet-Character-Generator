@@ -3,6 +3,7 @@ import { defaultCatalog } from "../catalog.ts";
 import { randomizeAll } from "../../components/desktop/slot-config.ts";
 import { requestConfirmation, showToast } from "../notifications.ts";
 import type { Command } from "../commands.ts";
+import { characterUndoStore } from "../character-undo-store.ts";
 
 export function getAppCommands(): Command[] {
   return [
@@ -58,6 +59,7 @@ export function getAppCommands(): Command[] {
         });
         if (!confirmed) return;
 
+        characterUndoStore.pushUndo();
         await resetAll();
         showToast("Selections reset.", { kind: "success" });
       },
@@ -76,8 +78,24 @@ export function getAppCommands(): Command[] {
         });
         if (!confirmed) return;
 
+        characterUndoStore.pushUndo();
         randomizeAll(defaultCatalog);
         showToast("Character randomized.", { kind: "success" });
+      },
+    },
+    {
+      id: "app.share.url",
+      label: "Share Character Link",
+      category: "Actions",
+      shortcut: "Ctrl+Shift+S",
+      keyCombo: { key: "s", ctrlKey: true, shiftKey: true },
+      action: async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          showToast("Share link copied to clipboard!", { kind: "success" });
+        } catch {
+          showToast("Failed to copy link.", { kind: "error" });
+        }
       },
     },
     {

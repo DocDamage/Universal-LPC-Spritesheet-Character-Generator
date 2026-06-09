@@ -7,8 +7,6 @@ import { state } from "../../../sources/state/state.ts";
 import {
   defaultCatalog,
   resetCatalogForTests,
-  registerFromIndexModule,
-  registerFromPaletteModule,
 } from "../../../sources/state/catalog.ts";
 import { BODY_TYPES } from "../../../sources/state/constants.ts";
 import {
@@ -96,7 +94,7 @@ describe("TreeNode", function () {
 
   it("shows skeleton rows for item ids until lite metadata is registered", function () {
     resetCatalogForTests();
-    registerFromIndexModule({
+    defaultCatalog.registerFromIndexModule({
       aliasMetadata: {},
       categoryTree: { items: [], children: {} },
       metadataIndexes: {
@@ -104,7 +102,7 @@ describe("TreeNode", function () {
         hashMatch: { itemsByTypeName: {} },
       },
     });
-    registerFromPaletteModule({
+    defaultCatalog.registerFromPaletteModule({
       paletteMetadata: { versions: {}, materials: {} },
     });
 

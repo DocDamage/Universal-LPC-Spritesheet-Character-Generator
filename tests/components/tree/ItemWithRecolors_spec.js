@@ -6,7 +6,6 @@ import { ItemWithRecolors } from "../../../sources/components/tree/ItemWithRecol
 import { state } from "../../../sources/state/state.ts";
 import {
   defaultCatalog,
-  getItemMerged,
 } from "../../../sources/state/catalog.ts";
 import { BODY_TYPES } from "../../../sources/state/constants.ts";
 import { resetState } from "../../../sources/state/filters.ts";
@@ -94,7 +93,7 @@ describe("ItemWithRecolors", function () {
         paletteMetadata: clothPaletteMetadata,
       },
     );
-    return getItemMerged("iwr_shirt").unwrapOr(null);
+    return defaultCatalog.getItemMerged("iwr_shirt").unwrapOr(null);
   }
 
   function baseAttrs(meta, overrides = {}) {
@@ -211,7 +210,7 @@ describe("ItemWithRecolors", function () {
         paletteMetadata: clothPaletteMetadata,
       },
     );
-    const meta = getItemMerged("iwr_body").unwrapOr(null);
+    const meta = defaultCatalog.getItemMerged("iwr_body").unwrapOr(null);
 
     m.render(
       host,

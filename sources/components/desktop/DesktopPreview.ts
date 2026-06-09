@@ -32,6 +32,7 @@ type DesktopPreviewState = {
   isPlaying: boolean;
   animationStatus: PreviewAnimationStatus | null;
   exportBusy: "gif" | "webp" | null;
+  wheelHandler: ((e: WheelEvent) => void) | null;
 };
 
 function refreshDirectionalFrames(
@@ -114,6 +115,7 @@ export const DesktopPreview: m.Component<
     vnode.state.isPlaying = true;
     vnode.state.animationStatus = null;
     vnode.state.exportBusy = null;
+    vnode.state.wheelHandler = null;
   },
 
   oncreate(vnode) {
@@ -145,20 +147,18 @@ export const DesktopPreview: m.Component<
 
     // Mouse wheel zoom
     const container = vnode.dom as HTMLElement;
-    container.addEventListener(
-      "wheel",
-      (e: WheelEvent) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        let newZoom = vnode.state.zoomLevel + delta;
-        newZoom = Math.max(0.5, Math.min(5, newZoom));
-        vnode.state.zoomLevel = newZoom;
-        state.previewCanvasZoomLevel = newZoom;
-        setPreviewCanvasZoom(newZoom);
-        m.redraw();
-      },
-      { passive: false },
-    );
+    const wheelHandler = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      let newZoom = vnode.state.zoomLevel + delta;
+      newZoom = Math.max(0.5, Math.min(5, newZoom));
+      vnode.state.zoomLevel = newZoom;
+      state.previewCanvasZoomLevel = newZoom;
+      setPreviewCanvasZoom(newZoom);
+      m.redraw();
+    };
+    vnode.state.wheelHandler = wheelHandler;
+    container.addEventListener("wheel", wheelHandler, { passive: false });
   },
 
   onupdate(vnode) {
@@ -175,14 +175,18 @@ export const DesktopPreview: m.Component<
     }
   },
 
-  onremove() {
-    if (this.directionalRefreshTimer !== null) {
-      window.clearTimeout(this.directionalRefreshTimer);
-      this.directionalRefreshTimer = null;
+  onremove(vnode) {
+    if (vnode.state.directionalRefreshTimer !== null) {
+      window.clearTimeout(vnode.state.directionalRefreshTimer);
+      vnode.state.directionalRefreshTimer = null;
     }
-    if (this.statusRefreshTimer !== null) {
-      window.clearInterval(this.statusRefreshTimer);
-      this.statusRefreshTimer = null;
+    if (vnode.state.statusRefreshTimer !== null) {
+      window.clearInterval(vnode.state.statusRefreshTimer);
+      vnode.state.statusRefreshTimer = null;
+    }
+    if (vnode.dom && vnode.state.wheelHandler) {
+      vnode.dom.removeEventListener("wheel", vnode.state.wheelHandler);
+      vnode.state.wheelHandler = null;
     }
     if (window.canvasRenderer) {
       stopPreviewAnimation();

@@ -1,7 +1,6 @@
 // @ts-nocheck
 import {
-  loadCatalogFromFixtures,
-  resetCatalogForTests,
+  defaultCatalog,
 } from "../sources/state/catalog.ts";
 import {
   loadAllMetadata,
@@ -40,7 +39,7 @@ function mergedItemMapFromLoadedChunks(loaded) {
  */
 export function seedBrowserCatalog(itemMetadata, extras = {}) {
   const byTypeName = buildItemsByTypeNameLite(itemMetadata);
-  loadCatalogFromFixtures({
+  defaultCatalog.loadCatalogFromFixtures({
     itemMetadata,
     aliasMetadata: extras.aliasMetadata ?? {},
     categoryTree: extras.categoryTree ?? emptyTree,
@@ -54,7 +53,7 @@ export function seedBrowserCatalog(itemMetadata, extras = {}) {
 
 /** Reload dist metadata into `catalog` after specs call `resetCatalogForTests()`. */
 export async function restoreAppCatalogAfterTest() {
-  resetCatalogForTests();
+  defaultCatalog.resetForTests();
   resetLoadAllMetadataCacheForTests();
   await loadAllMetadata();
 }
@@ -72,8 +71,8 @@ export async function seedBrowserCatalogMergedOnDist(patch) {
     ...patch,
   };
   const byTypeName = buildItemsByTypeNameLite(mergedItems);
-  resetCatalogForTests();
-  loadCatalogFromFixtures({
+  defaultCatalog.resetForTests();
+  defaultCatalog.loadCatalogFromFixtures({
     itemMetadata: mergedItems,
     aliasMetadata: loaded.aliasMetadata,
     categoryTree: loaded.categoryTree,

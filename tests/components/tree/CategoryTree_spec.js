@@ -7,8 +7,6 @@ import { state } from "../../../sources/state/state.ts";
 import {
   defaultCatalog,
   resetCatalogForTests,
-  registerFromIndexModule,
-  registerFromPaletteModule,
 } from "../../../sources/state/catalog.ts";
 import { BODY_TYPES } from "../../../sources/state/constants.ts";
 import { resetState } from "../../../sources/state/filters.ts";
@@ -56,7 +54,7 @@ describe("CategoryTree", function () {
 
   it("disables Expand Selected while the item list (lite) is not ready", function () {
     resetCatalogForTests();
-    registerFromIndexModule({
+    defaultCatalog.registerFromIndexModule({
       aliasMetadata: {},
       categoryTree: { items: [], children: {} },
       metadataIndexes: {
@@ -64,7 +62,7 @@ describe("CategoryTree", function () {
         hashMatch: { itemsByTypeName: {} },
       },
     });
-    registerFromPaletteModule({
+    defaultCatalog.registerFromPaletteModule({
       paletteMetadata: { versions: {}, materials: {} },
     });
 

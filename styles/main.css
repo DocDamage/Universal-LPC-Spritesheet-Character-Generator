@@ -108,6 +108,58 @@ canvas {
   position: relative;
 }
 
+.animation-qa-panel {
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fafafa;
+}
+
+.animation-qa-header,
+.animation-qa-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.animation-qa-header {
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.animation-qa-row {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.animation-qa-row p {
+  margin: 0;
+  line-height: 1.3;
+}
+
+.animation-qa-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: #7a7a7a;
+  flex: 0 0 auto;
+}
+
+.animation-qa-ready .animation-qa-dot {
+  background: #48c78e;
+}
+
+.animation-qa-warning .animation-qa-dot {
+  background: #ffe08a;
+}
+
+.animation-qa-blocked .animation-qa-dot {
+  background: #f14668;
+}
+
 .scrollable-container {
   overflow: auto;
   max-width: 100%;

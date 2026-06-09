@@ -5,6 +5,11 @@ import { ANIMATIONS } from "../../state/constants.ts";
 import { CollapsibleSection } from "../CollapsibleSection.ts";
 import { downloadPreviewAnimationGif } from "../../canvas/preview-gif.ts";
 import { downloadPreviewAnimationWebp } from "../../canvas/preview-webp.ts";
+import {
+  buildAnimationQaChecks,
+  downloadAnimationContactSheet,
+  downloadAnimationMetadata,
+} from "../../canvas/animation-professional-tools.ts";
 import { showToast } from "../../state/notifications.ts";
 import {
   setPreviewAnimation,
@@ -96,6 +101,21 @@ function persistTweenSettings(
   } else {
     setGlobalTweenSettings(settings);
   }
+}
+
+function currentTweenSettings(
+  vnode: m.Vnode<Record<string, never>, AnimationPreviewState>,
+): TweenSettings {
+  return {
+    mode: vnode.state.tweenMode,
+    inbetweens: vnode.state.compareOriginal ? 0 : vnode.state.tweenInbetweens,
+    fps: vnode.state.compareOriginal ? 8 : vnode.state.tweenFps,
+    motionStrength: vnode.state.tweenMotionStrength,
+    alphaThreshold: vnode.state.tweenAlphaThreshold,
+    easing: vnode.state.compareOriginal
+      ? "linear"
+      : vnode.state.tweenEasing || "linear",
+  };
 }
 
 export const AnimationPreview: m.Component<
@@ -474,6 +494,28 @@ export const AnimationPreview: m.Component<
             ]),
           ]),
         ]),
+        m("div.animation-qa-panel", [
+          m("div.animation-qa-header", [
+            m("strong", "Animation QA"),
+            m(
+              "span",
+              `${buildAnimationQaChecks(vnode.state.selectedAnimation, currentTweenSettings(vnode)).filter((check) => check.status === "ready").length}/4 ready`,
+            ),
+          ]),
+          buildAnimationQaChecks(
+            vnode.state.selectedAnimation,
+            currentTweenSettings(vnode),
+          ).map((check) =>
+            m(
+              "div.animation-qa-row",
+              { class: `animation-qa-${check.status}` },
+              [
+                m("span.animation-qa-dot"),
+                m("div", [m("strong", check.label), m("p", check.detail)]),
+              ],
+            ),
+          ),
+        ]),
         m(
           "div.is-flex.is-justify-content-center.mb-3",
           { style: { gap: "8px" } },
@@ -521,6 +563,43 @@ export const AnimationPreview: m.Component<
                 },
               },
               "Export Loop as WebP",
+            ),
+            m(
+              "button.button.is-small",
+              {
+                onclick: async () => {
+                  try {
+                    await downloadAnimationContactSheet(
+                      vnode.state.selectedAnimation,
+                      currentTweenSettings(vnode),
+                    );
+                    showToast("Animation contact sheet exported.", {
+                      kind: "success",
+                    });
+                  } catch (err) {
+                    console.error(err);
+                    showToast("Failed to export contact sheet.", {
+                      kind: "error",
+                    });
+                  }
+                },
+              },
+              "Contact Sheet",
+            ),
+            m(
+              "button.button.is-small",
+              {
+                onclick: () => {
+                  downloadAnimationMetadata(
+                    vnode.state.selectedAnimation,
+                    currentTweenSettings(vnode),
+                  );
+                  showToast("Animation metadata exported.", {
+                    kind: "success",
+                  });
+                },
+              },
+              "Metadata JSON",
             ),
           ],
         ),

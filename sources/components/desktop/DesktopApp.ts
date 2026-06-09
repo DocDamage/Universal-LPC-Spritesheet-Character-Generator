@@ -10,6 +10,8 @@ import { PartEditor } from "./PartEditor.ts";
 import { PlanSelector } from "./PlanSelector.ts";
 import { StudioPanel } from "./StudioPanel.ts";
 import { WorkflowToolsPanel } from "./WorkflowToolsPanel.ts";
+import { OnboardingModal } from "./OnboardingModal.ts";
+import { shouldShowOnboarding } from "../../state/onboarding.ts";
 import {
   executeCommand,
   getCommandTitle,
@@ -37,6 +39,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
 
     vnode.state.prevKey = buildRenderKey();
     vnode.state.slotSearch = "";
+    state.showOnboarding = shouldShowOnboarding();
   },
 
   onremove() {
@@ -115,6 +118,17 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
           "?",
         ),
         m(
+          "button.desktop-title-btn",
+          {
+            type: "button",
+            title: "Getting started",
+            onclick: () => {
+              state.showOnboarding = true;
+            },
+          },
+          "i",
+        ),
+        m(
           "button.desktop-title-btn.desktop-title-btn-close",
           {
             title: getCommandTitle("app.reset", "Reset all selections"),
@@ -190,6 +204,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       // Global Modals / Overlays
       m(CommandPaletteModal),
       m(ShortcutHelpModal),
+      m(OnboardingModal, { catalog }),
       m(ConfirmDialogModal),
       m(NotificationCenter),
     ]);

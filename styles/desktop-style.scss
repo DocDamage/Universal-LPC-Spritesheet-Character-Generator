@@ -2674,7 +2674,8 @@
 /* Command palette and shortcut help */
 .command-palette-overlay,
 .shortcut-help-overlay,
-.confirm-dialog-overlay {
+.confirm-dialog-overlay,
+.onboarding-overlay {
   position: fixed;
   inset: 0;
   z-index: 2200;
@@ -2692,9 +2693,15 @@
   padding: 16px;
 }
 
+.onboarding-overlay {
+  align-items: center;
+  padding: 16px;
+}
+
 .command-palette,
 .shortcut-help,
-.confirm-dialog {
+.confirm-dialog,
+.onboarding-modal {
   width: min(640px, calc(100vw - 32px));
   max-height: min(74vh, 720px);
   display: flex;
@@ -2712,6 +2719,67 @@
   width: min(420px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   outline: 0;
+}
+
+.onboarding-modal {
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 14px;
+  overflow: auto;
+}
+
+.onboarding-header,
+.onboarding-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.onboarding-header h2 {
+  margin: 6px 0 0;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.onboarding-copy,
+.onboarding-footer span {
+  margin: 10px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.onboarding-step-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.onboarding-step {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 9px;
+}
+
+.onboarding-step strong {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.onboarding-step p {
+  flex: 1;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
 }
 
 .command-palette-search-wrapper {
@@ -3195,6 +3263,16 @@
 }
 
 @media (max-width: 760px) {
+  .onboarding-step-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .onboarding-header,
+  .onboarding-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .part-editor-fullscreen {
     inset: 8px;
     height: calc(100vh - 16px);

@@ -69,6 +69,7 @@ export type State = {
   // transient (never saved)
   showCommandPalette: boolean;
   showShortcutHelp: boolean;
+  showOnboarding: boolean;
   zipByAnimation: ZipMode;
   zipByItem: ZipMode;
   zipByAnimationAndItem: ZipMode;
@@ -116,6 +117,7 @@ export const state: State = {
   // Following transient state should never be saved
   showCommandPalette: false,
   showShortcutHelp: false,
+  showOnboarding: false,
   zipByAnimation: { isRunning: false },
   zipByItem: { isRunning: false },
   zipByAnimationAndItem: { isRunning: false },

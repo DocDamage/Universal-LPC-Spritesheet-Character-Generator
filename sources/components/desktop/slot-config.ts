@@ -23,6 +23,13 @@ export type SlotDef = {
   canRandomize?: boolean;
 };
 
+export type SlotOption = {
+  value: string;
+  label: string;
+  itemId: string;
+  variant?: string;
+};
+
 // Slot configuration using ACTUAL type_names from the catalog
 export const SLOT_CONFIG: SlotDef[] = [
   // ─── Left panel — Character / Body ───
@@ -412,7 +419,7 @@ export function getBodyTypeOptions(): { value: string; label: string }[] {
 export function getSlotOptions(
   slot: SlotDef,
   catalog: CatalogReader,
-): { value: string; label: string; itemId: string; variant?: string }[] {
+): SlotOption[] {
   if (slot.kind === "bodyType") {
     return getBodyTypeOptions().map((o) => ({ ...o, itemId: o.value }));
   }

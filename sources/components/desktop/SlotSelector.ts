@@ -10,6 +10,7 @@ import {
   getDefaultRecolor,
   getSlotTypeNames,
 } from "./slot-config.ts";
+import type { SlotOption } from "./slot-config.ts";
 import {
   setPreviewAnimation,
   stopPreviewAnimation,
@@ -17,29 +18,9 @@ import {
   setPreviewShowTransparencyGrid,
   setPreviewApplyTransparencyMask,
 } from "../../canvas/preview-animation.ts";
-import { renderCharacter } from "../../canvas/renderer.ts";
 import { customAnimations } from "../../custom-animations.ts";
-import {
-  customParts,
-  deleteCustomPart,
-  getItemMerged,
-  registerCustomPart,
-  renameCustomPart,
-  duplicateCustomPart,
-} from "../../state/catalog.ts";
-import {
-  buildImportedWeaponPart,
-  buildImportPreview,
-  canUseWeaponImportReference,
-  getCustomWeaponImportName,
-} from "./custom-weapon-import.ts";
-import { requestConfirmation, showToast } from "../../state/notifications.ts";
-import {
-  exportCustomPartsZip,
-  importCustomPartsZip,
-} from "../../state/custom-parts-storage.ts";
-import { get2DContext } from "../../canvas/canvas-utils.ts";
-import { validateCustomAsset } from "../../state/custom-asset-validation.ts";
+import { customParts, getItemMerged } from "../../state/catalog.ts";
+import { canUseWeaponImportReference } from "./custom-weapon-import.ts";
 import {
   getRecolorChoices,
   getSelectedRecolor,
@@ -54,6 +35,7 @@ import {
 } from "./slot-selector/types.ts";
 import { initializeSlotSelectorState } from "./slot-selector/state.ts";
 import { renderCustomAssetLibrary } from "./slot-selector/custom-library.ts";
+import { createImportHandlers } from "./slot-selector/import-handlers.ts";
 import {
   canUseFeature,
   paidFeatureTitle,
@@ -134,364 +116,13 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     const currentRecolor = selectedItemId
       ? getSelectedRecolor(selectedItemId)
       : null;
-
-    const loadPreview = async (file: File): Promise<void> => {
-      const reference =
-        importReferenceOptions.find(
-          (opt) => opt.value === vnode.state.importReferenceValue,
-        ) ?? importReferenceOptions[0];
-      if (!reference) return;
-
-      try {
-        const preview = await buildImportPreview(
-          file,
-          reference.itemId,
-          reference.variant ?? null,
-          state.bodyType,
-          state.selections,
-          catalog,
-        );
-        if (preview) {
-          // Validate the imported image
-          const srcCtx = get2DContext(preview.sourceCanvas, true);
-          const srcImageData = srcCtx.getImageData(
-            0,
-            0,
-            preview.sourceCanvas.width,
-            preview.sourceCanvas.height,
-          );
-          const validation = validateCustomAsset(srcImageData, "weapon");
-          if (!validation.passed) {
-            const errorMsg = validation.issues
-              .filter((i) => i.severity === "error")
-              .map((i) => i.message)
-              .join("; ");
-            const warningMsg = validation.issues
-              .filter((i) => i.severity !== "error")
-              .map((i) => i.message)
-              .join("; ");
-            vnode.state.importStatus = [
-              errorMsg ? `Error: ${errorMsg}` : "",
-              warningMsg ? `Warning: ${warningMsg}` : "",
-            ]
-              .filter(Boolean)
-              .join(". ");
-            if (errorMsg) {
-              m.redraw();
-              return;
-            }
-          } else {
-            const warningMsg = validation.issues
-              .filter((i) => i.severity !== "info")
-              .map((i) => i.message)
-              .join("; ");
-            vnode.state.importStatus = warningMsg
-              ? `Adjust alignment, then click Import. Note: ${warningMsg}`
-              : "Adjust alignment, then click Import";
-          }
-
-          vnode.state.importPreviewFile = file;
-          vnode.state.importPreviewReferenceCanvas = preview.referenceCanvas;
-          vnode.state.importPreviewSourceCanvas = preview.sourceCanvas;
-          vnode.state.importPreviewSourceBounds = preview.sourceBounds;
-          vnode.state.importPreviewReferenceBounds = preview.referenceBounds;
-        } else {
-          vnode.state.importStatus = "Unable to build preview";
-        }
-      } catch (err) {
-        vnode.state.importStatus =
-          err instanceof Error ? err.message : "Preview failed";
-      }
-      m.redraw();
-    };
-
-    const clearPreview = (): void => {
-      vnode.state.importPreviewFile = null;
-      vnode.state.importPreviewReferenceCanvas = null;
-      vnode.state.importPreviewSourceCanvas = null;
-      vnode.state.importPreviewSourceBounds = null;
-      vnode.state.importPreviewReferenceBounds = null;
-    };
-
-    const handleWeaponImport = async (): Promise<void> => {
-      const file = vnode.state.importPreviewFile;
-      if (!file) return;
-
-      const reference =
-        importReferenceOptions.find(
-          (opt) => opt.value === vnode.state.importReferenceValue,
-        ) ?? importReferenceOptions[0];
-      if (!reference) return;
-
-      vnode.state.importing = true;
-      vnode.state.importStatus = "Aligning...";
-      m.redraw();
-
-      try {
-        const name =
-          vnode.state.importName.trim() || getCustomWeaponImportName(file);
-        const customPart = await buildImportedWeaponPart({
-          file,
-          name: name || "Imported weapon",
-          referenceItemId: reference.itemId,
-          referenceVariant: reference.variant ?? null,
-          bodyType: state.bodyType,
-          selections: state.selections,
-          catalog,
-          offsetX: vnode.state.importOffsetX,
-          offsetY: vnode.state.importOffsetY,
-          scalePercent: vnode.state.importScalePercent,
-        });
-        // Apply tags if any
-        const tags = vnode.state.customAssetTagInput
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t.length > 0);
-        if (tags.length > 0) {
-          customPart.tags = tags;
-        }
-        registerCustomPart(customPart);
-        clearSlotSelections(slot, catalog);
-        state.selections[customPart.type_name] = {
-          itemId: customPart.itemId,
-          variant: null,
-          recolor: null,
-          name: customPart.name,
-        };
-        await (window.canvasRenderer?.renderCharacter ?? renderCharacter)(
-          state.selections,
-          state.bodyType,
-        );
-        const importedCustomAnimation = Object.keys(customPart.sheets).find(
-          (animation) => customAnimations[animation],
-        );
-        if (importedCustomAnimation) {
-          stopPreviewAnimation();
-          setPreviewAnimation(importedCustomAnimation);
-          setPreviewShowTransparencyGrid(state.showTransparencyGrid);
-          setPreviewApplyTransparencyMask(state.applyTransparencyMask);
-          startPreviewAnimation();
-          state.selectedAnimation = importedCustomAnimation;
-        }
-        vnode.state.importStatus = `Imported ${customPart.name}`;
-        vnode.state.showImporter = false;
-        vnode.state.importName = "";
-        vnode.state.customAssetTagInput = "";
-        clearPreview();
-      } catch (err) {
-        vnode.state.importStatus =
-          err instanceof Error ? err.message : "Import failed";
-      } finally {
-        vnode.state.importing = false;
-        m.redraw();
-      }
-    };
-
-    const setImportNumber = (
-      key: "importOffsetX" | "importOffsetY" | "importScalePercent",
-      rawValue: string,
-      min: number,
-      max: number,
-    ): void => {
-      const nextValue = Number(rawValue);
-      vnode.state[key] = Number.isFinite(nextValue)
-        ? Math.max(min, Math.min(max, nextValue))
-        : key === "importScalePercent"
-          ? 100
-          : 0;
-    };
-
-    const resetImportTuning = (): void => {
-      vnode.state.importOffsetX = 0;
-      vnode.state.importOffsetY = 0;
-      vnode.state.importScalePercent = 100;
-    };
-
-    const centerOnReference = (): void => {
-      const refBounds = vnode.state.importPreviewReferenceBounds;
-      const srcBounds = vnode.state.importPreviewSourceBounds;
-      if (!refBounds || !srcBounds) return;
-      const refCx = refBounds.x + refBounds.width / 2;
-      const refCy = refBounds.y + refBounds.height / 2;
-      const srcCx = srcBounds.x + srcBounds.width / 2;
-      const srcCy = srcBounds.y + srcBounds.height / 2;
-      vnode.state.importOffsetX = Math.round(refCx - srcCx);
-      vnode.state.importOffsetY = Math.round(refCy - srcCy);
-    };
-
-    const nudge = (
-      key: "importOffsetX" | "importOffsetY",
-      delta: number,
-    ): void => {
-      const current = vnode.state[key];
-      const next = Math.max(
-        IMPORT_OFFSET_MIN,
-        Math.min(IMPORT_OFFSET_MAX, current + delta),
-      );
-      vnode.state[key] = next;
-    };
-
-    const renderCurrentCharacter = async (): Promise<void> => {
-      await (window.canvasRenderer?.renderCharacter ?? renderCharacter)(
-        state.selections,
-        state.bodyType,
-      );
-      m.redraw();
-    };
-
-    const selectCustomAsset = async (
-      part: (typeof customAssetParts)[number],
-    ): Promise<void> => {
-      clearSlotSelections(slot, catalog);
-      state.selections[part.type_name] = {
-        itemId: part.itemId,
-        variant: null,
-        recolor: null,
-        name: part.name,
-      };
-      await renderCurrentCharacter();
-    };
-
-    const startRenameCustomAsset = (
-      part: (typeof customAssetParts)[number],
-    ): void => {
-      vnode.state.renamingCustomPartId = part.itemId;
-      vnode.state.renameCustomPartName = part.name;
-    };
-
-    const cancelRenameCustomAsset = (): void => {
-      vnode.state.renamingCustomPartId = null;
-      vnode.state.renameCustomPartName = "";
-    };
-
-    const saveRenameCustomAsset = (
-      part: (typeof customAssetParts)[number],
-    ): void => {
-      const nextName = vnode.state.renameCustomPartName.trim();
-      if (!nextName) return;
-
-      if (renameCustomPart(part.itemId, nextName)) {
-        for (const selection of Object.values(state.selections)) {
-          if (selection.itemId === part.itemId) {
-            selection.name = nextName;
-          }
-        }
-      }
-      cancelRenameCustomAsset();
-    };
-
-    const deleteCustomAsset = async (
-      part: (typeof customAssetParts)[number],
-    ): Promise<void> => {
-      const confirmed = await requestConfirmation({
-        title: "Delete imported asset",
-        message: `Delete "${part.name}" from saved imports?`,
-        confirmLabel: "Delete",
-        danger: true,
-      });
-      if (!confirmed) return;
-
-      const wasSelected = Object.values(state.selections).some(
-        (selection) => selection.itemId === part.itemId,
-      );
-      for (const [key, selection] of Object.entries(state.selections)) {
-        if (selection.itemId === part.itemId) {
-          delete state.selections[key];
-        }
-      }
-      deleteCustomPart(part.itemId);
-      if (vnode.state.renamingCustomPartId === part.itemId) {
-        cancelRenameCustomAsset();
-      }
-      if (vnode.state.editingTagsPartId === part.itemId) {
-        vnode.state.editingTagsPartId = null;
-      }
-      showToast(`Deleted "${part.name}".`, { kind: "success" });
-      if (wasSelected) {
-        await renderCurrentCharacter();
-      } else {
-        m.redraw();
-      }
-    };
-
-    const duplicateCustomAsset = (
-      part: (typeof customAssetParts)[number],
-    ): void => {
-      const duplicated = duplicateCustomPart(part.itemId);
-      if (duplicated) {
-        showToast(`Duplicated "${part.name}".`, { kind: "success" });
-        m.redraw();
-      }
-    };
-
-    const exportAllCustomAssets = async (): Promise<void> => {
-      const parts = Object.values(customParts).filter((part) =>
-        slotTypeNames.includes(part.type_name),
-      );
-      if (parts.length === 0) {
-        showToast("No custom assets to export.", { kind: "warning" });
-        return;
-      }
-      try {
-        const blob = await exportCustomPartsZip(parts);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `lpc_custom_assets_${Date.now()}.zip`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast(`Exported ${parts.length} custom assets.`, {
-          kind: "success",
-        });
-      } catch (err) {
-        showToast(err instanceof Error ? err.message : "Export failed", {
-          kind: "error",
-        });
-      }
-    };
-
-    const importBackupCustomAssets = async (e: Event): Promise<void> => {
-      const input = e.target as HTMLInputElement;
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const imported = await importCustomPartsZip(file);
-        for (const part of imported) {
-          registerCustomPart(part);
-        }
-        showToast(`Imported ${imported.length} custom assets.`, {
-          kind: "success",
-        });
-        input.value = "";
-        m.redraw();
-      } catch (err) {
-        showToast(err instanceof Error ? err.message : "Import backup failed", {
-          kind: "error",
-        });
-        input.value = "";
-      }
-    };
-
-    const saveTags = (part: (typeof customAssetParts)[number]): void => {
-      const tags = vnode.state.customAssetTagInput
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-      part.tags = tags.length > 0 ? tags : undefined;
-      vnode.state.editingTagsPartId = null;
-      vnode.state.customAssetTagInput = "";
-      m.redraw();
-    };
-
-    const startEditTags = (part: (typeof customAssetParts)[number]): void => {
-      vnode.state.editingTagsPartId = part.itemId;
-      vnode.state.customAssetTagInput = (part.tags ?? []).join(", ");
-    };
-
-    const cancelEditTags = (): void => {
-      vnode.state.editingTagsPartId = null;
-      vnode.state.customAssetTagInput = "";
-    };
+    const importHandlers = createImportHandlers({
+      stateObj: vnode.state,
+      slot,
+      catalog,
+      importReferenceOptions: importReferenceOptions as SlotOption[],
+      slotTypeNames,
+    });
 
     // Draw preview canvases when data is available
     const previewRefCanvas = document.getElementById(
@@ -637,7 +268,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     vnode.state.showColorPicker = false;
                     vnode.state.showImporter = !vnode.state.showImporter;
                     if (!vnode.state.showImporter) {
-                      clearPreview();
+                      importHandlers.clearPreview();
                     }
                   },
                 },
@@ -683,7 +314,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     ).value;
                     // Rebuild preview if file already selected
                     if (vnode.state.importPreviewFile) {
-                      void loadPreview(vnode.state.importPreviewFile);
+                      void importHandlers.loadPreview(
+                        vnode.state.importPreviewFile,
+                      );
                     }
                   },
                 },
@@ -702,7 +335,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                   const input = e.target as HTMLInputElement;
                   const file = input.files?.[0];
                   if (file) {
-                    void loadPreview(file);
+                    void importHandlers.loadPreview(file);
                   }
                 },
               }),
@@ -737,7 +370,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                         type: "button",
                         title: "Nudge left 1px",
                         disabled: vnode.state.importing,
-                        onclick: () => nudge("importOffsetX", -1),
+                        onclick: () =>
+                          importHandlers.nudge("importOffsetX", -1),
                       },
                       "◀",
                     ),
@@ -751,7 +385,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                         "Horizontal alignment nudge in pixels; mirrored side rows use the opposite X offset",
                       disabled: vnode.state.importing,
                       oninput: (e: Event) => {
-                        setImportNumber(
+                        importHandlers.setImportNumber(
                           "importOffsetX",
                           (e.target as HTMLInputElement).value,
                           IMPORT_OFFSET_MIN,
@@ -765,7 +399,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                         type: "button",
                         title: "Nudge right 1px",
                         disabled: vnode.state.importing,
-                        onclick: () => nudge("importOffsetX", 1),
+                        onclick: () => importHandlers.nudge("importOffsetX", 1),
                       },
                       "▶",
                     ),
@@ -780,7 +414,8 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                         type: "button",
                         title: "Nudge up 1px",
                         disabled: vnode.state.importing,
-                        onclick: () => nudge("importOffsetY", -1),
+                        onclick: () =>
+                          importHandlers.nudge("importOffsetY", -1),
                       },
                       "▲",
                     ),
@@ -793,7 +428,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                       title: "Vertical alignment nudge in pixels",
                       disabled: vnode.state.importing,
                       oninput: (e: Event) => {
-                        setImportNumber(
+                        importHandlers.setImportNumber(
                           "importOffsetY",
                           (e.target as HTMLInputElement).value,
                           IMPORT_OFFSET_MIN,
@@ -807,7 +442,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                         type: "button",
                         title: "Nudge down 1px",
                         disabled: vnode.state.importing,
-                        onclick: () => nudge("importOffsetY", 1),
+                        onclick: () => importHandlers.nudge("importOffsetY", 1),
                       },
                       "▼",
                     ),
@@ -825,7 +460,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                       "Scale applied after auto-alignment; 100 keeps the matched reference size",
                     disabled: vnode.state.importing,
                     oninput: (e: Event) => {
-                      setImportNumber(
+                      importHandlers.setImportNumber(
                         "importScalePercent",
                         (e.target as HTMLInputElement).value,
                         IMPORT_SCALE_MIN,
@@ -840,7 +475,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     type: "button",
                     title: "Reset import alignment tuning",
                     disabled: vnode.state.importing,
-                    onclick: resetImportTuning,
+                    onclick: importHandlers.resetImportTuning,
                   },
                   "↺",
                 ),
@@ -852,7 +487,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     disabled:
                       vnode.state.importing ||
                       !vnode.state.importPreviewReferenceBounds,
-                    onclick: centerOnReference,
+                    onclick: importHandlers.centerOnReference,
                   },
                   "⊕",
                 ),
@@ -876,7 +511,7 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                   disabled:
                     vnode.state.importing || !vnode.state.importPreviewFile,
                   onclick: () => {
-                    void handleWeaponImport();
+                    void importHandlers.handleWeaponImport();
                   },
                 },
                 vnode.state.importing ? "Importing..." : "Import",
@@ -888,17 +523,18 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                 stateObj: vnode.state,
                 selectedValue,
                 customAssetParts,
-                exportAllCustomAssets,
-                importBackupCustomAssets,
-                selectCustomAsset,
-                startRenameCustomAsset,
-                cancelRenameCustomAsset,
-                saveRenameCustomAsset,
-                duplicateCustomAsset,
-                deleteCustomAsset,
-                startEditTags,
-                cancelEditTags,
-                saveTags,
+                exportAllCustomAssets: importHandlers.exportAllCustomAssets,
+                importBackupCustomAssets:
+                  importHandlers.importBackupCustomAssets,
+                selectCustomAsset: importHandlers.selectCustomAsset,
+                startRenameCustomAsset: importHandlers.startRenameCustomAsset,
+                cancelRenameCustomAsset: importHandlers.cancelRenameCustomAsset,
+                saveRenameCustomAsset: importHandlers.saveRenameCustomAsset,
+                duplicateCustomAsset: importHandlers.duplicateCustomAsset,
+                deleteCustomAsset: importHandlers.deleteCustomAsset,
+                startEditTags: importHandlers.startEditTags,
+                cancelEditTags: importHandlers.cancelEditTags,
+                saveTags: importHandlers.saveTags,
               }),
             ])
           : null,

@@ -42,8 +42,7 @@
     "jszip": "^3.10.1",
     "mithril": "^2.3.8",
     "neverthrow": "^8.2.0",
-    "tinygesture": "^3.0.0",
-    "webp-encoder": "^2.1.2"
+    "tinygesture": "^3.0.0"
   },
   "devDependencies": {
     "@argos-ci/playwright": "^7.0.5",

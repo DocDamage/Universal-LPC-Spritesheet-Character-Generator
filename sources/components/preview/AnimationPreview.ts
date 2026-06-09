@@ -41,6 +41,7 @@ import { setPreviewCanvasZoom } from "../../canvas/preview-canvas.ts";
 import { ScrollableContainer } from "./ScrollableContainer.ts";
 import { PreviewMetadataLoadingOverlay } from "./PreviewMetadataLoadingOverlay.ts";
 import { PreviewCanvas } from "./PreviewCanvas.ts";
+import { DirectionalPreviewGrid } from "./DirectionalPreviewGrid.ts";
 
 type AnimationOption = { value: string; label: string };
 
@@ -116,6 +117,24 @@ function currentTweenSettings(
       ? "linear"
       : vnode.state.tweenEasing || "linear",
   };
+}
+
+function previewRefreshKey(
+  vnode: m.Vnode<Record<string, never>, AnimationPreviewState>,
+): string {
+  return [
+    vnode.state.selectedAnimation,
+    vnode.state.frameCycle,
+    vnode.state.zoomLevel,
+    vnode.state.tweenMode,
+    vnode.state.tweenInbetweens,
+    vnode.state.tweenFps,
+    vnode.state.tweenMotionStrength,
+    vnode.state.tweenAlphaThreshold,
+    vnode.state.tweenEasing,
+    vnode.state.compareOriginal ? "original" : "tweened",
+    vnode.state.useAnimationOverride ? "override" : "global",
+  ].join(":");
 }
 
 export const AnimationPreview: m.Component<
@@ -343,6 +362,57 @@ export const AnimationPreview: m.Component<
                     m(
                       "button.button.is-small",
                       {
+                        title:
+                          "Save the current tween settings for only this animation",
+                        onclick: () => {
+                          setTweenOverrideForAnimation(
+                            vnode.state.selectedAnimation,
+                            currentTweenSettings(vnode),
+                          );
+                          vnode.state.useAnimationOverride = true;
+                          showToast("Animation preset saved.", {
+                            kind: "success",
+                          });
+                        },
+                      },
+                      "Save Preset",
+                    ),
+                  ]),
+                  m("div.control", [
+                    m(
+                      "button.button.is-small",
+                      {
+                        disabled: !hasTweenOverride(
+                          vnode.state.selectedAnimation,
+                        ),
+                        title:
+                          "Clear this animation preset and use global tween settings",
+                        onclick: () => {
+                          clearTweenOverrideForAnimation(
+                            vnode.state.selectedAnimation,
+                          );
+                          vnode.state.useAnimationOverride = false;
+                          assignTweenState(
+                            vnode,
+                            getTweenSettingsForAnimation(
+                              vnode.state.selectedAnimation,
+                            ),
+                          );
+                          syncPreviewTweenSettingsForAnimation(
+                            vnode.state.selectedAnimation,
+                          );
+                          showToast("Animation now uses global preset.", {
+                            kind: "success",
+                          });
+                        },
+                      },
+                      "Use Global",
+                    ),
+                  ]),
+                  m("div.control", [
+                    m(
+                      "button.button.is-small",
+                      {
                         title: "Temporarily preview original frame timing",
                         onclick: () => {
                           vnode.state.compareOriginal =
@@ -516,6 +586,7 @@ export const AnimationPreview: m.Component<
             ),
           ),
         ]),
+        m(DirectionalPreviewGrid, { refreshKey: previewRefreshKey(vnode) }),
         m(
           "div.is-flex.is-justify-content-center.mb-3",
           { style: { gap: "8px" } },

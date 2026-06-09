@@ -54,6 +54,11 @@ type PreviewGeometry = {
   yOffset: number;
 };
 
+export type DirectionalPreviewFrame = {
+  direction: string;
+  canvas: HTMLCanvasElement;
+};
+
 /**
  * Set which animation to preview
  */
@@ -281,6 +286,39 @@ function drawAnimationCycleFrame(
   }
 }
 
+function renderDirectionFrameToCanvas(
+  sourceCanvas: HTMLCanvasElement,
+  geometry: PreviewGeometry,
+  cycleIndex: number,
+  directionIndex: number,
+): HTMLCanvasElement {
+  const { canvas: frameCanvas, ctx: frameCtx } = createCanvas(
+    geometry.frameSize,
+    geometry.frameSize,
+    true,
+  );
+  const currentFrame = animationFrames[cycleIndex];
+  if (currentFrame === undefined) {
+    return frameCanvas;
+  }
+
+  const srcY = activeCustomAnimation
+    ? geometry.yOffset + directionIndex * geometry.frameSize
+    : (animRowStart + directionIndex) * FRAME_SIZE;
+  frameCtx.drawImage(
+    sourceCanvas,
+    currentFrame * geometry.frameSize,
+    srcY,
+    geometry.frameSize,
+    geometry.frameSize,
+    0,
+    0,
+    geometry.frameSize,
+    geometry.frameSize,
+  );
+  return frameCanvas;
+}
+
 /**
  * When Playwright sets `__DISABLE_PREVIEW_ANIMATION__`, we paint once instead of using rAF.
  * The first paint can run before `renderCharacter` finishes; call this after any redraw that
@@ -337,6 +375,34 @@ export function renderPreviewAnimationFrameCanvases(
   }
 
   return frameCanvases;
+}
+
+export function renderDirectionalPreviewCanvases(
+  cycleIndex: number = currentFrameIndex,
+): DirectionalPreviewFrame[] {
+  if (!canvas) {
+    throw new Error("Renderer canvas is not initialized");
+  }
+
+  const geometry = getPreviewGeometry();
+  const sourceCanvas = getSourceCanvas();
+  const directionLabels =
+    animRowNum === 1 ? ["all"] : ["up", "left", "down", "right"];
+  const frames: DirectionalPreviewFrame[] = [];
+
+  for (let index = 0; index < animRowNum; index++) {
+    frames.push({
+      direction: directionLabels[index] ?? `row ${index + 1}`,
+      canvas: renderDirectionFrameToCanvas(
+        sourceCanvas,
+        geometry,
+        cycleIndex % animationFrames.length,
+        index,
+      ),
+    });
+  }
+
+  return frames;
 }
 
 export function startPreviewAnimation(): void {

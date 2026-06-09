@@ -11,6 +11,7 @@ import {
   startPreviewAnimation,
   stopPreviewAnimation,
   getCustomAnimations,
+  renderDirectionalPreviewCanvases,
   setPreviewShowTransparencyGrid,
   setPreviewApplyTransparencyMask,
 } from "../../canvas/preview-animation.ts";
@@ -18,7 +19,44 @@ import {
 type DesktopPreviewState = {
   zoomLevel: number;
   selectedAnimation: string;
+  directionalFrames: Array<{ direction: string; src: string }>;
+  directionalRefreshTimer: number | null;
 };
+
+function refreshDirectionalFrames(
+  vnode: m.Vnode<Record<string, never>, DesktopPreviewState>,
+): boolean {
+  try {
+    vnode.state.directionalFrames = renderDirectionalPreviewCanvases(0).map(
+      (frame) => ({
+        direction: frame.direction,
+        src: frame.canvas.toDataURL("image/png"),
+      }),
+    );
+    return vnode.state.directionalFrames.length > 0;
+  } catch {
+    vnode.state.directionalFrames = [];
+    return false;
+  }
+}
+
+function scheduleDirectionalRefresh(
+  vnode: m.Vnode<Record<string, never>, DesktopPreviewState>,
+  attempts = 8,
+): void {
+  if (vnode.state.directionalRefreshTimer !== null) {
+    window.clearTimeout(vnode.state.directionalRefreshTimer);
+  }
+
+  vnode.state.directionalRefreshTimer = window.setTimeout(() => {
+    vnode.state.directionalRefreshTimer = null;
+    const refreshed = refreshDirectionalFrames(vnode);
+    m.redraw();
+    if (!refreshed && attempts > 1) {
+      scheduleDirectionalRefresh(vnode, attempts - 1);
+    }
+  }, 250);
+}
 
 export const DesktopPreview: m.Component<
   Record<string, never>,
@@ -27,6 +65,8 @@ export const DesktopPreview: m.Component<
   oninit(vnode) {
     vnode.state.zoomLevel = state.previewCanvasZoomLevel || 1;
     vnode.state.selectedAnimation = state.selectedAnimation || "walk";
+    vnode.state.directionalFrames = [];
+    vnode.state.directionalRefreshTimer = null;
   },
 
   oncreate(vnode) {
@@ -48,6 +88,9 @@ export const DesktopPreview: m.Component<
     setPreviewApplyTransparencyMask(state.applyTransparencyMask);
     startPreviewAnimation();
     setPreviewCanvasZoom(vnode.state.zoomLevel);
+    if (!refreshDirectionalFrames(vnode)) {
+      scheduleDirectionalRefresh(vnode);
+    }
 
     // Mouse wheel zoom
     const container = vnode.dom as HTMLElement;
@@ -72,10 +115,18 @@ export const DesktopPreview: m.Component<
     // Sync dropdown with external animation changes (e.g., auto-switch for wheelchair/weapons)
     if (state.selectedAnimation !== vnode.state.selectedAnimation) {
       vnode.state.selectedAnimation = state.selectedAnimation;
+      if (window.canvasRenderer) {
+        setPreviewAnimation(vnode.state.selectedAnimation);
+        refreshDirectionalFrames(vnode);
+      }
     }
   },
 
   onremove() {
+    if (this.directionalRefreshTimer !== null) {
+      window.clearTimeout(this.directionalRefreshTimer);
+      this.directionalRefreshTimer = null;
+    }
     if (window.canvasRenderer) {
       stopPreviewAnimation();
     }
@@ -110,6 +161,7 @@ export const DesktopPreview: m.Component<
                 stopPreviewAnimation();
                 setPreviewAnimation(anim);
                 startPreviewAnimation();
+                refreshDirectionalFrames(vnode);
               }
             },
           },
@@ -130,6 +182,20 @@ export const DesktopPreview: m.Component<
             ])
           : null,
       ]),
+      vnode.state.directionalFrames.length > 0
+        ? m(
+            "div.desktop-direction-preview",
+            vnode.state.directionalFrames.map((frame) =>
+              m("div.desktop-direction-preview-card", [
+                m("img", {
+                  src: frame.src,
+                  alt: `${frame.direction} direction preview`,
+                }),
+                m("span", frame.direction),
+              ]),
+            ),
+          )
+        : null,
     ]);
   },
 };

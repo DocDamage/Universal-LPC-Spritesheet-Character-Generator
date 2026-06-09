@@ -6,7 +6,7 @@ import type { Selections } from "../state/state.ts";
 import { replaceInPath } from "../state/path.ts";
 import { variantToFilename } from "../utils/helpers.ts";
 
-type CreditWithFileName = Credit & { fileName: string };
+export type CreditWithFileName = Credit & { fileName: string };
 
 /**
  * Collect credits from all selected items. Only includes credits for files

@@ -3,7 +3,7 @@ import type { Selections } from "../state/app-state.ts";
 import type { DrawCall } from "../state/render-state.ts";
 import { getSpritePath } from "../state/path.ts";
 import { getMultiRecolors } from "../state/palettes.ts";
-import { defaultCatalog, getItemMerged } from "../state/catalog.ts";
+import { defaultCatalog } from "../state/catalog.ts";
 import { supportsAnimation } from "../state/meta.ts";
 import { debugWarn } from "../utils/debug.ts";
 import { variantToFilename } from "../utils/helpers.ts";
@@ -71,7 +71,7 @@ export function populateRenderPlan({
     }
 
     const assetItemId = itemId;
-    const metaResult = getItemMerged(assetItemId);
+    const metaResult = defaultCatalog.getItemMerged(assetItemId);
     if (metaResult.isErr() || subId) continue;
     const meta = metaResult.value;
 

@@ -3,7 +3,7 @@ import { loadImage } from "../../../canvas/load-image.ts";
 import { get2DContext } from "../../../canvas/canvas-utils.ts";
 import { customAnimations } from "../../../custom-animations.ts";
 import { FRAME_SIZE } from "../../../state/constants.ts";
-import { getItemMerged } from "../../../state/catalog.ts";
+import { defaultCatalog } from "../../../state/catalog.ts";
 import { getSpritePath } from "../../../state/path.ts";
 import { state } from "../../../state/state.ts";
 import { getMultiRecolors } from "../../../state/palettes.ts";
@@ -78,7 +78,7 @@ export function loadPartEditorItemIfNeeded(
   stateObj.onionCanvases = null;
   clearSelectionState(stateObj, false);
 
-  const meta = getItemMerged(editing.itemId).unwrapOr(null);
+  const meta = defaultCatalog.getItemMerged(editing.itemId).unwrapOr(null);
   if (!meta) {
     stateObj.loading = false;
     return;

@@ -5,10 +5,7 @@ import type { ItemMerged } from "../../../state/catalog.ts";
 import type { CatalogReader } from "../../../state/catalog.ts";
 import { ANIMATION_OFFSETS } from "../../../state/constants.ts";
 import { customAnimations } from "../../../custom-animations.ts";
-import {
-  STANDARD_SHEET_WIDTH,
-  STANDARD_SHEET_HEIGHT,
-} from "./constants.ts";
+import { STANDARD_SHEET_WIDTH, STANDARD_SHEET_HEIGHT } from "./constants.ts";
 import type { Rect, SourceMode } from "./types.ts";
 
 // ─── Canvas / IO ───────────────────────────────────────────────────────

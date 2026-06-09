@@ -15,98 +15,94 @@ export type AnimationExportButtonsAttrs = {
   tweenSettings: TweenSettings;
 };
 
-export const AnimationExportButtons: m.Component<
-  AnimationExportButtonsAttrs
-> = {
-  view(vnode) {
-    const { selectedAnimation, tweenSettings } = vnode.attrs;
+export const AnimationExportButtons: m.Component<AnimationExportButtonsAttrs> =
+  {
+    view(vnode) {
+      const { selectedAnimation, tweenSettings } = vnode.attrs;
 
-    return m(
-      "div.is-flex.is-justify-content-center.mb-3",
-      { style: { gap: "8px" } },
-      [
-        m(
-          "button.button.is-small.is-primary",
-          {
-            onclick: async () => {
-              try {
-                await downloadPreviewAnimationGif(
-                  state.selectedAnimation,
-                  state.bodyType,
-                );
-                showToast("Animated GIF exported successfully!", {
+      return m(
+        "div.is-flex.is-justify-content-center.mb-3",
+        { style: { gap: "8px" } },
+        [
+          m(
+            "button.button.is-small.is-primary",
+            {
+              onclick: async () => {
+                try {
+                  await downloadPreviewAnimationGif(
+                    state.selectedAnimation,
+                    state.bodyType,
+                  );
+                  showToast("Animated GIF exported successfully!", {
+                    kind: "success",
+                  });
+                } catch (err) {
+                  console.error(err);
+                  showToast("Failed to export preview GIF.", {
+                    kind: "error",
+                  });
+                }
+              },
+            },
+            "Export Loop as GIF",
+          ),
+          m(
+            "button.button.is-small.is-primary",
+            {
+              onclick: async () => {
+                try {
+                  await downloadPreviewAnimationWebp(
+                    state.selectedAnimation,
+                    state.bodyType,
+                  );
+                  showToast("Animated WebP exported successfully!", {
+                    kind: "success",
+                  });
+                } catch (err) {
+                  console.error(err);
+                  showToast("Failed to export preview WebP.", {
+                    kind: "error",
+                  });
+                }
+              },
+            },
+            "Export Loop as WebP",
+          ),
+          m(
+            "button.button.is-small",
+            {
+              onclick: async () => {
+                try {
+                  await downloadAnimationContactSheet(
+                    selectedAnimation,
+                    tweenSettings,
+                  );
+                  showToast("Animation contact sheet exported.", {
+                    kind: "success",
+                  });
+                } catch (err) {
+                  console.error(err);
+                  showToast("Failed to export contact sheet.", {
+                    kind: "error",
+                  });
+                }
+              },
+            },
+            "Contact Sheet",
+          ),
+          m(
+            "button.button.is-small",
+            {
+              onclick: () => {
+                downloadAnimationMetadata(selectedAnimation, tweenSettings);
+                showToast("Animation metadata exported.", {
                   kind: "success",
                 });
-              } catch (err) {
-                console.error(err);
-                showToast("Failed to export preview GIF.", {
-                  kind: "error",
-                });
-              }
+              },
             },
-          },
-          "Export Loop as GIF",
-        ),
-        m(
-          "button.button.is-small.is-primary",
-          {
-            onclick: async () => {
-              try {
-                await downloadPreviewAnimationWebp(
-                  state.selectedAnimation,
-                  state.bodyType,
-                );
-                showToast("Animated WebP exported successfully!", {
-                  kind: "success",
-                });
-              } catch (err) {
-                console.error(err);
-                showToast("Failed to export preview WebP.", {
-                  kind: "error",
-                });
-              }
-            },
-          },
-          "Export Loop as WebP",
-        ),
-        m(
-          "button.button.is-small",
-          {
-            onclick: async () => {
-              try {
-                await downloadAnimationContactSheet(
-                  selectedAnimation,
-                  tweenSettings,
-                );
-                showToast("Animation contact sheet exported.", {
-                  kind: "success",
-                });
-              } catch (err) {
-                console.error(err);
-                showToast("Failed to export contact sheet.", {
-                  kind: "error",
-                });
-              }
-            },
-          },
-          "Contact Sheet",
-        ),
-        m(
-          "button.button.is-small",
-          {
-            onclick: () => {
-              downloadAnimationMetadata(
-                selectedAnimation,
-                tweenSettings,
-              );
-              showToast("Animation metadata exported.", {
-                kind: "success",
-              });
-            },
-          },
-          "Metadata JSON",
-        ),
-      ],
-    );
-  },
-};
+            "Metadata JSON",
+          ),
+        ],
+      );
+    },
+  };

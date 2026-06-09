@@ -2,7 +2,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import {
-  registerFromLayersModule,
+  defaultCatalog,
   resetCatalogForTests,
 } from "../../../sources/state/catalog.ts";
 import { getPreviewCanvasState } from "../../../sources/state/preview-canvas-loading.ts";
@@ -19,7 +19,7 @@ test("getPreviewCanvasState walks through pending kinds in order, then ready", (
   state.isRenderingCharacter = false;
 
   assert.equal(getPreviewCanvasState().kind, "loading-layers");
-  registerFromLayersModule({ itemLayers: {} });
+  defaultCatalog.registerFromLayersModule({ itemLayers: {} });
   assert.equal(getPreviewCanvasState().kind, "canvas-not-initialized");
   setOffscreenCanvasInitializedForTests(true);
   assert.equal(getPreviewCanvasState().kind, "bootstrap-pending");
@@ -35,7 +35,7 @@ test("getPreviewCanvasState reports `rendering` while a render is in flight, eve
   resetCatalogForTests();
   resetOffscreenCanvasStateForTests();
   state.previewBootstrapRenderDone = false;
-  registerFromLayersModule({ itemLayers: {} });
+  defaultCatalog.registerFromLayersModule({ itemLayers: {} });
   setOffscreenCanvasInitializedForTests(true);
   assert.equal(getPreviewCanvasState().kind, "bootstrap-pending");
   state.isRenderingCharacter = true;

@@ -180,8 +180,7 @@ function renderImportTuning(
       {
         type: "button",
         title: "Center imported image on reference bounds",
-        disabled:
-          stateObj.importing || !stateObj.importPreviewReferenceBounds,
+        disabled: stateObj.importing || !stateObj.importPreviewReferenceBounds,
         onclick: importHandlers.centerOnReference,
       },
       "⊕",
@@ -242,9 +241,7 @@ export function renderImportPanel(
         value: stateObj.importReferenceValue,
         title: "Built-in asset used as the alignment reference",
         onchange: (e: Event) => {
-          stateObj.importReferenceValue = (
-            e.target as HTMLSelectElement
-          ).value;
+          stateObj.importReferenceValue = (e.target as HTMLSelectElement).value;
           if (stateObj.importPreviewFile) {
             void importHandlers.loadPreview(stateObj.importPreviewFile);
           }
@@ -257,10 +254,8 @@ export function renderImportPanel(
     m("input.desktop-slot-import-input", {
       type: "file",
       accept: "image/*",
-      title:
-        "Choose a transparent weapon/tool image or full LPC sheet",
-      disabled:
-        stateObj.importing || importReferenceOptions.length === 0,
+      title: "Choose a transparent weapon/tool image or full LPC sheet",
+      disabled: stateObj.importing || importReferenceOptions.length === 0,
       onchange: (e: Event) => {
         const input = e.target as HTMLInputElement;
         const file = input.files?.[0];
@@ -278,17 +273,14 @@ export function renderImportPanel(
       title: "Optional tags for the imported asset",
       disabled: stateObj.importing,
       oninput: (e: Event) => {
-        stateObj.customAssetTagInput = (
-          e.target as HTMLInputElement
-        ).value;
+        stateObj.customAssetTagInput = (e.target as HTMLInputElement).value;
       },
     }),
     m(
       "button.desktop-slot-import-action",
       {
         type: "button",
-        disabled:
-          stateObj.importing || !stateObj.importPreviewFile,
+        disabled: stateObj.importing || !stateObj.importPreviewFile,
         onclick: () => {
           void importHandlers.handleWeaponImport();
         },

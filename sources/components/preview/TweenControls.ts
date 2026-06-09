@@ -17,9 +17,7 @@ import {
   hasTweenOverride,
   setTweenOverrideForAnimation,
 } from "../../state/tween-settings.ts";
-import {
-  syncPreviewTweenSettingsForAnimation,
-} from "../../canvas/preview-animation.ts";
+import { syncPreviewTweenSettingsForAnimation } from "../../canvas/preview-animation.ts";
 import { showToast } from "../../state/notifications.ts";
 import {
   assignTweenState,
@@ -73,7 +71,10 @@ export const TweenControls: m.Component<TweenControlsAttrs> = {
                       const preset = target.value as TweenPreset;
                       if (preset in TWEEN_PRESETS) {
                         const newSettings = applyTweenPreset(preset);
-                        update({ tweenPreset: preset, useAnimationOverride: false });
+                        update({
+                          tweenPreset: preset,
+                          useAnimationOverride: false,
+                        });
                         assignTweenState(tweenState, newSettings);
                       }
                     },
@@ -152,7 +153,8 @@ export const TweenControls: m.Component<TweenControlsAttrs> = {
               m(
                 "button.button.is-small",
                 {
-                  title: "Save the current tween settings for only this animation",
+                  title:
+                    "Save the current tween settings for only this animation",
                   onclick: () => {
                     setTweenOverrideForAnimation(
                       selectedAnimation,
@@ -173,7 +175,8 @@ export const TweenControls: m.Component<TweenControlsAttrs> = {
                 "button.button.is-small",
                 {
                   disabled: !hasTweenOverride(selectedAnimation),
-                  title: "Clear this animation preset and use global tween settings",
+                  title:
+                    "Clear this animation preset and use global tween settings",
                   onclick: () => {
                     clearTweenOverrideForAnimation(selectedAnimation);
                     assignTweenState(
@@ -272,8 +275,16 @@ export const TweenControls: m.Component<TweenControlsAttrs> = {
                     [
                       m("option", { value: "linear" }, "Linear (Fixed Speed)"),
                       m("option", { value: "ease-in" }, "Ease-In (Accelerate)"),
-                      m("option", { value: "ease-out" }, "Ease-Out (Decelerate)"),
-                      m("option", { value: "ease-in-out" }, "Ease-In-Out (Smooth)"),
+                      m(
+                        "option",
+                        { value: "ease-out" },
+                        "Ease-Out (Decelerate)",
+                      ),
+                      m(
+                        "option",
+                        { value: "ease-in-out" },
+                        "Ease-In-Out (Smooth)",
+                      ),
                       m("option", { value: "bounce" }, "Bounce"),
                       m("option", { value: "elastic" }, "Elastic (Snap)"),
                     ],

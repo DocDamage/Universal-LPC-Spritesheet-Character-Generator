@@ -1,5 +1,9 @@
 // Barrel re-exports for the views/ subdirectory
-export { renderEmptyEditor, renderProRequiredEditor, renderLoadingEditor } from "./empty-states.ts";
+export {
+  renderEmptyEditor,
+  renderProRequiredEditor,
+  renderLoadingEditor,
+} from "./empty-states.ts";
 export { renderEditorHeader } from "./editor-header.ts";
 export {
   renderNameField,

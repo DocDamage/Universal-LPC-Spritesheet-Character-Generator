@@ -4,7 +4,7 @@ import { assert } from "chai";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
 import { ItemWithVariants } from "../../../sources/components/tree/ItemWithVariants.ts";
 import { state } from "../../../sources/state/state.ts";
-import { getItemMerged } from "../../../sources/state/catalog.ts";
+import { defaultCatalog } from "../../../sources/state/catalog.ts";
 import { BODY_TYPES } from "../../../sources/state/constants.ts";
 import { resetState } from "../../../sources/state/filters.ts";
 import {
@@ -47,7 +47,7 @@ describe("ItemWithVariants", function () {
       },
       { categoryTree: { items: [], children: {} } },
     );
-    return getItemMerged("iwv_cloak").unwrapOr(null);
+    return defaultCatalog.getItemMerged("iwv_cloak").unwrapOr(null);
   }
 
   it("renders the item row with a collapsed tree label", function () {
@@ -155,7 +155,7 @@ describe("ItemWithVariants", function () {
       },
       { categoryTree: { items: [], children: {} } },
     );
-    const meta = getItemMerged("iwv_body_color").unwrapOr(null);
+    const meta = defaultCatalog.getItemMerged("iwv_body_color").unwrapOr(null);
 
     m.render(
       host,

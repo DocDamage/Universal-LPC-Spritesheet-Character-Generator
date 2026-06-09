@@ -9,11 +9,7 @@
  * The browser test page (`tests_run.html`) still awaits `loadAllMetadata()` at module evaluation.
  */
 import {
-  registerFromCreditsModule,
-  registerFromIndexModule,
-  registerFromItemModule,
-  registerFromLayersModule,
-  registerFromPaletteModule,
+  defaultCatalog,
   type AliasMetadata,
   type CategoryTree,
   type Credit,
@@ -70,7 +66,7 @@ export function loadAllMetadata(): Promise<LoadedChunks> {
     const [indexMod, paletteMod, itemMod, creditsMod, layersMod] =
       await Promise.all([
         import("../index-metadata.js").then((mod) => {
-          registerFromIndexModule({
+          defaultCatalog.registerFromIndexModule({
             aliasMetadata: mod.aliasMetadata,
             categoryTree: mod.categoryTree,
             metadataIndexes: mod.metadataIndexes,
@@ -79,22 +75,30 @@ export function loadAllMetadata(): Promise<LoadedChunks> {
           return mod;
         }),
         import("../palette-metadata.js").then((mod) => {
-          registerFromPaletteModule({ paletteMetadata: mod.paletteMetadata });
+          defaultCatalog.registerFromPaletteModule({
+            paletteMetadata: mod.paletteMetadata,
+          });
           safeRedraw();
           return mod;
         }),
         import("../item-metadata.js").then((mod) => {
-          registerFromItemModule({ itemMetadata: mod.itemMetadata });
+          defaultCatalog.registerFromItemModule({
+            itemMetadata: mod.itemMetadata,
+          });
           safeRedraw();
           return mod;
         }),
         import("../credits-metadata.js").then((mod) => {
-          registerFromCreditsModule({ itemCredits: mod.itemCredits });
+          defaultCatalog.registerFromCreditsModule({
+            itemCredits: mod.itemCredits,
+          });
           safeRedraw();
           return mod;
         }),
         import("../layers-metadata.js").then((mod) => {
-          registerFromLayersModule({ itemLayers: mod.itemLayers });
+          defaultCatalog.registerFromLayersModule({
+            itemLayers: mod.itemLayers,
+          });
           safeRedraw();
           return mod;
         }),

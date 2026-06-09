@@ -3,13 +3,10 @@
 import m from "mithril";
 import { state, selectItem } from "../../../state/state.ts";
 import { customAnimations } from "../../../custom-animations.ts";
-import { getItemMerged } from "../../../state/catalog.ts";
+import { defaultCatalog } from "../../../state/catalog.ts";
 import type { CatalogReader } from "../../../state/catalog.ts";
 import type { SlotDef, SlotOption } from "../slot-config.ts";
-import {
-  clearSlotSelections,
-  getDefaultRecolor,
-} from "../slot-config.ts";
+import { clearSlotSelections, getDefaultRecolor } from "../slot-config.ts";
 import {
   setPreviewAnimation,
   stopPreviewAnimation,
@@ -56,7 +53,7 @@ export function createSlotChangeHandler(
     }
 
     // Auto-switch preview animation for custom-animation-only items
-    const meta = getItemMerged(opt.itemId).unwrapOr(null);
+    const meta = defaultCatalog.getItemMerged(opt.itemId).unwrapOr(null);
     if (meta && meta.animations && meta.animations.length > 0) {
       const firstAnim = meta.animations[0];
       if (firstAnim && customAnimations && customAnimations[firstAnim]) {

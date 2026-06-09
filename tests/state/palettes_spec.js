@@ -1,8 +1,10 @@
 // @ts-nocheck
 import { expect } from "chai";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
-import { resetCatalogForTests } from "../../sources/state/catalog.ts";
-import { getItemLite } from "../../sources/state/catalog.ts";
+import {
+  resetCatalogForTests,
+  defaultCatalog,
+} from "../../sources/state/catalog.ts";
 import {
   restoreAppCatalogAfterTest,
   seedBrowserCatalog,
@@ -279,7 +281,7 @@ describe("state/palettes.ts", () => {
 
     const [paletteOptions, selectedColors] = getPaletteOptions(
       "head_ears_elven",
-      getItemLite("head_ears_elven").unwrapOr(null),
+      defaultCatalog.getItemLite("head_ears_elven").unwrapOr(null),
     );
 
     expect(selectedColors).to.deep.equal({ ears: "bronze" });

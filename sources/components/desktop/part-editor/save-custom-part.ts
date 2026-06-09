@@ -1,9 +1,5 @@
 import m from "mithril";
-import {
-  defaultCatalog,
-  getItemMerged,
-  registerCustomPart,
-} from "../../../state/catalog.ts";
+import { defaultCatalog, registerCustomPart } from "../../../state/catalog.ts";
 import { state } from "../../../state/state.ts";
 import { clearDraft } from "../../../state/editor-autosave.ts";
 import { SLOT_CONFIG, clearSlotSelections } from "../slot-config.ts";
@@ -23,7 +19,7 @@ export async function saveCustomPartFromEditor(
 ): Promise<void> {
   if (!editorState.baseItemId) return;
   const baseId = editorState.baseItemId;
-  const meta = getItemMerged(baseId).unwrapOr(null);
+  const meta = defaultCatalog.getItemMerged(baseId).unwrapOr(null);
   if (!meta) return;
 
   editorState.loading = true;

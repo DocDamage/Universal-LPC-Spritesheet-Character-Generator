@@ -1,7 +1,9 @@
 import m from "mithril";
 import type { PartEditorState } from "../types.ts";
 
-export function renderReferenceUnderlaySection(stateObj: PartEditorState): m.Children {
+export function renderReferenceUnderlaySection(
+  stateObj: PartEditorState,
+): m.Children {
   return m("div.part-editor-pro-section", [
     m("h4", "Reference Underlay"),
 

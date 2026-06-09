@@ -4,7 +4,10 @@ import { createCanvas } from "../../../canvas/canvas-utils.ts";
 import { loadImage } from "../../../canvas/load-image.ts";
 import { getSpritePath } from "../../../state/path.ts";
 import { variantToFilename } from "../../../utils/helpers.ts";
-import { customAnimations, customAnimationSize } from "../../../custom-animations.ts";
+import {
+  customAnimations,
+  customAnimationSize,
+} from "../../../custom-animations.ts";
 import type { ItemMerged, CatalogReader } from "../../../state/catalog.ts";
 import type { Selections } from "../../../state/state.ts";
 import { getLayerZPos } from "./utils.ts";

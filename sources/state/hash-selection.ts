@@ -3,8 +3,7 @@ import type { Selection, Selections } from "./state.ts";
 import { parseRecolorKey } from "./palettes.ts";
 import { debugWarn } from "../utils/debug.ts";
 import {
-  getAliasMetadata,
-  getItemLite,
+  defaultCatalog,
   getCustomPart,
   type AliasMetadata,
 } from "./catalog.ts";
@@ -75,7 +74,9 @@ export function getHashParamsforSelections(
 
   // Add selections — old format: `type_name=Name_variant`.
   // e.g., "body=Body_color_light", "shoes=Sara_sara".
-  const aliasMetadata = getAliasMetadata().unwrapOr({} as AliasMetadata);
+  const aliasMetadata = defaultCatalog
+    .getAliasMetadata()
+    .unwrapOr({} as AliasMetadata);
   for (const [typeName, selection] of Object.entries(selections)) {
     const custom = getCustomPart(selection.itemId);
     if (custom) {
@@ -89,7 +90,7 @@ export function getHashParamsforSelections(
       continue;
     }
 
-    const meta = getItemLite(selection.itemId).unwrapOr(null);
+    const meta = defaultCatalog.getItemLite(selection.itemId).unwrapOr(null);
     // Defensive: real production data has type_name, but a few test fixtures
     // (and possibly malformed URLs) might lack it. Treat as alias-fallback.
     if (!meta || !meta.type_name) {
@@ -179,7 +180,9 @@ export function loadSelectionsFromHash(hashString: string | null = null): void {
     }
 
     // Check name and variant
-    const aliasMd = getAliasMetadata().unwrapOr({} as AliasMetadata);
+    const aliasMd = defaultCatalog
+      .getAliasMetadata()
+      .unwrapOr({} as AliasMetadata);
     const aliasType = aliasMd[typeName];
     const aliasMeta = aliasType?.[nameAndVariant];
     if (aliasMeta) {

@@ -17,7 +17,10 @@ type ZoomControlsProps = {
   setZoom: (zoom: number) => void;
 };
 
-export function renderZoomControls({ zoom, setZoom }: ZoomControlsProps): m.Children {
+export function renderZoomControls({
+  zoom,
+  setZoom,
+}: ZoomControlsProps): m.Children {
   return m("div.part-editor-zoom-controls", [
     m(
       "button.part-editor-zoom-button",
@@ -101,7 +104,9 @@ export function renderThumbnailCanvas(
   );
 }
 
-export function renderDirectionThumbnails(stateObj: PartEditorState): m.Children {
+export function renderDirectionThumbnails(
+  stateObj: PartEditorState,
+): m.Children {
   return m("div.part-editor-directions-row.mb-3", [
     (["front", "back", "left", "right"] as const).map((dir) =>
       renderThumbnailCanvas(stateObj, dir),
@@ -127,7 +132,9 @@ export function renderCanvasArea(
       ),
       renderZoomControls({
         zoom: stateObj.zoom,
-        setZoom: (zoom: number) => { stateObj.zoom = clampEditorZoom(zoom); },
+        setZoom: (zoom: number) => {
+          stateObj.zoom = clampEditorZoom(zoom);
+        },
       }),
     ]),
     m(
@@ -235,15 +242,11 @@ export function renderCanvasArea(
                 canvasHandlers.handleCanvasMove(e, canvasEl);
               },
               onmouseup: (e: MouseEvent) => {
-                canvasHandlers.handleCanvasUp(
-                  e.target as HTMLCanvasElement,
-                );
+                canvasHandlers.handleCanvasUp(e.target as HTMLCanvasElement);
               },
               onmouseleave: (e: MouseEvent) => {
                 stateObj.cursorPosition = null;
-                canvasHandlers.handleCanvasLeave(
-                  e.target as HTMLCanvasElement,
-                );
+                canvasHandlers.handleCanvasLeave(e.target as HTMLCanvasElement);
               },
             }),
           ],

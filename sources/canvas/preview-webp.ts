@@ -31,25 +31,41 @@ interface ParsedFrameInfo {
 }
 
 export class AnimatedWebPEncoder {
-  public static encode(frames: WebPFrameInput[], options: WebPEncoderOptions = {}): Uint8Array {
+  public static encode(
+    frames: WebPFrameInput[],
+    options: WebPEncoderOptions = {},
+  ): Uint8Array {
     if (frames.length === 0) {
-      throw new Error("At least one frame is required to encode an animated WebP.");
+      throw new Error(
+        "At least one frame is required to encode an animated WebP.",
+      );
     }
 
     const parsedFrames: ParsedFrameInfo[] = frames.map((f, index) => {
       try {
         return this.parseSingleFrameWebP(f.bytes);
       } catch (err) {
-        throw new Error(`Failed to parse frame at index ${index}: ${(err as Error).message}`);
+        throw new Error(
+          `Failed to parse frame at index ${index}: ${(err as Error).message}`,
+        );
       }
     });
 
-    const canvasWidth = options.width ?? Math.max(...parsedFrames.map((f) => f.width));
-    const canvasHeight = options.height ?? Math.max(...parsedFrames.map((f) => f.height));
+    const canvasWidth =
+      options.width ?? Math.max(...parsedFrames.map((f) => f.width));
+    const canvasHeight =
+      options.height ?? Math.max(...parsedFrames.map((f) => f.height));
     const hasAlphaGlobal = parsedFrames.some((f) => f.hasAlpha);
 
-    const vp8xChunk = this.createVP8XChunk(canvasWidth, canvasHeight, hasAlphaGlobal);
-    const animChunk = this.createANIMChunk(options.loopCount ?? 0, options.backgroundColor ?? [0, 0, 0, 0]);
+    const vp8xChunk = this.createVP8XChunk(
+      canvasWidth,
+      canvasHeight,
+      hasAlphaGlobal,
+    );
+    const animChunk = this.createANIMChunk(
+      options.loopCount ?? 0,
+      options.backgroundColor ?? [0, 0, 0, 0],
+    );
 
     const anmfChunks: Uint8Array[] = [];
     for (let i = 0; i < frames.length; i++) {
@@ -64,7 +80,7 @@ export class AnimatedWebPEncoder {
         !!f.noBlend,
         !!f.disposeToBackground,
         parsed.alphaChunk,
-        parsed.bitstreamChunk.bytes
+        parsed.bitstreamChunk.bytes,
       );
       anmfChunks.push(anmf);
     }
@@ -101,7 +117,10 @@ export class AnimatedWebPEncoder {
       throw new Error("Truncated WebP container.");
     }
 
-    if (this.readString(fileBytes, 0, 4) !== "RIFF" || this.readString(fileBytes, 8, 4) !== "WEBP") {
+    if (
+      this.readString(fileBytes, 0, 4) !== "RIFF" ||
+      this.readString(fileBytes, 8, 4) !== "WEBP"
+    ) {
       throw new Error("Invalid WebP container header.");
     }
 
@@ -118,11 +137,16 @@ export class AnimatedWebPEncoder {
       const paddedSize = (size + 1) & ~1;
 
       if (offset + 8 + size > fileBytes.byteLength) {
-        throw new Error(`Chunk ${fourcc} specifies size ${size} out of file bounds.`);
+        throw new Error(
+          `Chunk ${fourcc} specifies size ${size} out of file bounds.`,
+        );
       }
 
       const payload = fileBytes.subarray(offset + 8, offset + 8 + size);
-      const fullChunkBytes = fileBytes.subarray(offset, offset + 8 + paddedSize);
+      const fullChunkBytes = fileBytes.subarray(
+        offset,
+        offset + 8 + paddedSize,
+      );
 
       if (fourcc === "VP8X") {
         if (size >= 10) {
@@ -177,32 +201,41 @@ export class AnimatedWebPEncoder {
     };
   }
 
-  private static parseVP8Dimensions(payload: Uint8Array): { width: number; height: number } | null {
+  private static parseVP8Dimensions(
+    payload: Uint8Array,
+  ): { width: number; height: number } | null {
     if (payload.length < 10) return null;
     const bits = payload[0] | (payload[1] << 8) | (payload[2] << 16);
     const isKeyFrame = !(bits & 1);
     if (!isKeyFrame) return null;
-    
-    if (payload[3] !== 0x9D || payload[4] !== 0x01 || payload[5] !== 0x2A) {
+
+    if (payload[3] !== 0x9d || payload[4] !== 0x01 || payload[5] !== 0x2a) {
       return null;
     }
-    const width = ((payload[7] << 8) | payload[6]) & 0x3FFF;
-    const height = ((payload[9] << 8) | payload[8]) & 0x3FFF;
+    const width = ((payload[7] << 8) | payload[6]) & 0x3fff;
+    const height = ((payload[9] << 8) | payload[8]) & 0x3fff;
     return { width, height };
   }
 
-  private static parseVP8LDimensions(payload: Uint8Array): { width: number; height: number; hasAlpha: boolean } | null {
+  private static parseVP8LDimensions(
+    payload: Uint8Array,
+  ): { width: number; height: number; hasAlpha: boolean } | null {
     if (payload.length < 5) return null;
-    if (payload[0] !== 0x2F) return null;
+    if (payload[0] !== 0x2f) return null;
 
-    const value = payload[1] | (payload[2] << 8) | (payload[3] << 16) | (payload[4] << 24);
-    const width = (value & 0x3FFF) + 1;
-    const height = ((value >> 14) & 0x3FFF) + 1;
+    const value =
+      payload[1] | (payload[2] << 8) | (payload[3] << 16) | (payload[4] << 24);
+    const width = (value & 0x3fff) + 1;
+    const height = ((value >> 14) & 0x3fff) + 1;
     const hasAlpha = !!(value & (1 << 28));
     return { width, height, hasAlpha };
   }
 
-  private static createVP8XChunk(width: number, height: number, hasAlpha: boolean): Uint8Array {
+  private static createVP8XChunk(
+    width: number,
+    height: number,
+    hasAlpha: boolean,
+  ): Uint8Array {
     const chunk = new Uint8Array(18);
     this.writeString(chunk, 0, "VP8X");
     this.writeUint32LE(chunk, 4, 10);
@@ -215,7 +248,10 @@ export class AnimatedWebPEncoder {
     return chunk;
   }
 
-  private static createANIMChunk(loopCount: number, bgColor: [number, number, number, number]): Uint8Array {
+  private static createANIMChunk(
+    loopCount: number,
+    bgColor: [number, number, number, number],
+  ): Uint8Array {
     const chunk = new Uint8Array(14);
     this.writeString(chunk, 0, "ANIM");
     this.writeUint32LE(chunk, 4, 6);
@@ -238,7 +274,7 @@ export class AnimatedWebPEncoder {
     noBlend: boolean,
     disposeBackground: boolean,
     alphaChunk: Uint8Array | null,
-    bitstreamChunk: Uint8Array
+    bitstreamChunk: Uint8Array,
   ): Uint8Array {
     const alphaLen = alphaChunk ? alphaChunk.length : 0;
     const bitstreamLen = bitstreamChunk.length;
@@ -270,35 +306,60 @@ export class AnimatedWebPEncoder {
     return chunk;
   }
 
-  private static writeUint32LE(arr: Uint8Array, offset: number, val: number): void {
+  private static writeUint32LE(
+    arr: Uint8Array,
+    offset: number,
+    val: number,
+  ): void {
     arr[offset] = val & 0xff;
     arr[offset + 1] = (val >> 8) & 0xff;
     arr[offset + 2] = (val >> 16) & 0xff;
     arr[offset + 3] = (val >> 24) & 0xff;
   }
 
-  private static writeUint24LE(arr: Uint8Array, offset: number, val: number): void {
+  private static writeUint24LE(
+    arr: Uint8Array,
+    offset: number,
+    val: number,
+  ): void {
     arr[offset] = val & 0xff;
     arr[offset + 1] = (val >> 8) & 0xff;
     arr[offset + 2] = (val >> 16) & 0xff;
   }
 
-  private static writeUint16LE(arr: Uint8Array, offset: number, val: number): void {
+  private static writeUint16LE(
+    arr: Uint8Array,
+    offset: number,
+    val: number,
+  ): void {
     arr[offset] = val & 0xff;
     arr[offset + 1] = (val >> 8) & 0xff;
   }
 
-  private static writeString(arr: Uint8Array, offset: number, str: string): void {
+  private static writeString(
+    arr: Uint8Array,
+    offset: number,
+    str: string,
+  ): void {
     for (let i = 0; i < str.length; i++) {
       arr[offset + i] = str.charCodeAt(i);
     }
   }
 
   private static readUint32LE(arr: Uint8Array, offset: number): number {
-    return arr[offset] | (arr[offset + 1] << 8) | (arr[offset + 2] << 16) | (arr[offset + 3] << 24);
+    return (
+      arr[offset] |
+      (arr[offset + 1] << 8) |
+      (arr[offset + 2] << 16) |
+      (arr[offset + 3] << 24)
+    );
   }
 
-  private static readString(arr: Uint8Array, offset: number, length: number): string {
+  private static readString(
+    arr: Uint8Array,
+    offset: number,
+    length: number,
+  ): string {
     let s = "";
     for (let i = 0; i < length; i++) {
       s += String.fromCharCode(arr[offset + i]);

@@ -1,6 +1,6 @@
 // Bounded LRU cache for recolored canvases
 
-import { getItemLite } from "../state/catalog.ts";
+import { defaultCatalog } from "../state/catalog.ts";
 import { getPalettesFromMeta } from "../state/palettes.ts";
 import { recolorWithPalette } from "./recolor-palette.ts";
 
@@ -34,7 +34,7 @@ export async function getImageToDraw(
   if (!recolors) {
     return img; // No recolor specified, return original image
   }
-  const meta = getItemLite(itemId).unwrapOr(null);
+  const meta = defaultCatalog.getItemLite(itemId).unwrapOr(null);
   const paletteConfig = getPalettesFromMeta(meta).unwrapOr(null);
   if (!paletteConfig) {
     return img; // Item doesn't use palette recoloring

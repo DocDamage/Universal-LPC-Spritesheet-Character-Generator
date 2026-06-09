@@ -3,8 +3,7 @@ import { ok, err, type Result } from "neverthrow";
 import { ANIMATIONS } from "./constants.ts";
 import { getHashParamsforSelections } from "./hash.ts";
 import {
-  getItemMerged,
-  getMetadataIndexes,
+  defaultCatalog,
   type ItemMerged,
   type LoadError,
   type MetadataIndexes,
@@ -76,8 +75,8 @@ function createDefaultPathDeps(): PathDeps {
     es6DynamicTemplate,
     debugLog,
     animations: ANIMATIONS,
-    getItemMetadata: getItemMerged,
-    getMetadataIndexes,
+    getItemMetadata: (itemId) => defaultCatalog.getItemMerged(itemId),
+    getMetadataIndexes: () => defaultCatalog.getMetadataIndexes(),
   };
 }
 

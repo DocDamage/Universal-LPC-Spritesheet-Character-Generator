@@ -53,17 +53,13 @@ export function persistTweenSettings(
   }
 }
 
-export function currentTweenSettings(
-  state: TweenState,
-): TweenSettings {
+export function currentTweenSettings(state: TweenState): TweenSettings {
   return {
     mode: state.tweenMode,
     inbetweens: state.compareOriginal ? 0 : state.tweenInbetweens,
     fps: state.compareOriginal ? 8 : state.tweenFps,
     motionStrength: state.tweenMotionStrength,
     alphaThreshold: state.tweenAlphaThreshold,
-    easing: state.compareOriginal
-      ? "linear"
-      : state.tweenEasing || "linear",
+    easing: state.compareOriginal ? "linear" : state.tweenEasing || "linear",
   };
 }

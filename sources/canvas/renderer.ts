@@ -8,7 +8,7 @@ import {
   setCurrentCustomAnimations,
   setCustomAnimYPositions,
 } from "./preview-animation.ts";
-import { catalogReady } from "../state/catalog.ts";
+import { defaultCatalog } from "../state/catalog.ts";
 import { renderState } from "../state/render-state.ts";
 import {
   SHEET_HEIGHT,
@@ -91,7 +91,7 @@ export async function renderCharacter(
   bodyType: string,
   targetCanvas: HTMLCanvasElement | null = null,
 ): Promise<void> {
-  await catalogReady.onLayersReady;
+  await defaultCatalog.ready.onLayersReady;
 
   const p = renderCharacterSerial.then(() =>
     runRenderCharacter(selections, bodyType, targetCanvas),

@@ -2,8 +2,7 @@
 import { ok, err, type Result } from "neverthrow";
 import { state, getSelectionGroup, type Selections } from "./state.ts";
 import {
-  getItemLite,
-  getPaletteMetadata,
+  defaultCatalog,
   type ItemLite,
   type LoadError,
   type PaletteMaterialMeta,
@@ -13,10 +12,10 @@ import {
 
 /** Local helpers — collapse `Result<T, _>` into `T | null` for ergonomics. */
 function liteOrNull(itemId: string): ItemLite | null {
-  return getItemLite(itemId).unwrapOr(null);
+  return defaultCatalog.getItemLite(itemId).unwrapOr(null);
 }
 function paletteMetaOrNull(): PaletteMetadata | null {
-  return getPaletteMetadata().unwrapOr(null);
+  return defaultCatalog.getPaletteMetadata().unwrapOr(null);
 }
 
 /**
@@ -40,7 +39,7 @@ export function fixMissingRecolor(
   recolor: string,
   typeName: string | null = null,
 ): Result<string, RecolorFixError> {
-  const metaResult = getItemLite(itemId);
+  const metaResult = defaultCatalog.getItemLite(itemId);
   if (metaResult.isErr()) return err(metaResult.error);
   const meta = metaResult.value;
 
@@ -139,7 +138,7 @@ export function getBodyColor(
   itemId: string,
   selections: Selections,
 ): Result<string, BodyColorError> {
-  const metaResult = getItemLite(itemId);
+  const metaResult = defaultCatalog.getItemLite(itemId);
   if (metaResult.isErr()) return err(metaResult.error);
   const meta = metaResult.value;
 

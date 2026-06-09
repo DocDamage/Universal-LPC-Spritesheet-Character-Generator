@@ -7,7 +7,6 @@ import deferredStylesheetHref from "./styles/deferred-entry.scss?url";
 import "./vendor-globals.ts";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import {
-  catalogReady,
   defaultCatalog,
   hydrateCustomPartsFromStorage,
 } from "./state/catalog.ts";
@@ -150,8 +149,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   void (async () => {
     await Promise.all([
-      catalogReady.onIndexReady,
-      catalogReady.onLiteReady,
+      defaultCatalog.ready.onIndexReady,
+      defaultCatalog.ready.onLiteReady,
       customPartsHydrated,
     ]);
     if (hashHydrationInitDone) return;

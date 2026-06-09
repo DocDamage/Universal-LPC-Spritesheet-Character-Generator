@@ -14,9 +14,7 @@ export {
   buildImportPreview,
 } from "./custom-weapon-import/importer.ts";
 
-export {
-  alignSourceToReferenceSheet,
-} from "./custom-weapon-import/alignment.ts";
+export { alignSourceToReferenceSheet } from "./custom-weapon-import/alignment.ts";
 
 export {
   getSourceMode,

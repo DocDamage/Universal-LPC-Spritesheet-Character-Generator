@@ -33,7 +33,9 @@ type AnimationPreviewState = {
   tweenState: TweenState;
 };
 
-function previewRefreshKey(vnode: m.Vnode<Record<string, never>, AnimationPreviewState>): string {
+function previewRefreshKey(
+  vnode: m.Vnode<Record<string, never>, AnimationPreviewState>,
+): string {
   const t = vnode.state.tweenState;
   return [
     vnode.state.selectedAnimation,
@@ -129,7 +131,10 @@ export const AnimationPreview: m.Component<
           m("div.column", [
             m("div.field.is-horizontal.is-align-items-center", [
               m("div.field-label.is-normal", [
-                m("label.label.mb-0", `Zoom: ${Math.round(vnode.state.zoomLevel * 100)}%`),
+                m(
+                  "label.label.mb-0",
+                  `Zoom: ${Math.round(vnode.state.zoomLevel * 100)}%`,
+                ),
               ]),
               m("div.field-body", [
                 m("div.field.mb-0", [
@@ -159,7 +164,8 @@ export const AnimationPreview: m.Component<
             m(TweenControls, {
               tweenState: t,
               selectedAnimation: vnode.state.selectedAnimation,
-              onTweenStateChange: (partial) => onTweenStateChange(vnode, partial),
+              onTweenStateChange: (partial) =>
+                onTweenStateChange(vnode, partial),
             }),
           ]),
         ]),
@@ -192,15 +198,19 @@ export const AnimationPreview: m.Component<
                   tweenFps: t.compareOriginal ? 8 : t.tweenFps,
                   tweenMotionStrength: t.tweenMotionStrength,
                   tweenAlphaThreshold: t.tweenAlphaThreshold,
-                  tweenEasing: t.compareOriginal ? "linear" : t.tweenEasing || "linear",
+                  tweenEasing: t.compareOriginal
+                    ? "linear"
+                    : t.tweenEasing || "linear",
                   onFrameCycleUpdate: (frameCycle) => {
                     vnode.state.frameCycle = frameCycle;
                   },
                 }),
                 state.isRenderingCharacter
                   ? m("div.preview-canvas-busy", { "aria-hidden": true }, [
-                    m("span.loading", { "aria-label": "Rendering character" }),
-                  ])
+                      m("span.loading", {
+                        "aria-label": "Rendering character",
+                      }),
+                    ])
                   : null,
                 m(PreviewMetadataLoadingOverlay),
               ]),

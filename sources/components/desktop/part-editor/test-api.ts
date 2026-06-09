@@ -17,11 +17,7 @@ import {
   createDirectionCanvases,
   recomposeCanvases,
 } from "./canvas.ts";
-import {
-  copySelection,
-  nudgeSelection,
-  pasteClipboard,
-} from "./selection.ts";
+import { copySelection, nudgeSelection, pasteClipboard } from "./selection.ts";
 import { createEditorContextSnapshot } from "./history.ts";
 import { isFrameDirty } from "./animation.ts";
 import { getFrameContextKey } from "./types.ts";

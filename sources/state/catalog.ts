@@ -39,7 +39,6 @@ export * from "./custom-parts.ts";
 // Additional imports needed only by the factory
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { Result } from "neverthrow";
 import { ok, err } from "neverthrow";
 import {
   buildItemsByTypeNameLite,
@@ -59,7 +58,6 @@ import type {
   Credit,
   LayerEntry,
   FullItemMetadata,
-  SlimByTypeNameRow,
   ItemMerged,
   CatalogReady,
   Catalog,
@@ -362,91 +360,10 @@ export function createCatalog(): Catalog {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Default instance + legacy free-function exports (transitional)
+// Default instance + test reset helper
 // ────────────────────────────────────────────────────────────────────────────
-//
-// All exports below preserve the pre-factory module surface for incremental
-// migration. They delegate to a single shared `defaultCatalog`. Phase Final
-// of the migration deletes everything between these comment fences; main.ts
-// will own the only `createCatalog()` instance at that point.
 
 export const defaultCatalog: Catalog = createCatalog();
-
-export const catalogReady = defaultCatalog.ready;
-
-export const isIndexReady = (): boolean => defaultCatalog.isIndexReady();
-export const isLiteReady = (): boolean => defaultCatalog.isLiteReady();
-export const isCreditsReady = (): boolean => defaultCatalog.isCreditsReady();
-export const isPaletteReady = (): boolean => defaultCatalog.isPaletteReady();
-export const isLayersReady = (): boolean => defaultCatalog.isLayersReady();
-
-export const chunkReady = (
-  chunk: ChunkName,
-): Result<true, LoadError> => defaultCatalog.chunkReady(chunk);
-
-export const getItemLite = (
-  id: string,
-): Result<ItemLite, LoadError> => defaultCatalog.getItemLite(id);
-
-export const getItemMerged = (
-  id: string,
-): Result<ItemMerged, LoadError> => defaultCatalog.getItemMerged(id);
-
-export const getItemCredits = (
-  id: string,
-): Result<Credit[], LoadError> => defaultCatalog.getItemCredits(id);
-
-export const getItemLayers = (
-  id: string,
-): Result<Record<string, LayerEntry>, LoadError> =>
-  defaultCatalog.getItemLayers(id);
-
-export const getPaletteMetadata = (): Result<PaletteMetadata, LoadError> =>
-  defaultCatalog.getPaletteMetadata();
-
-export const getCategoryTree = (): Result<CategoryTree, LoadError> =>
-  defaultCatalog.getCategoryTree();
-
-export const getMetadataIndexes = (): Result<MetadataIndexes, LoadError> =>
-  defaultCatalog.getMetadataIndexes();
-
-export const getAliasMetadata = (): Result<AliasMetadata, LoadError> =>
-  defaultCatalog.getAliasMetadata();
-
-export const buildItemsByTypeNameFromRegisteredLite = (): Record<
-  string,
-  SlimByTypeNameRow[]
-> => defaultCatalog.buildItemsByTypeNameFromRegisteredLite();
-
-export const registerFromIndexModule = (exports_: {
-  aliasMetadata: AliasMetadata;
-  categoryTree: CategoryTree;
-  metadataIndexes: MetadataIndexes;
-}): void => defaultCatalog.registerFromIndexModule(exports_);
-
-export const registerFromPaletteModule = (exports_: {
-  paletteMetadata: PaletteMetadata;
-}): void => defaultCatalog.registerFromPaletteModule(exports_);
-
-export const registerFromItemModule = (exports_: {
-  itemMetadata: Record<string, ItemLite>;
-}): void => defaultCatalog.registerFromItemModule(exports_);
-
-export const registerFromCreditsModule = (exports_: {
-  itemCredits: Record<string, Credit[]>;
-}): void => defaultCatalog.registerFromCreditsModule(exports_);
-
-export const registerFromLayersModule = (exports_: {
-  itemLayers: Record<string, Record<string, LayerEntry>>;
-}): void => defaultCatalog.registerFromLayersModule(exports_);
-
-export const loadCatalogFromFixtures = (fixtureGlobals: {
-  itemMetadata: Record<string, FullItemMetadata>;
-  aliasMetadata: AliasMetadata;
-  categoryTree: CategoryTree;
-  metadataIndexes: MetadataIndexes;
-  paletteMetadata: PaletteMetadata;
-}): void => defaultCatalog.loadCatalogFromFixtures(fixtureGlobals);
 
 /**
  * Reset the shared compatibility catalog. New isolated tests should prefer

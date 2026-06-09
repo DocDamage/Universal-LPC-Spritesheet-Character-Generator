@@ -6,9 +6,7 @@ import {
   setPreviewAnimation,
   syncPreviewTweenSettingsForAnimation,
 } from "../../canvas/preview-animation.ts";
-import {
-  getTweenSettingsForAnimation,
-} from "../../state/tween-settings.ts";
+import { getTweenSettingsForAnimation } from "../../state/tween-settings.ts";
 import type { TweenSettings } from "../../canvas/tween.ts";
 
 export type AnimationSelectorAttrs = {
@@ -18,9 +16,7 @@ export type AnimationSelectorAttrs = {
   onFrameCycleUpdate: (frameCycle: string) => void;
 };
 
-export const AnimationSelector: m.Component<
-  AnimationSelectorAttrs
-> = {
+export const AnimationSelector: m.Component<AnimationSelectorAttrs> = {
   view(vnode) {
     const customAnims = Object.keys(getCustomAnimations());
     const allAnimations: Array<{ value: string; label: string }> = [
@@ -32,9 +28,7 @@ export const AnimationSelector: m.Component<
     ];
 
     return m("div.field.is-horizontal.is-align-items-center", [
-      m("div.field-label.is-normal", [
-        m("label.label.mb-0", "Animation"),
-      ]),
+      m("div.field-label.is-normal", [m("label.label.mb-0", "Animation")]),
       m("div.field-body", [
         m("div.field.has-addons.mb-0", [
           m("div.control", [
@@ -64,10 +58,7 @@ export const AnimationSelector: m.Component<
             ]),
           ]),
           m("div.control", [
-            m(
-              "span.button.is-static.is-light",
-              vnode.attrs.frameCycle,
-            ),
+            m("span.button.is-static.is-light", vnode.attrs.frameCycle),
           ]),
         ]),
       ]),

@@ -6,7 +6,7 @@ import {
   createStudioProjectSnapshot,
   type StudioProject,
 } from "../../../state/studio-projects.ts";
-import { getItemMerged } from "../../../state/catalog.ts";
+import { defaultCatalog } from "../../../state/catalog.ts";
 import { state } from "../../../state/state.ts";
 import { triggerRender } from "../../render-effect.ts";
 import type { SavedSnapshot, WorkflowToolsState } from "./types.ts";
@@ -136,7 +136,7 @@ export function selectionSummary(): string {
 export function animationWarnings(): string[] {
   const warnings: string[] = [];
   for (const selection of Object.values(state.selections)) {
-    const meta = getItemMerged(selection.itemId).unwrapOr(null);
+    const meta = defaultCatalog.getItemMerged(selection.itemId).unwrapOr(null);
     if (!meta) continue;
     if (
       Array.isArray(meta.animations) &&
@@ -154,7 +154,9 @@ export function animationWarnings(): string[] {
 export function layerInspectorRows(): string[] {
   return Object.values(state.selections)
     .map((selection) => {
-      const meta = getItemMerged(selection.itemId).unwrapOr(null);
+      const meta = defaultCatalog
+        .getItemMerged(selection.itemId)
+        .unwrapOr(null);
       return `${selection.name} - ${meta?.type_name ?? selection.itemId}`;
     })
     .sort((a, b) => a.localeCompare(b));

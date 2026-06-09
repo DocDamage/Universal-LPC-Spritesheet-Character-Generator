@@ -12,7 +12,7 @@ import {
 import { customAnimations } from "../custom-animations.ts";
 import { getSortedLayersByAnim, supportsAnimation } from "../state/meta.ts";
 import type { AnimationLayer } from "../state/meta.ts";
-import { defaultCatalog, getItemMerged } from "../state/catalog.ts";
+import { defaultCatalog } from "../state/catalog.ts";
 import { debugWarn } from "../utils/debug.ts";
 import type { Selections } from "../state/app-state.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
@@ -50,7 +50,7 @@ export async function renderSingleItem(
     );
   }
 
-  const metaResult = getItemMerged(itemId);
+  const metaResult = defaultCatalog.getItemMerged(itemId);
   if (metaResult.isErr()) {
     console.error("Item metadata not found:", itemId);
     return null;
@@ -263,7 +263,7 @@ export async function renderSingleItemAnimation(
     return customPart.sheets[animationName] ?? null;
   }
 
-  const metaResult = getItemMerged(itemId);
+  const metaResult = defaultCatalog.getItemMerged(itemId);
   if (metaResult.isErr()) {
     console.error("Item metadata not found:", itemId);
     return null;

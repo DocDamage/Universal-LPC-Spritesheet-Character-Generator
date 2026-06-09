@@ -1,10 +1,6 @@
 import { state } from "./state.ts";
 import {
-  buildItemsByTypeNameFromRegisteredLite,
-  getItemLite,
-  getMetadataIndexes,
-  isIndexReady,
-  isLiteReady,
+  defaultCatalog,
   customParts,
   type ItemLite,
   type SlimByTypeNameRow,
@@ -47,7 +43,9 @@ function createDefaultHashDeps(): HashDeps {
 
         const suffix = nameAndVariant.slice(customName.length + 1);
         const [variantOrRecolor = "", recolor = ""] = suffix.split("|");
-        const baseMeta = getItemLite(part.baseItemId).unwrapOr(null);
+        const baseMeta = defaultCatalog
+          .getItemLite(part.baseItemId)
+          .unwrapOr(null);
         const suffixIsVariant =
           !!variantOrRecolor && baseMeta?.variants?.includes(variantOrRecolor);
         return {
@@ -58,12 +56,13 @@ function createDefaultHashDeps(): HashDeps {
       }
 
       let itemsByTypeName: Record<string, SlimByTypeNameRow[]>;
-      if (isIndexReady()) {
-        const idx = getMetadataIndexes().unwrapOr(null);
+      if (defaultCatalog.isIndexReady()) {
+        const idx = defaultCatalog.getMetadataIndexes().unwrapOr(null);
         itemsByTypeName =
           idx?.hashMatch?.itemsByTypeName ?? idx?.byTypeName ?? {};
-      } else if (isLiteReady()) {
-        itemsByTypeName = buildItemsByTypeNameFromRegisteredLite();
+      } else if (defaultCatalog.isLiteReady()) {
+        itemsByTypeName =
+          defaultCatalog.buildItemsByTypeNameFromRegisteredLite();
       } else {
         itemsByTypeName = {};
       }
@@ -73,7 +72,7 @@ function createDefaultHashDeps(): HashDeps {
         itemsByTypeName,
       });
     },
-    getItemLite: (itemId) => getItemLite(itemId).unwrapOr(null),
+    getItemLite: (itemId) => defaultCatalog.getItemLite(itemId).unwrapOr(null),
   };
 }
 

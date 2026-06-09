@@ -3,9 +3,7 @@ import m from "mithril";
 import { state } from "../../../../state/state.ts";
 import type { PartEditorState } from "../types.ts";
 
-export function renderEditorHeader(
-  stateObj: PartEditorState,
-): m.Children {
+export function renderEditorHeader(stateObj: PartEditorState): m.Children {
   return m("div.part-editor-header", [
     m("h3", "Sprite Part Editor"),
     m("div.part-editor-header-actions", [

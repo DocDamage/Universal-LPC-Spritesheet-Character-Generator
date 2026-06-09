@@ -3,7 +3,7 @@ import { canvasToBlob, createCanvas } from "./canvas-utils.ts";
 import { renderPreviewAnimationFrameCanvases } from "./preview-animation.ts";
 import { ANIMATION_CONFIGS, DIRECTIONS } from "../state/constants.ts";
 import { state } from "../state/state.ts";
-import { getItemMerged } from "../state/catalog.ts";
+import { defaultCatalog } from "../state/catalog.ts";
 import { getTweenSettingsForAnimation } from "../state/tween-settings.ts";
 import type { TweenSettings } from "./tween.ts";
 
@@ -34,7 +34,7 @@ export function buildAnimationQaChecks(
   const config = getAnimationConfig(animationName);
   const selectedParts = Object.values(state.selections);
   const incompatibleParts = selectedParts.filter((selection) => {
-    const meta = getItemMerged(selection.itemId).unwrapOr(null);
+    const meta = defaultCatalog.getItemMerged(selection.itemId).unwrapOr(null);
     if (!meta?.animations || meta.animations.length === 0) return false;
     if (animationName === "combat_idle") {
       return !meta.animations.includes("combat");

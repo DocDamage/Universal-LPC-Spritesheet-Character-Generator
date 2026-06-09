@@ -65,14 +65,16 @@ describe("canvas/preview-gif.ts", () => {
 
     const blob = await encodeCanvasesAsAnimatedWebp(
       [makeFrame("red"), makeFrame("blue")],
-      12
+      12,
     );
     const buffer = new Uint8Array(await blob.arrayBuffer());
-    
+
     expect(blob.type).to.equal("image/webp");
     expect(blob.size).to.be.greaterThan(30);
     // Header should start with RIFF...WEBP
-    const headerStr = String.fromCharCode(...buffer.slice(0, 4)) + String.fromCharCode(...buffer.slice(8, 12));
+    const headerStr =
+      String.fromCharCode(...buffer.slice(0, 4)) +
+      String.fromCharCode(...buffer.slice(8, 12));
     expect(headerStr).to.equal("RIFFWEBP");
   });
 });

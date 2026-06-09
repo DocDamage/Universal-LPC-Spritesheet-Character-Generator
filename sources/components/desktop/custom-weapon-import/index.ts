@@ -1,6 +1,11 @@
 // Custom weapon import — barrel exports
 
-export type { Rect, SourceMode, ImportWeaponOptions, ImportAdjustment } from "./types.ts";
+export type {
+  Rect,
+  SourceMode,
+  ImportWeaponOptions,
+  ImportAdjustment,
+} from "./types.ts";
 
 export {
   canUseWeaponImportReference,
@@ -9,9 +14,7 @@ export {
   buildImportPreview,
 } from "./importer.ts";
 
-export {
-  alignSourceToReferenceSheet,
-} from "./alignment.ts";
+export { alignSourceToReferenceSheet } from "./alignment.ts";
 
 export {
   getSourceMode,

@@ -2,7 +2,7 @@ import { ANIMATIONS, FRAME_SIZE } from "../constants.ts";
 import { renderSingleItemAnimation } from "../../canvas/renderer.ts";
 import { loadImage } from "../../canvas/load-image.ts";
 import { getImageToDraw } from "../../canvas/palette-recolor.ts";
-import { defaultCatalog, getItemMerged } from "../catalog.ts";
+import { defaultCatalog } from "../catalog.ts";
 import { getSortedLayersWithCustomFallback } from "../meta.ts";
 import { getMultiRecolors } from "../palettes.ts";
 import { getItemFileName } from "../../utils/fileName.ts";
@@ -52,7 +52,7 @@ export const exportSplitItemAnimations = async (
 
         for (const [, selection] of Object.entries(state.selections)) {
           const { itemId, variant, name } = selection;
-          const metaResult = getItemMerged(itemId);
+          const metaResult = defaultCatalog.getItemMerged(itemId);
           if (
             metaResult.isErr() ||
             !metaResult.value.animations.includes(anim.value)

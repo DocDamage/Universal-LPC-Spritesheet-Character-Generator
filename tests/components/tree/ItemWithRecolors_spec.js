@@ -4,9 +4,7 @@ import { assert } from "chai";
 import { describe, it, beforeEach, afterEach } from "mocha-globals";
 import { ItemWithRecolors } from "../../../sources/components/tree/ItemWithRecolors.ts";
 import { state } from "../../../sources/state/state.ts";
-import {
-  defaultCatalog,
-} from "../../../sources/state/catalog.ts";
+import { defaultCatalog } from "../../../sources/state/catalog.ts";
 import { BODY_TYPES } from "../../../sources/state/constants.ts";
 import { resetState } from "../../../sources/state/filters.ts";
 import {

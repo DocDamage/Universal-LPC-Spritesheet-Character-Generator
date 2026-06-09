@@ -32,7 +32,7 @@ type DesktopPreviewState = {
   isPlaying: boolean;
   animationStatus: PreviewAnimationStatus | null;
   exportBusy: "gif" | "webp" | null;
-  wheelHandler: ((e: WheelEvent) => void) | null;
+  wheelHandler: EventListener | null;
 };
 
 function refreshDirectionalFrames(
@@ -147,7 +147,8 @@ export const DesktopPreview: m.Component<
 
     // Mouse wheel zoom
     const container = vnode.dom as HTMLElement;
-    const wheelHandler = (e: WheelEvent) => {
+    const wheelHandler: EventListener = (event) => {
+      const e = event as WheelEvent;
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       let newZoom = vnode.state.zoomLevel + delta;

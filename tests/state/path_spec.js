@@ -6,9 +6,7 @@ import {
   setPathDeps,
   resetPathDeps,
 } from "../../sources/state/path.ts";
-import {
-  defaultCatalog,
-} from "../../sources/state/catalog.ts";
+import { defaultCatalog } from "../../sources/state/catalog.ts";
 import { restoreAppCatalogAfterTest } from "../browser-catalog-fixture.js";
 import { es6DynamicTemplate } from "../../sources/utils/helpers.ts";
 import { err } from "neverthrow";

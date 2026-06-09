@@ -1,7 +1,5 @@
 // @ts-nocheck
-import {
-  defaultCatalog,
-} from "../sources/state/catalog.ts";
+import { defaultCatalog } from "../sources/state/catalog.ts";
 import {
   loadAllMetadata,
   resetLoadAllMetadataCacheForTests,

@@ -19,6 +19,14 @@ export interface WebPEncoderOptions {
   backgroundColor?: [number, number, number, number];
 }
 
+export type AnimatedWebPEncoderAdapter = {
+  encodeGifImageData(
+    bytes: Uint8Array,
+    length: number,
+    quality: number,
+  ): Uint8Array;
+};
+
 interface ParsedFrameInfo {
   width: number;
   height: number;
@@ -69,8 +77,8 @@ export class AnimatedWebPEncoder {
 
     const anmfChunks: Uint8Array[] = [];
     for (let i = 0; i < frames.length; i++) {
-      const f = frames[i];
-      const parsed = parsedFrames[i];
+      const f = frames[i]!;
+      const parsed = parsedFrames[i]!;
       const anmf = this.createANMFChunk(
         f.x ?? 0,
         f.y ?? 0,
@@ -150,10 +158,10 @@ export class AnimatedWebPEncoder {
 
       if (fourcc === "VP8X") {
         if (size >= 10) {
-          const flags = payload[0];
+          const flags = payload[0]!;
           hasAlpha = !!(flags & 0x10);
-          width = (payload[4] | (payload[5] << 8) | (payload[6] << 16)) + 1;
-          height = (payload[7] | (payload[8] << 8) | (payload[9] << 16)) + 1;
+          width = (payload[4]! | (payload[5]! << 8) | (payload[6]! << 16)) + 1;
+          height = (payload[7]! | (payload[8]! << 8) | (payload[9]! << 16)) + 1;
         }
       } else if (fourcc === "ALPH") {
         hasAlpha = true;
@@ -205,15 +213,15 @@ export class AnimatedWebPEncoder {
     payload: Uint8Array,
   ): { width: number; height: number } | null {
     if (payload.length < 10) return null;
-    const bits = payload[0] | (payload[1] << 8) | (payload[2] << 16);
+    const bits = payload[0]! | (payload[1]! << 8) | (payload[2]! << 16);
     const isKeyFrame = !(bits & 1);
     if (!isKeyFrame) return null;
 
     if (payload[3] !== 0x9d || payload[4] !== 0x01 || payload[5] !== 0x2a) {
       return null;
     }
-    const width = ((payload[7] << 8) | payload[6]) & 0x3fff;
-    const height = ((payload[9] << 8) | payload[8]) & 0x3fff;
+    const width = ((payload[7]! << 8) | payload[6]!) & 0x3fff;
+    const height = ((payload[9]! << 8) | payload[8]!) & 0x3fff;
     return { width, height };
   }
 
@@ -224,7 +232,10 @@ export class AnimatedWebPEncoder {
     if (payload[0] !== 0x2f) return null;
 
     const value =
-      payload[1] | (payload[2] << 8) | (payload[3] << 16) | (payload[4] << 24);
+      payload[1]! |
+      (payload[2]! << 8) |
+      (payload[3]! << 16) |
+      (payload[4]! << 24);
     const width = (value & 0x3fff) + 1;
     const height = ((value >> 14) & 0x3fff) + 1;
     const hasAlpha = !!(value & (1 << 28));
@@ -348,10 +359,10 @@ export class AnimatedWebPEncoder {
 
   private static readUint32LE(arr: Uint8Array, offset: number): number {
     return (
-      arr[offset] |
-      (arr[offset + 1] << 8) |
-      (arr[offset + 2] << 16) |
-      (arr[offset + 3] << 24)
+      arr[offset]! |
+      (arr[offset + 1]! << 8) |
+      (arr[offset + 2]! << 16) |
+      (arr[offset + 3]! << 24)
     );
   }
 
@@ -362,7 +373,7 @@ export class AnimatedWebPEncoder {
   ): string {
     let s = "";
     for (let i = 0; i < length; i++) {
-      s += String.fromCharCode(arr[offset + i]);
+      s += String.fromCharCode(arr[offset + i]!);
     }
     return s;
   }
@@ -371,7 +382,7 @@ export class AnimatedWebPEncoder {
 export async function encodeCanvasesAsAnimatedWebp(
   frames: readonly HTMLCanvasElement[],
   fps: number,
-  encoder?: any,
+  encoder?: AnimatedWebPEncoderAdapter,
 ): Promise<Blob> {
   if (encoder && typeof encoder.encodeGifImageData === "function") {
     const gifBlob = encodeCanvasesAsGif(frames, fps);
@@ -414,7 +425,9 @@ export async function encodeCanvasesAsAnimatedWebp(
     loopCount: 0,
   });
 
-  return new Blob([webpBytes.buffer], { type: "image/webp" });
+  const blobBytes = new Uint8Array(webpBytes.length);
+  blobBytes.set(webpBytes);
+  return new Blob([blobBytes.buffer], { type: "image/webp" });
 }
 
 export async function downloadPreviewAnimationWebp(

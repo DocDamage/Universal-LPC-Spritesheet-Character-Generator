@@ -1,5 +1,5 @@
 import m from "mithril";
-import { state, selectItem, getSelectionGroup } from "../../state/state.ts";
+import { state, selectItem } from "../../state/state.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import type { SlotDef } from "./slot-config.ts";
 import {
@@ -10,8 +10,6 @@ import {
   getDefaultRecolor,
   getSlotTypeNames,
 } from "./slot-config.ts";
-import { getPaletteOptions } from "../../state/palettes.ts";
-import { ucwords } from "../../utils/helpers.ts";
 import {
   setPreviewAnimation,
   stopPreviewAnimation,
@@ -34,7 +32,6 @@ import {
   buildImportPreview,
   canUseWeaponImportReference,
   getCustomWeaponImportName,
-  type Rect,
 } from "./custom-weapon-import.ts";
 import { requestConfirmation, showToast } from "../../state/notifications.ts";
 import {
@@ -43,162 +40,29 @@ import {
 } from "../../state/custom-parts-storage.ts";
 import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { validateCustomAsset } from "../../state/custom-asset-validation.ts";
+import {
+  getRecolorChoices,
+  getSelectedRecolor,
+} from "./slot-selector/recolor.ts";
+import { drawPreviewWithCrosshair } from "./slot-selector/preview.ts";
+import {
+  IMPORT_OFFSET_MAX,
+  IMPORT_OFFSET_MIN,
+  IMPORT_SCALE_MAX,
+  IMPORT_SCALE_MIN,
+  type SlotSelectorState,
+} from "./slot-selector/types.ts";
+import { initializeSlotSelectorState } from "./slot-selector/state.ts";
+import { renderCustomAssetLibrary } from "./slot-selector/custom-library.ts";
 
 type SlotSelectorAttrs = {
   slot: SlotDef;
   catalog: CatalogReader;
 };
 
-type SlotSelectorState = {
-  showColorPicker: boolean;
-  showImporter: boolean;
-  importName: string;
-  importReferenceValue: string;
-  importStatus: string;
-  importing: boolean;
-  importOffsetX: number;
-  importOffsetY: number;
-  importScalePercent: number;
-  renamingCustomPartId: string | null;
-  renameCustomPartName: string;
-  // Preview state
-  importPreviewFile: File | null;
-  importPreviewReferenceCanvas: HTMLCanvasElement | null;
-  importPreviewSourceCanvas: HTMLCanvasElement | null;
-  importPreviewSourceBounds: Rect | null;
-  importPreviewReferenceBounds: Rect | null;
-  // Tags & filter
-  customAssetFilter: string;
-  customAssetTagInput: string;
-  editingTagsPartId: string | null;
-};
-
-const IMPORT_OFFSET_MIN = -256;
-const IMPORT_OFFSET_MAX = 256;
-const IMPORT_SCALE_MIN = 10;
-const IMPORT_SCALE_MAX = 800;
-
-/** Build a simple list of recolor choices for an item. */
-function getRecolorChoices(
-  itemId: string,
-  catalog: CatalogReader,
-): { label: string; value: string; gradient: string[] }[] {
-  const metaResult = catalog.getItemLite(itemId);
-  if (metaResult.isErr()) return [];
-  const meta = metaResult.value;
-
-  const [paletteOptions] = getPaletteOptions(itemId, meta);
-  if (!paletteOptions || paletteOptions.length === 0) return [];
-
-  const choices: ReturnType<typeof getRecolorChoices> = [];
-
-  for (const opt of paletteOptions) {
-    const paletteMetaResult = catalog.getPaletteMetadata();
-    if (paletteMetaResult.isErr()) continue;
-    const paletteMeta = paletteMetaResult.value;
-
-    for (const cat of opt.versions) {
-      const [material, version] = cat.split(".") as [string, string];
-      const materialMeta = paletteMeta.materials[material];
-      const recolors: Record<string, string[]> =
-        materialMeta?.palettes?.[version] ?? {};
-
-      for (const [paletteName, colors] of Object.entries(recolors)) {
-        const key =
-          (material !== opt.material ? material + "." : "") +
-          (version !== opt.default ? version + "." : "") +
-          paletteName;
-        choices.push({
-          label: ucwords(paletteName.replaceAll("_", " ")),
-          value: key,
-          gradient: colors.slice().reverse(),
-        });
-      }
-    }
-  }
-
-  return choices;
-}
-
-/** Get the currently selected recolor for an item. */
-function getSelectedRecolor(itemId: string): string | null {
-  const selectionGroup = getSelectionGroup(itemId);
-  const sel = state.selections[selectionGroup];
-  if (sel?.itemId === itemId) {
-    return sel.recolor || null;
-  }
-  return null;
-}
-
-function drawPreviewWithCrosshair(
-  targetCanvas: HTMLCanvasElement,
-  sourceCanvas: HTMLCanvasElement,
-  bounds: Rect | null,
-): void {
-  const ctx = get2DContext(targetCanvas, true);
-  ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-
-  // Draw checkerboard background
-  const checkSize = 8;
-  for (let y = 0; y < targetCanvas.height; y += checkSize) {
-    for (let x = 0; x < targetCanvas.width; x += checkSize) {
-      ctx.fillStyle =
-        (x / checkSize + y / checkSize) % 2 === 0 ? "#1a1a2e" : "#252540";
-      ctx.fillRect(x, y, checkSize, checkSize);
-    }
-  }
-
-  // Scale and center the source image in the preview
-  const previewW = targetCanvas.width;
-  const previewH = targetCanvas.height;
-  const scaleFactor = Math.min(
-    previewW / sourceCanvas.width,
-    previewH / sourceCanvas.height,
-    1,
-  );
-  const drawW = sourceCanvas.width * scaleFactor;
-  const drawH = sourceCanvas.height * scaleFactor;
-  const drawX = (previewW - drawW) / 2;
-  const drawY = (previewH - drawH) / 2;
-
-  ctx.drawImage(sourceCanvas, drawX, drawY, drawW, drawH);
-
-  // Draw crosshair at center-of-content
-  if (bounds) {
-    const cx = drawX + (bounds.x + bounds.width / 2) * scaleFactor;
-    const cy = drawY + (bounds.y + bounds.height / 2) * scaleFactor;
-    ctx.strokeStyle = "#f43f5e";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx - 8, cy);
-    ctx.lineTo(cx + 8, cy);
-    ctx.moveTo(cx, cy - 8);
-    ctx.lineTo(cx, cy + 8);
-    ctx.stroke();
-  }
-}
-
 export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
   oninit(vnode) {
-    vnode.state.showColorPicker = false;
-    vnode.state.showImporter = false;
-    vnode.state.importName = "";
-    vnode.state.importReferenceValue = "";
-    vnode.state.importStatus = "";
-    vnode.state.importing = false;
-    vnode.state.importOffsetX = 0;
-    vnode.state.importOffsetY = 0;
-    vnode.state.importScalePercent = 100;
-    vnode.state.renamingCustomPartId = null;
-    vnode.state.renameCustomPartName = "";
-    vnode.state.importPreviewFile = null;
-    vnode.state.importPreviewReferenceCanvas = null;
-    vnode.state.importPreviewSourceCanvas = null;
-    vnode.state.importPreviewSourceBounds = null;
-    vnode.state.importPreviewReferenceBounds = null;
-    vnode.state.customAssetFilter = "";
-    vnode.state.customAssetTagInput = "";
-    vnode.state.editingTagsPartId = null;
+    initializeSlotSelectorState(vnode.state);
   },
 
   view(vnode) {
@@ -1006,212 +870,22 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
               vnode.state.importStatus
                 ? m("span.desktop-slot-import-status", vnode.state.importStatus)
                 : null,
-              // Library management
-              m("div.desktop-slot-custom-library-header", [
-                m("span.desktop-slot-custom-library-title", "Saved imports"),
-                m("input.desktop-slot-custom-filter", {
-                  type: "text",
-                  placeholder: "Filter by name or tag...",
-                  value: vnode.state.customAssetFilter,
-                  oninput: (e: Event) => {
-                    vnode.state.customAssetFilter = (
-                      e.target as HTMLInputElement
-                    ).value;
-                  },
-                }),
-                m(
-                  "button.desktop-slot-custom-action",
-                  {
-                    type: "button",
-                    title: "Export all custom assets as ZIP backup",
-                    onclick: () => {
-                      void exportAllCustomAssets();
-                    },
-                  },
-                  "Export All",
-                ),
-                m("label.desktop-slot-custom-action is-file", [
-                  m("input", {
-                    type: "file",
-                    accept: ".zip",
-                    style: { display: "none" },
-                    onchange: (e: Event) => {
-                      void importBackupCustomAssets(e);
-                    },
-                  }),
-                  "Import Backup",
-                ]),
-              ]),
-              customAssetParts.length > 0
-                ? m("div.desktop-slot-custom-library", [
-                    customAssetParts.map((part) =>
-                      m(
-                        "div.desktop-slot-custom-asset",
-                        {
-                          key: part.itemId,
-                          class:
-                            selectedValue === part.itemId ? "is-selected" : "",
-                        },
-                        vnode.state.renamingCustomPartId === part.itemId
-                          ? [
-                              m("input.desktop-slot-custom-asset-name", {
-                                type: "text",
-                                value: vnode.state.renameCustomPartName,
-                                title: "Rename saved import",
-                                oninput: (e: Event) => {
-                                  vnode.state.renameCustomPartName = (
-                                    e.target as HTMLInputElement
-                                  ).value;
-                                },
-                                onkeydown: (e: KeyboardEvent) => {
-                                  if (e.key === "Enter") {
-                                    saveRenameCustomAsset(part);
-                                  }
-                                  if (e.key === "Escape") {
-                                    cancelRenameCustomAsset();
-                                  }
-                                },
-                              }),
-                              m(
-                                "button.desktop-slot-custom-action",
-                                {
-                                  type: "button",
-                                  title: "Save import name",
-                                  disabled:
-                                    vnode.state.renameCustomPartName.trim() ===
-                                    "",
-                                  onclick: () => saveRenameCustomAsset(part),
-                                },
-                                "Save",
-                              ),
-                              m(
-                                "button.desktop-slot-custom-action",
-                                {
-                                  type: "button",
-                                  title: "Cancel rename",
-                                  onclick: cancelRenameCustomAsset,
-                                },
-                                "Cancel",
-                              ),
-                            ]
-                          : [
-                              m(
-                                "button.desktop-slot-custom-name",
-                                {
-                                  type: "button",
-                                  title: `Use ${part.name}`,
-                                  onclick: () => {
-                                    void selectCustomAsset(part);
-                                  },
-                                },
-                                part.name,
-                              ),
-                              part.tags && part.tags.length > 0
-                                ? m(
-                                    "span.desktop-slot-custom-tags",
-                                    part.tags.join(", "),
-                                  )
-                                : null,
-                              m(
-                                "button.desktop-slot-custom-action",
-                                {
-                                  type: "button",
-                                  title: `Rename ${part.name}`,
-                                  onclick: () => {
-                                    startRenameCustomAsset(part);
-                                  },
-                                },
-                                "Rename",
-                              ),
-                              m(
-                                "button.desktop-slot-custom-action",
-                                {
-                                  type: "button",
-                                  title: `Duplicate ${part.name}`,
-                                  onclick: () => {
-                                    duplicateCustomAsset(part);
-                                  },
-                                },
-                                "Duplicate",
-                              ),
-                              m(
-                                "button.desktop-slot-custom-action is-danger",
-                                {
-                                  type: "button",
-                                  title: `Delete ${part.name}`,
-                                  onclick: () => {
-                                    void deleteCustomAsset(part);
-                                  },
-                                },
-                                "Delete",
-                              ),
-                              m(
-                                "button.desktop-slot-custom-action",
-                                {
-                                  type: "button",
-                                  title: `Edit tags for ${part.name}`,
-                                  onclick: () => {
-                                    startEditTags(part);
-                                  },
-                                },
-                                "Tags",
-                              ),
-                            ],
-                      ),
-                    ),
-                    // Inline tag editor
-                    customAssetParts.some(
-                      (p) => p.itemId === vnode.state.editingTagsPartId,
-                    )
-                      ? m("div.desktop-slot-custom-tag-editor", [
-                          m("input.desktop-slot-custom-tag-input", {
-                            type: "text",
-                            placeholder: "Tags (comma separated)",
-                            value: vnode.state.customAssetTagInput,
-                            oninput: (e: Event) => {
-                              vnode.state.customAssetTagInput = (
-                                e.target as HTMLInputElement
-                              ).value;
-                            },
-                            onkeydown: (e: KeyboardEvent) => {
-                              if (e.key === "Enter") {
-                                const part = customAssetParts.find(
-                                  (p) =>
-                                    p.itemId === vnode.state.editingTagsPartId,
-                                );
-                                if (part) saveTags(part);
-                              }
-                              if (e.key === "Escape") {
-                                cancelEditTags();
-                              }
-                            },
-                          }),
-                          m(
-                            "button.desktop-slot-custom-action",
-                            {
-                              type: "button",
-                              onclick: () => {
-                                const part = customAssetParts.find(
-                                  (p) =>
-                                    p.itemId === vnode.state.editingTagsPartId,
-                                );
-                                if (part) saveTags(part);
-                              },
-                            },
-                            "Save",
-                          ),
-                          m(
-                            "button.desktop-slot-custom-action",
-                            {
-                              type: "button",
-                              onclick: cancelEditTags,
-                            },
-                            "Cancel",
-                          ),
-                        ])
-                      : null,
-                  ])
-                : m("span.desktop-slot-custom-empty", "No saved imports yet."),
+              renderCustomAssetLibrary({
+                stateObj: vnode.state,
+                selectedValue,
+                customAssetParts,
+                exportAllCustomAssets,
+                importBackupCustomAssets,
+                selectCustomAsset,
+                startRenameCustomAsset,
+                cancelRenameCustomAsset,
+                saveRenameCustomAsset,
+                duplicateCustomAsset,
+                deleteCustomAsset,
+                startEditTags,
+                cancelEditTags,
+                saveTags,
+              }),
             ])
           : null,
         // Inline color picker panel

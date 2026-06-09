@@ -1,7 +1,6 @@
 // Interactive Pixel Editor for character parts and accessories
 import m from "mithril";
 import { state } from "../../state/state.ts";
-import { getSpritePath } from "../../state/path.ts";
 import {
   getItemMerged,
   registerCustomPart,
@@ -11,40 +10,31 @@ import {
   registerEditorContext,
   unregisterEditorContext,
 } from "../../state/commands.ts";
-import { loadImage } from "../../canvas/load-image.ts";
 import { get2DContext } from "../../canvas/canvas-utils.ts";
 import { SLOT_CONFIG, clearSlotSelections } from "./slot-config.ts";
-import { customAnimations } from "../../custom-animations.ts";
-import { clamp, variantToFilename } from "../../utils/helpers.ts";
-import { debugWarn } from "../../utils/debug.ts";
-import { getMultiRecolors } from "../../state/palettes.ts";
+import { clamp } from "../../utils/helpers.ts";
 import { FRAME_SIZE } from "../../state/constants.ts";
 import { clearDraft } from "../../state/editor-autosave.ts";
 import {
   applyBrush,
   applyFill,
-  DIRECTIONS,
   getLinePoints,
   sampleColor,
 } from "./pixel-editor-tools.ts";
 
 import type { PartEditorState } from "./part-editor/types.ts";
 
-import {
-  MIN_EDITOR_ZOOM,
-  MAX_EDITOR_ZOOM,
-  DEFAULT_EDITOR_ZOOM,
-} from "./part-editor/types.ts";
+import { MIN_EDITOR_ZOOM, MAX_EDITOR_ZOOM } from "./part-editor/types.ts";
 import {
   clampEditorZoom,
   getEditorWheelZoomUpdate,
+  initializePartEditorState,
 } from "./part-editor/state.ts";
 
 export { createPartEditorStateForTests } from "./part-editor/state.ts";
 
 import {
   createDirectionCanvases,
-  cropFrame,
   drawMainGrid,
   cloneDirectionCanvases,
   composeLayersIntoCanvases,
@@ -62,7 +52,6 @@ import {
   startSelectionInteraction,
   updateSelectionInteraction,
   finishSelectionInteraction,
-  clearSelectionState,
   copySelection,
   pasteClipboard,
   getCanvasPoint,
@@ -75,7 +64,6 @@ import {
 import { transformActivePixels } from "./part-editor/transform.ts";
 import {
   getAnimationLabel,
-  getAvailableFrameAnimations,
   switchEditorContext,
   stopPlayback,
   applyGlobalToFrame,
@@ -93,13 +81,13 @@ import {
   createEditorContextSnapshot,
   resetCanvases,
 } from "./part-editor/history.ts";
-import { checkForDraftRecovery } from "./part-editor/autosave.ts";
 import {
   handleTouchStart,
   handleTouchMove,
   handleTouchEnd,
 } from "./part-editor/touch.ts";
 import { handleEditorShortcut } from "./part-editor/keyboard.ts";
+import { loadPartEditorItemIfNeeded } from "./part-editor/load-item.ts";
 import {
   renderProPanel,
   renderStatusBar,
@@ -140,83 +128,7 @@ export { getEditorWheelZoomUpdate } from "./part-editor/state.ts";
 
 export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
   oninit(vnode) {
-    vnode.state.loading = false;
-    vnode.state.baseItemId = null;
-    vnode.state.name = "";
-    vnode.state.activeEditorTab = "edit";
-    vnode.state.activeDirection = "front";
-    vnode.state.tool = "pen";
-    vnode.state.activeColor = "#ff0000";
-    vnode.state.autoPropagate = true;
-    vnode.state.isDrawing = false;
-    vnode.state.zoom = DEFAULT_EDITOR_ZOOM;
-    vnode.state.brushSize = 1;
-    vnode.state.mirrorX = false;
-    vnode.state.mirrorY = false;
-    vnode.state.showGrid = true;
-    vnode.state.isFullscreen = false;
-    vnode.state.shapeStart = null;
-    vnode.state.shapeEnd = null;
-    vnode.state.shapeFilled = false;
-    vnode.state.lastPoint = null;
-    vnode.state.selectionRect = null;
-    vnode.state.selectionDraftStart = null;
-    vnode.state.selectionMove = null;
-    vnode.state.clipboard = null;
-    vnode.state.keyboardHandler = null;
-    vnode.state.history = [];
-    vnode.state.historyIndex = -1;
-
-    vnode.state.canvases = createDirectionCanvases();
-    vnode.state.originalCanvases = createDirectionCanvases();
-    vnode.state.editLayers = [];
-    vnode.state.activeLayerId = null;
-    vnode.state.nextLayerNumber = 1;
-    vnode.state.globalEditorContext = null;
-    vnode.state.frameEditorContexts = {};
-    vnode.state.availableFrameAnimations = ["walk"];
-    vnode.state.frameMode = false;
-    vnode.state.frameAnimation = "walk";
-    vnode.state.frameIndex = 0;
-    vnode.state.onionSkin = false;
-    vnode.state.onionOpacity = 0.28;
-    vnode.state.onionCanvases = null;
-    vnode.state.referenceImageUrl = null;
-    vnode.state.referenceOpacity = 0.3;
-    vnode.state.replaceFromColor = "#000000";
-    vnode.state.replaceToColor = "#ff0000";
-    vnode.state.replaceTolerance = 0;
-    vnode.state.replaceAllDirections = false;
-    vnode.state.transformAllDirections = false;
-    vnode.state.alphaLocked = false;
-
-    // Task 1: Autosave
-    vnode.state.showRecoveryPrompt = false;
-    vnode.state.autosaveDebounceTimer = null;
-    vnode.state.unsavedChanges = false;
-    vnode.state.beforeunloadHandler = null;
-
-    // Task 2: Status bar
-    vnode.state.cursorPosition = null;
-
-    // Task 6: Animation playback
-    vnode.state.isPlaying = false;
-    vnode.state.playbackTimer = null;
-
-    // Task 8: Mobile/touch
-    vnode.state.isTouchDevice =
-      window.matchMedia("(hover: none)").matches ||
-      window.matchMedia("(max-width: 768px)").matches ||
-      "ontouchstart" in window;
-    vnode.state.touchStartDist = 0;
-    vnode.state.touchStartZoom = DEFAULT_EDITOR_ZOOM;
-    vnode.state.lastTouchCenter = null;
-
-    // Task 9: Performance
-    vnode.state.thumbnailCache = null;
-    vnode.state.recomposeDebounceTimer = null;
-
-    resetEditLayers(vnode.state);
+    initializePartEditorState(vnode.state);
   },
 
   oncreate(vnode) {
@@ -267,143 +179,7 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
       ]);
     }
 
-    // Load new item if selection changed
-    if (vnode.state.baseItemId !== editing.itemId) {
-      vnode.state.baseItemId = editing.itemId;
-      vnode.state.loading = true;
-      vnode.state.history = [];
-      vnode.state.historyIndex = -1;
-      vnode.state.frameMode = false;
-      vnode.state.frameIndex = 0;
-      vnode.state.frameEditorContexts = {};
-      vnode.state.globalEditorContext = null;
-      vnode.state.onionCanvases = null;
-      clearSelectionState(vnode.state, false);
-
-      const meta = getItemMerged(editing.itemId).unwrapOr(null);
-      if (meta) {
-        vnode.state.name = `Custom ${meta.name}`;
-        vnode.state.availableFrameAnimations =
-          getAvailableFrameAnimations(meta);
-        vnode.state.frameAnimation =
-          vnode.state.availableFrameAnimations[0] ?? "walk";
-
-        // Standard animation sheets already contain four direction rows.
-        const firstAnim = meta.animations?.[0] ?? "walk";
-        const isCustomOnly = !!(
-          firstAnim &&
-          customAnimations &&
-          (customAnimations as Record<string, unknown>)[firstAnim]
-        );
-
-        let imagePromise: Promise<HTMLImageElement> | null = null;
-        const selection = state.selections[meta.type_name];
-        const itemVariant = selection?.variant ?? "";
-        const recolors = getMultiRecolors(editing.itemId, state.selections);
-
-        if (isCustomOnly) {
-          // Custom animation: load directly from the layer path
-          const layerKey = "layer_1";
-          const layer = meta.layers?.[layerKey];
-          if (layer) {
-            const basePath = layer[state.bodyType] as string | undefined;
-            if (basePath) {
-              const spritePath = `spritesheets/${basePath}${variantToFilename(itemVariant || (meta.variants?.[0] ?? ""))}.png`;
-              imagePromise = loadImage(spritePath);
-            }
-          }
-        }
-
-        if (!imagePromise) {
-          // Standard: use walk animation path
-          const pathResult = getSpritePath(
-            editing.itemId,
-            itemVariant || null,
-            recolors,
-            state.bodyType,
-            "walk",
-            1,
-            state.selections,
-            meta,
-          );
-          if (pathResult.isOk()) {
-            imagePromise = loadImage(pathResult.value);
-          }
-        }
-
-        if (imagePromise) {
-          imagePromise
-            .then((img) => {
-              const frames = {
-                back: cropFrame(img, 0, 0),
-                left: cropFrame(img, 1, 0),
-                front: cropFrame(img, 2, 0),
-                right: cropFrame(img, 3, 0),
-              };
-              for (const key of DIRECTIONS) {
-                const originalCtx = get2DContext(
-                  vnode.state.originalCanvases[key],
-                );
-                originalCtx.clearRect(0, 0, 64, 64);
-                originalCtx.drawImage(frames[key], 0, 0);
-              }
-              resetEditLayers(vnode.state);
-              recomposeCanvases(vnode.state);
-              vnode.state.loading = false;
-              saveHistory(vnode.state);
-              vnode.state.globalEditorContext = createEditorContextSnapshot(
-                vnode.state,
-              );
-              void checkForDraftRecovery(vnode.state, editing.itemId);
-              m.redraw();
-            })
-            .catch((err) => {
-              debugWarn(
-                "Failed to load spritesheet for editing, starting with blank canvas:",
-                err,
-              );
-              // Start with blank canvases instead of failing
-              for (const key of DIRECTIONS) {
-                get2DContext(vnode.state.originalCanvases[key]).clearRect(
-                  0,
-                  0,
-                  64,
-                  64,
-                );
-              }
-              resetEditLayers(vnode.state);
-              recomposeCanvases(vnode.state);
-              vnode.state.loading = false;
-              saveHistory(vnode.state);
-              vnode.state.globalEditorContext = createEditorContextSnapshot(
-                vnode.state,
-              );
-              void checkForDraftRecovery(vnode.state, editing.itemId);
-              m.redraw();
-            });
-        } else {
-          // No image could be loaded - start with blank canvases
-          for (const key of DIRECTIONS) {
-            get2DContext(vnode.state.originalCanvases[key]).clearRect(
-              0,
-              0,
-              64,
-              64,
-            );
-          }
-          resetEditLayers(vnode.state);
-          recomposeCanvases(vnode.state);
-          vnode.state.loading = false;
-          saveHistory(vnode.state);
-          vnode.state.globalEditorContext = createEditorContextSnapshot(
-            vnode.state,
-          );
-          void checkForDraftRecovery(vnode.state, editing.itemId);
-        }
-      } else {
-        vnode.state.loading = false;
-      }
-    }
+    loadPartEditorItemIfNeeded(vnode.state, editing);
 
     if (vnode.state.loading) {
       return m("div.part-editor-loading", [

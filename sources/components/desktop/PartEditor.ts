@@ -2,32 +2,17 @@
 import m from "mithril";
 import { state } from "../../state/state.ts";
 import {
-  getItemMerged,
-  registerCustomPart,
-  defaultCatalog,
-} from "../../state/catalog.ts";
-import {
   registerEditorContext,
   unregisterEditorContext,
 } from "../../state/commands.ts";
 import { get2DContext } from "../../canvas/canvas-utils.ts";
-import { SLOT_CONFIG, clearSlotSelections } from "./slot-config.ts";
-import { clamp } from "../../utils/helpers.ts";
 import { FRAME_SIZE } from "../../state/constants.ts";
-import { clearDraft } from "../../state/editor-autosave.ts";
-import {
-  applyBrush,
-  applyFill,
-  getLinePoints,
-  sampleColor,
-} from "./pixel-editor-tools.ts";
 
 import type { PartEditorState } from "./part-editor/types.ts";
 
 import { MIN_EDITOR_ZOOM, MAX_EDITOR_ZOOM } from "./part-editor/types.ts";
 import {
   clampEditorZoom,
-  getEditorWheelZoomUpdate,
   initializePartEditorState,
 } from "./part-editor/state.ts";
 
@@ -39,45 +24,24 @@ import {
   cloneDirectionCanvases,
   composeLayersIntoCanvases,
 } from "./part-editor/canvas.ts";
+import { recomposeCanvases } from "./part-editor/canvas.ts";
+import { getActiveLayer, resetEditLayers } from "./part-editor/layers.ts";
 import {
-  recomposeCanvases,
-  refreshVisibleCanvas,
-} from "./part-editor/canvas.ts";
-import {
-  getActiveLayer,
-  getActiveLayerToolState,
-  resetEditLayers,
-} from "./part-editor/layers.ts";
-import {
-  startSelectionInteraction,
-  updateSelectionInteraction,
-  finishSelectionInteraction,
   copySelection,
   pasteClipboard,
   getCanvasPoint,
 } from "./part-editor/selection.ts";
-import {
-  isShapeTool,
-  startShapeInteraction,
-  finishShapeInteraction,
-} from "./part-editor/shapes.ts";
+import { isShapeTool } from "./part-editor/shapes.ts";
 import { transformActivePixels } from "./part-editor/transform.ts";
 import {
   getAnimationLabel,
   switchEditorContext,
   stopPlayback,
   applyGlobalToFrame,
-  saveActiveEditorContext,
 } from "./part-editor/animation.ts";
-import {
-  buildEditedAnimationSheets,
-  createFrameOverrides,
-  createCanvasesFromContext,
-} from "./part-editor/save.ts";
 import {
   undo,
   redo,
-  saveHistory,
   createEditorContextSnapshot,
   resetCanvases,
 } from "./part-editor/history.ts";
@@ -94,6 +58,8 @@ import {
   renderRecoveryPrompt,
 } from "./part-editor/panels.ts";
 import { canUseFeature } from "../../state/feature-gates.ts";
+import { saveCustomPartFromEditor } from "./part-editor/save-custom-part.ts";
+import { createCanvasInteractionHandlers } from "./part-editor/canvas-interactions.ts";
 
 import {
   addEditLayer,
@@ -206,220 +172,13 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
       vnode.state.zoom = clampEditorZoom(zoom);
     };
 
-    const handleCanvasWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const stageEl = e.currentTarget as HTMLElement;
-      const canvasEl = stageEl.querySelector(
-        ".editor-pixel-canvas",
-      ) as HTMLCanvasElement | null;
-      const rect = canvasEl?.getBoundingClientRect();
-      const pointerRatioX = rect
-        ? clamp((e.clientX - rect.left) / rect.width, 0, 1)
-        : 0.5;
-      const pointerRatioY = rect
-        ? clamp((e.clientY - rect.top) / rect.height, 0, 1)
-        : 0.5;
-      const zoomUpdate = getEditorWheelZoomUpdate({
-        zoom: vnode.state.zoom,
-        deltaY: e.deltaY,
-        pointerRatioX,
-        pointerRatioY,
-      });
-      if (!zoomUpdate.changed) return;
-
-      setZoom(zoomUpdate.nextZoom);
-      requestAnimationFrame(() => {
-        stageEl.scrollLeft += zoomUpdate.scrollLeftDelta;
-        stageEl.scrollTop += zoomUpdate.scrollTopDelta;
-      });
-    };
-
-    const drawOnMain = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
-      const point = getCanvasPoint(e, canvasEl);
-      if (point) {
-        const tool = e.altKey ? "picker" : vnode.state.tool;
-        if (tool === "select" || isShapeTool(tool)) return;
-
-        if (tool === "picker") {
-          const sampledColor = sampleColor(vnode.state, point);
-          if (sampledColor) {
-            vnode.state.activeColor = sampledColor;
-          }
-          vnode.state.tool = "pen";
-          vnode.state.lastPoint = point;
-          return;
-        }
-
-        const layerState = getActiveLayerToolState(vnode.state);
-        if (!layerState) return;
-
-        if (tool === "fill") {
-          applyFill(layerState, point);
-          recomposeCanvases(vnode.state);
-          refreshVisibleCanvas(canvasEl, vnode.state);
-          vnode.state.lastPoint = point;
-          return;
-        }
-
-        const points =
-          e.shiftKey && vnode.state.lastPoint
-            ? getLinePoints(vnode.state.lastPoint, point)
-            : [point];
-
-        for (const p of points) {
-          applyBrush(layerState, p, tool === "eraser" ? "erase" : "paint");
-        }
-        recomposeCanvases(vnode.state);
-        refreshVisibleCanvas(canvasEl, vnode.state);
-        vnode.state.lastPoint = point;
-      }
-    };
-
-    const handleCanvasDown = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
-      const point = getCanvasPoint(e, canvasEl);
-      if (!point) return;
-
-      if (vnode.state.tool === "select" && !e.altKey) {
-        vnode.state.isDrawing = false;
-        startSelectionInteraction(vnode.state, point);
-        recomposeCanvases(vnode.state);
-        refreshVisibleCanvas(canvasEl, vnode.state);
-        return;
-      }
-
-      if (isShapeTool(vnode.state.tool) && !e.altKey) {
-        vnode.state.isDrawing = false;
-        startShapeInteraction(vnode.state, point);
-        refreshVisibleCanvas(canvasEl, vnode.state);
-        return;
-      }
-
-      vnode.state.isDrawing = true;
-      drawOnMain(e, canvasEl);
-    };
-
-    const handleCanvasMove = (e: MouseEvent, canvasEl: HTMLCanvasElement) => {
-      const point = getCanvasPoint(e, canvasEl);
-      if (!point) return;
-
-      if (vnode.state.selectionDraftStart || vnode.state.selectionMove) {
-        updateSelectionInteraction(vnode.state, point);
-        recomposeCanvases(vnode.state);
-        refreshVisibleCanvas(canvasEl, vnode.state);
-        return;
-      }
-
-      if (vnode.state.shapeStart) {
-        vnode.state.shapeEnd = point;
-        refreshVisibleCanvas(canvasEl, vnode.state);
-        return;
-      }
-
-      if (vnode.state.isDrawing) {
-        drawOnMain(e, canvasEl);
-      }
-    };
-
-    const handleCanvasUp = (canvasEl: HTMLCanvasElement) => {
-      const movedSelection = finishSelectionInteraction(vnode.state);
-      if (movedSelection) {
-        saveHistory(vnode.state);
-      }
-
-      const drewShape = finishShapeInteraction(vnode.state);
-      if (drewShape) {
-        saveHistory(vnode.state);
-      }
-
-      if (vnode.state.isDrawing) {
-        vnode.state.isDrawing = false;
-        saveHistory(vnode.state);
-      }
-
-      recomposeCanvases(vnode.state);
-      refreshVisibleCanvas(canvasEl, vnode.state);
-      m.redraw();
-    };
-
-    const handleCanvasLeave = (canvasEl: HTMLCanvasElement) => {
-      if (
-        !vnode.state.isDrawing &&
-        !vnode.state.selectionDraftStart &&
-        !vnode.state.selectionMove &&
-        !vnode.state.shapeStart
-      ) {
-        return;
-      }
-
-      handleCanvasUp(canvasEl);
-    };
+    const canvasHandlers = createCanvasInteractionHandlers({
+      editorState: vnode.state,
+      setZoom,
+    });
 
     const handleSave = async () => {
-      if (!vnode.state.baseItemId) return;
-      const baseId = vnode.state.baseItemId;
-      const meta = getItemMerged(baseId).unwrapOr(null);
-      if (!meta) return;
-
-      vnode.state.loading = true;
-      try {
-        recomposeCanvases(vnode.state);
-        saveActiveEditorContext(vnode.state);
-        const globalContext =
-          vnode.state.globalEditorContext ??
-          createEditorContextSnapshot(vnode.state);
-        const globalCanvases = await createCanvasesFromContext(globalContext);
-        const frameOverrides = await createFrameOverrides(vnode.state);
-        const sheets = await buildEditedAnimationSheets(
-          baseId,
-          meta,
-          globalCanvases.originalCanvases,
-          globalCanvases.editedCanvases,
-          frameOverrides,
-        );
-        const firstSheet = sheets["walk"] ?? Object.values(sheets)[0];
-        if (!firstSheet) {
-          throw new Error("No editable animation sheets could be generated.");
-        }
-
-        const customPartId = `custom_part_${Date.now()}`;
-        const currentSelection = state.selections[meta.type_name];
-        const customName = vnode.state.name.trim() || `Custom ${meta.name}`;
-
-        registerCustomPart({
-          itemId: customPartId,
-          name: customName,
-          type_name: meta.type_name,
-          baseItemId: baseId,
-          sheets,
-          image: firstSheet,
-        });
-
-        // Add to state and select it
-        const slot = SLOT_CONFIG.find((s) => s.label === editing.slotLabel);
-        if (slot) {
-          clearSlotSelections(slot, defaultCatalog);
-        }
-        state.selections[meta.type_name] = {
-          itemId: customPartId,
-          variant: currentSelection?.variant ?? null,
-          recolor: currentSelection?.recolor ?? null,
-          name: customName,
-        };
-
-        state.editingPart = null; // Close editor
-        vnode.state.baseItemId = null;
-        vnode.state.unsavedChanges = false;
-        if (baseId) {
-          void clearDraft(baseId);
-        }
-
-        // Force character redraw
-        m.redraw();
-      } catch (err) {
-        console.error("Failed to save custom part:", err);
-      } finally {
-        vnode.state.loading = false;
-      }
+      await saveCustomPartFromEditor(vnode.state, editing.slotLabel);
     };
 
     return m(
@@ -715,7 +474,7 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
                 {
                   title:
                     "Scroll over the canvas to zoom. Two-finger drag to pan, pinch to zoom.",
-                  onwheel: handleCanvasWheel,
+                  onwheel: canvasHandlers.handleCanvasWheel,
                   ontouchstart: (e: TouchEvent) => {
                     handleTouchStart(e, vnode.state);
                   },
@@ -807,20 +566,27 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
                           drawMainGrid(ctx, activeCanvas, vnode.state);
                         },
                         onmousedown: (e: MouseEvent) => {
-                          handleCanvasDown(e, e.target as HTMLCanvasElement);
+                          canvasHandlers.handleCanvasDown(
+                            e,
+                            e.target as HTMLCanvasElement,
+                          );
                         },
                         onmousemove: (e: MouseEvent) => {
                           const canvasEl = e.target as HTMLCanvasElement;
                           const point = getCanvasPoint(e, canvasEl);
                           vnode.state.cursorPosition = point;
-                          handleCanvasMove(e, canvasEl);
+                          canvasHandlers.handleCanvasMove(e, canvasEl);
                         },
                         onmouseup: (e: MouseEvent) => {
-                          handleCanvasUp(e.target as HTMLCanvasElement);
+                          canvasHandlers.handleCanvasUp(
+                            e.target as HTMLCanvasElement,
+                          );
                         },
                         onmouseleave: (e: MouseEvent) => {
                           vnode.state.cursorPosition = null;
-                          handleCanvasLeave(e.target as HTMLCanvasElement);
+                          canvasHandlers.handleCanvasLeave(
+                            e.target as HTMLCanvasElement,
+                          );
                         },
                       }),
                     ],

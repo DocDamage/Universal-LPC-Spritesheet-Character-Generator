@@ -606,9 +606,7 @@ export function extractFramesFromCustomAnimation(
   for (const direction of directions) {
     const dirIndex = CUSTOM_ANIM_DIRECTION_TO_ROW[direction];
     if (dirIndex === undefined) {
-      debugLog(
-        `Skipping direction ${direction} - not found in direction map`,
-      );
+      debugLog(`Skipping direction ${direction} - not found in direction map`);
       continue;
     }
     if (dirIndex >= animationFrames.length) {

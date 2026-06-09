@@ -77,7 +77,6 @@ export function getAnimationLabel(animation: string): string {
     .join(" ");
 }
 
-
 export function saveActiveEditorContext(stateObj: PartEditorState): void {
   const context = createEditorContextSnapshot(stateObj);
   if (stateObj.frameMode) {
@@ -187,7 +186,9 @@ export async function restoreEditorContext(
   recomposeCanvases(stateObj);
 }
 
-export async function updateOnionCanvases(stateObj: PartEditorState): Promise<void> {
+export async function updateOnionCanvases(
+  stateObj: PartEditorState,
+): Promise<void> {
   if (!stateObj.frameMode || !stateObj.onionSkin) {
     stateObj.onionCanvases = null;
     m.redraw();
@@ -296,7 +297,10 @@ export async function loadAnimationFrameCanvases(
   return canvases;
 }
 
-export function isFrameDirty(stateObj: PartEditorState, frameIndex: number): boolean {
+export function isFrameDirty(
+  stateObj: PartEditorState,
+  frameIndex: number,
+): boolean {
   const key = getFrameContextKey(stateObj.frameAnimation, frameIndex);
   const frameContext = stateObj.frameEditorContexts[key];
   if (!frameContext) return false;
@@ -307,7 +311,9 @@ export function isFrameDirty(stateObj: PartEditorState, frameIndex: number): boo
   );
 }
 
-export async function applyGlobalToFrame(stateObj: PartEditorState): Promise<void> {
+export async function applyGlobalToFrame(
+  stateObj: PartEditorState,
+): Promise<void> {
   if (!stateObj.frameMode || !stateObj.globalEditorContext) return;
   const globalContext = stateObj.globalEditorContext;
   await restoreEditorContext(stateObj, globalContext);
@@ -342,4 +348,3 @@ export function advancePlayback(stateObj: PartEditorState): void {
     stateObj.frameIndex + 1 >= frameCount ? 0 : stateObj.frameIndex + 1;
   void switchEditorContext(stateObj, true, stateObj.frameAnimation, nextIndex);
 }
-

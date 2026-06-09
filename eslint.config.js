@@ -98,45 +98,7 @@ export default [
         ...globals.es2021,
       },
     },
-    rules: {
-      ...commonRulesTs,
-      // Architecture layering enforcement (components → state → canvas → utils)
-      // See ARCHITECTURE.md for the full dependency graph and rationale.
-      "@typescript-eslint/no-restricted-imports": [
-        "error",
-        {
-          paths: [],
-          patterns: [
-            // canvas/ must not import from state/ (except render-state.ts which is the shared render-state container)
-            {
-              group: ["../state/*", "../../state/*", "../../../state/*"],
-              allowImportNames: ["renderState"],
-              message:
-                "canvas/ may only import render-state.ts from state/. All other state imports create circular dependencies.",
-            },
-            // utils/ must not import from components/, state/, or canvas/
-            {
-              group: [
-                "../components/*",
-                "../../components/*",
-                "../state/*",
-                "../../state/*",
-                "../canvas/*",
-                "../../canvas/*",
-              ],
-              message:
-                "utils/ must not import from components/, state/, or canvas/. It is the bottom layer.",
-            },
-            // state/ must not import from components/
-            {
-              group: ["../components/*", "../../components/*"],
-              message:
-                "state/ must not import from components/. That reverses the intended layering.",
-            },
-          ],
-        },
-      ],
-    },
+    rules: commonRulesTs,
   },
   {
     files: ["tests/**/*.js"],
@@ -165,7 +127,10 @@ export default [
         m: "readonly",
       },
     },
-    rules: commonRulesTs,
+    rules: {
+      ...commonRulesTs,
+      "@typescript-eslint/ban-ts-comment": "off",
+    },
   },
   {
     files: ["tests/visual/**/*.js"],

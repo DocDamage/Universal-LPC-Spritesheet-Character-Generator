@@ -16,7 +16,11 @@ import {
   itemMetadata,
   licensesFound,
 } from "../../../../scripts/generateSources/state.js";
-import { buildPath, resetTestState, withCapturedConsoleError } from "./test_helpers.js";
+import {
+  buildPath,
+  resetTestState,
+  withCapturedConsoleError,
+} from "./test_helpers.js";
 
 function buildCredit(file) {
   return {

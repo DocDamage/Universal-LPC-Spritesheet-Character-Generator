@@ -194,7 +194,7 @@ export async function buildImportedWeaponPart(
     type_name: meta.type_name,
     baseItemId: options.referenceItemId,
     sheets,
-    image: sheets['walk'] ?? Object.values(sheets)[0],
+    image: sheets["walk"] ?? Object.values(sheets)[0],
     drawLayerNum,
     drawZPos: getLayerZPos(
       options.catalog,

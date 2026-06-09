@@ -254,7 +254,7 @@ export function getHashParamsforSelections(
   const params: Record<string, string> = {};
 
   // Add body type (using 'sex' for backwards compatibility with old URLs).
-  params['sex'] = state.bodyType;
+  params["sex"] = state.bodyType;
 
   // Add selections — old format: `type_name=Name_variant`.
   // e.g., "body=Body_color_light", "shoes=Sara_sara".
@@ -465,8 +465,8 @@ export function loadSelectionsFromHash(hashString: string | null = null): void {
   state.selections = newSelections;
 
   // Load body type
-  if (params['bodyType']) {
-    state.bodyType = params['bodyType'];
+  if (params["bodyType"]) {
+    state.bodyType = params["bodyType"];
   }
 
   // Ensure hash is in sync with loaded selections (handles any normalization).

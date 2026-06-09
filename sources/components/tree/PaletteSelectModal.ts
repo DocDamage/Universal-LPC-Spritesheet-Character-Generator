@@ -210,7 +210,9 @@ function renderModal(
                 ),
                 isExpanded
                   ? m("div.variants-container.is-flex.is-flex-wrap-wrap", [
-                      ...Object.entries(recolors as Record<string, string[]>).map(([palette, colors]) => {
+                      ...Object.entries(
+                        recolors as Record<string, string[]>,
+                      ).map(([palette, colors]) => {
                         const gradient = colors.slice().reverse();
                         const key =
                           (material !== opt.material ? material + "." : "") +

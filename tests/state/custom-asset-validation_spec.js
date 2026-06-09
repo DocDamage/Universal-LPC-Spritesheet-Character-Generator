@@ -42,7 +42,11 @@ function makeImageData(width, height, fillAlpha) {
 describe("custom-asset-validation", function () {
   describe("validateCustomAsset (weapon mode)", function () {
     it("passes for a normal 64x64 image with alpha", function () {
-      var imgData = makeImageData(64, 64, PARTIAL);
+      var imgData = makeImageData(64, 64, function (x, y) {
+        return x === 0 || y === 0 || x === 63 || y === 63
+          ? TRANSPARENT
+          : PARTIAL;
+      });
       var result = validateCustomAsset(imgData, "weapon");
       expect(result.passed).to.equal(true);
       expect(result.issues.length).to.equal(0);

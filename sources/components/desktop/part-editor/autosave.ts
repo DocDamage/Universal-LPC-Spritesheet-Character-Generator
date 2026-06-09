@@ -1,8 +1,5 @@
 import { debugWarn } from "../../../utils/debug.ts";
-import {
-  saveDraft,
-  hasUnsavedDraft,
-} from "../../../state/editor-autosave.ts";
+import { saveDraft, hasUnsavedDraft } from "../../../state/editor-autosave.ts";
 import type { PartEditorState } from "./types.ts";
 import { createEditorContextSnapshot } from "./history.ts";
 import m from "mithril";
@@ -30,4 +27,3 @@ export async function checkForDraftRecovery(
     m.redraw();
   }
 }
-

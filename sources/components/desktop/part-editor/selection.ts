@@ -2,11 +2,7 @@ import { FRAME_SIZE } from "../../../state/constants.ts";
 import { createCanvas, get2DContext } from "../../../canvas/canvas-utils.ts";
 import { clamp } from "../../../utils/helpers.ts";
 import { flipImageDataHorizontal } from "./transform.ts";
-import type {
-  PartEditorState,
-  SelectionRect,
-  Point,
-} from "./types.ts";
+import type { PartEditorState, SelectionRect, Point } from "./types.ts";
 import { getActiveLayer } from "./layers.ts";
 import { recomposeCanvases } from "./canvas.ts";
 import { saveHistory } from "./history.ts";
@@ -33,7 +29,10 @@ export function isSelectionNudgeKey(key: string): boolean {
   );
 }
 
-export function normalizeSelectionRect(start: Point, end: Point): SelectionRect {
+export function normalizeSelectionRect(
+  start: Point,
+  end: Point,
+): SelectionRect {
   const x = Math.min(start.x, end.x);
   const y = Math.min(start.y, end.y);
   return {
@@ -137,7 +136,10 @@ export function updateSelectionInteraction(
   }
 }
 
-export function applySelectionMove(stateObj: PartEditorState, point: Point): void {
+export function applySelectionMove(
+  stateObj: PartEditorState,
+  point: Point,
+): void {
   const moveState = stateObj.selectionMove;
   const activeLayer = getActiveLayer(stateObj);
   if (
@@ -297,4 +299,3 @@ export function nudgeSelection(
   saveHistory(stateObj);
   return true;
 }
-

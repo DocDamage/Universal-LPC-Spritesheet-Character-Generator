@@ -7,7 +7,6 @@ import { itemMetadata } from "../dist/item-metadata.js";
 import { itemLayers } from "../dist/layers-metadata.js";
 import { metadataIndexes } from "../dist/index-metadata.js";
 import {
-  ANIMATIONS,
   variantToFilename,
   remapAnimationName,
   SLOT_CONFIG,

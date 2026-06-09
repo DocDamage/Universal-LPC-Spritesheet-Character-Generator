@@ -153,14 +153,19 @@ function makeZipAdders(
 
   const addCanvas: typeof baseAddCanvasToZip = (folder, fileName, srcCanvas) =>
     baseAddCanvasToZip(folder, fileName, srcCanvas, { profiler });
-  const addSlice: typeof baseAddSlice = (folder, fileName, srcCanvas, srcRect) =>
-    baseAddSlice(folder, fileName, srcCanvas, srcRect, { profiler });
+  const addSlice: typeof baseAddSlice = (
+    folder,
+    fileName,
+    srcCanvas,
+    srcRect,
+  ) => baseAddSlice(folder, fileName, srcCanvas, srcRect, { profiler });
   const addStandardAnimation: typeof baseAddStandard = (
     custAnimFolder,
     itemFileName,
     src,
     custAnim,
-  ) => baseAddStandard(custAnimFolder, itemFileName, src, custAnim, { profiler });
+  ) =>
+    baseAddStandard(custAnimFolder, itemFileName, src, custAnim, { profiler });
 
   return { addCanvas, addSlice, addStandardAnimation };
 }
@@ -171,7 +176,10 @@ function addTweenExportFiles(
   creditsFolder: ZipFolder,
   exportKind: Parameters<typeof buildTweenExportReadme>[0],
 ): void {
-  creditsFolder.file("TWEEN_EXPORT_README.txt", buildTweenExportReadme(exportKind));
+  creditsFolder.file(
+    "TWEEN_EXPORT_README.txt",
+    buildTweenExportReadme(exportKind),
+  );
   const presetFolder = zip.folder("engine-presets")!;
   for (const preset of buildTweenEnginePresets(exportKind, FRAME_SIZE)) {
     presetFolder.file(`${preset.engine}.json`, JSON.stringify(preset, null, 2));
@@ -196,10 +204,16 @@ type ZipExportResult = {
   beforeGenerateZip?: () => void;
 };
 
+type ZipExportStateKey =
+  | "zipByAnimation"
+  | "zipByItem"
+  | "zipByAnimationAndItem"
+  | "zipIndividualFrames";
+
 /** Shared lifecycle wrapper for all ZIP export flows. */
 async function runZipExport(
   profilerName: string,
-  stateKey: keyof State,
+  stateKey: ZipExportStateKey,
   buildFilename: (bodyType: string, timestamp: string) => string,
   execute: (ctx: ZipExportContext) => Promise<ZipExportResult>,
   errorPrefix = "Export failed:",
@@ -211,7 +225,7 @@ async function runZipExport(
     const zip = new window.JSZip!();
     const timestamp = zipExportTimestamp();
     state = (await import("./state.ts")).state;
-    (state as any)[stateKey].isRunning = true;
+    state[stateKey].isRunning = true;
     m.redraw();
     beginZipExportUiSuspend();
     const bodyType = state.bodyType;
@@ -227,7 +241,12 @@ async function runZipExport(
     });
 
     await profiler.phase("staticFiles", async () => {
-      addCharacterJsonAndCredits(zip, creditsFolder, state!, renderState.drawCalls);
+      addCharacterJsonAndCredits(
+        zip,
+        creditsFolder,
+        state!,
+        renderState.drawCalls,
+      );
     });
 
     if (result.metadata) {
@@ -256,7 +275,7 @@ async function runZipExport(
   } finally {
     endZipExportUiSuspend();
     if (state) {
-      (state as any)[stateKey].isRunning = false;
+      state[stateKey].isRunning = false;
     }
     m.redraw();
   }
@@ -561,8 +580,7 @@ export const exportSplitItemAnimations = async (
   await runZipExport(
     "splitItemAnimations",
     "zipByAnimationAndItem",
-    (bodyType, timestamp) =>
-      `lpc_${bodyType}_item_animations_${timestamp}.zip`,
+    (bodyType, timestamp) => `lpc_${bodyType}_item_animations_${timestamp}.zip`,
     async ({ zip, timestamp, state, bodyType, profiler }) => {
       const { addCanvas, addSlice, addStandardAnimation } = makeZipAdders(
         profiler,
@@ -907,12 +925,15 @@ export const exportIndividualFrames = async (
           }
           const rendererCanvas = canvas;
           let custAnimCanvas: HTMLCanvasElement | null = null;
-          profiler.syncPhase("render_composite_sliceCanvasForCustomAnim", () => {
-            custAnimCanvas = sliceCanvasForCustomAnim(
-              rendererCanvas,
-              srcRect,
-            ).unwrapOr(null);
-          });
+          profiler.syncPhase(
+            "render_composite_sliceCanvasForCustomAnim",
+            () => {
+              custAnimCanvas = sliceCanvasForCustomAnim(
+                rendererCanvas,
+                srcRect,
+              ).unwrapOr(null);
+            },
+          );
           if (custAnimCanvas) {
             profiler.syncPhase(
               "render_composite_extractFramesFromCustomAnimation",

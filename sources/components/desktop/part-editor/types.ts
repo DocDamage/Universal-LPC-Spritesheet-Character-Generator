@@ -199,8 +199,10 @@ export const MAX_EDITOR_ZOOM = 16;
 export const DEFAULT_EDITOR_ZOOM = 4;
 export const MAX_EXTRACTED_PALETTE_COLORS = 36;
 
-
-export function getFrameContextKey(animation: string, frameIndex: number): string {
+export function getFrameContextKey(
+  animation: string,
+  frameIndex: number,
+): string {
   return `${animation}:${frameIndex}`;
 }
 
@@ -212,4 +214,3 @@ export function parseFrameContextKey(
   if (!animation || !Number.isInteger(frameIndex)) return null;
   return { animation, frameIndex };
 }
-

@@ -104,7 +104,10 @@ export function transformImageData(
   return flipImageData(sourceData, true);
 }
 
-export function flipImageData(sourceData: ImageData, horizontal: boolean): ImageData {
+export function flipImageData(
+  sourceData: ImageData,
+  horizontal: boolean,
+): ImageData {
   const output = new ImageData(sourceData.width, sourceData.height);
   for (let y = 0; y < sourceData.height; y++) {
     for (let x = 0; x < sourceData.width; x++) {
@@ -116,7 +119,10 @@ export function flipImageData(sourceData: ImageData, horizontal: boolean): Image
   return output;
 }
 
-export function rotateImageData(sourceData: ImageData, clockwise: boolean): ImageData {
+export function rotateImageData(
+  sourceData: ImageData,
+  clockwise: boolean,
+): ImageData {
   const output = new ImageData(sourceData.height, sourceData.width);
   for (let y = 0; y < sourceData.height; y++) {
     for (let x = 0; x < sourceData.width; x++) {
@@ -167,4 +173,3 @@ export function flipImageDataHorizontal(sourceData: ImageData): ImageData {
   }
   return output;
 }
-

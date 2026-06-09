@@ -2,23 +2,26 @@
 
 **Date:** 2026-06-08  
 **Scope:** Full codebase (`sources/`, `tests/`, `scripts/`, `vite/`, build config, dependencies)  
-**Method:** Static analysis + automated tool output + targeted code review  
+**Method:** Static analysis + automated tool output + targeted code review
+
+**Refresh:** 2026-06-08 post-remediation review. The branch now passes `npm run lint`, `npm run type-check`, `npm run test:node`, `npm test`, `npm run build`, and `npm run test:visual`. Several P0/P1 items from the original audit have been addressed; unresolved debt is kept below as refactor guidance.
 
 ---
 
 ## Executive Summary
 
-| Dimension | Debt Level | Key Signal |
-|-----------|-----------|------------|
-| Architecture | **High** | 4,754-line god component; circular state↔canvas coupling |
-| Type Safety | Medium-High | 426 `as` assertions, pervasive `unknown`, no `noUncheckedIndexedAccess` |
-| Test Suite | **High** | 4 orphaned spec files (~800 lines); dual framework split; flaky visual tests |
-| Build / Tooling | Medium | 7 Vite workaround plugins; severe script duplication; bleeding-edge `tsgo` |
-| Dependencies | Medium | 18 outdated packages; 3 security vulns (moderate); unused deps flagged |
-| State Management | **High** | Global mutable singleton; duplicate render flags; JSON-string diffs |
-| Documentation | Low | Good JSDoc per-plugin, but no consolidated architecture doc |
+| Dimension        | Debt Level  | Key Signal                                                                                                           |
+| ---------------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| Architecture     | Medium-High | Editor split improved, but `panels.ts`, `SlotSelector.ts`, `PartEditor.ts`, `zip.ts`, and `renderer.ts` remain large |
+| Type Safety      | Medium      | Sources are type-checked; tests/scripts still commonly use `@ts-nocheck`                                             |
+| Test Suite       | Medium      | Node, browser, and visual suites are green; runner split and visual-test noise remain                                |
+| Build / Tooling  | Medium      | Vite workaround plugins, generated-file workflow, and `tsgo` dependency still require care                           |
+| Dependencies     | Medium      | 18 outdated packages; 3 security vulns (moderate); unused deps flagged                                               |
+| State Management | Medium-High | Global mutable singleton and render-state coupling remain                                                            |
+| Documentation    | Low         | README/CONTRIBUTING now document the verification matrix; architecture docs still need ongoing maintenance           |
 
 **Project health snapshot:**
+
 - **Sources:** 83 `.ts` files, ~25,900 LOC (full TS migration complete in `sources/`)
 - **Tests:** 91 `.js` files, ~22,100 LOC (zero TypeScript in tests)
 - **Scripts:** ~5,800 LOC, mixed modern/legacy patterns
@@ -28,35 +31,38 @@
 
 ## 1. Architecture Debt
 
-### 1.1 God Files (Single Responsibility Violations)
+### 1.1 Large Files (Single Responsibility Pressure)
 
-| File | Lines | Responsibilities |
-|------|-------|------------------|
-| `sources/components/desktop/PartEditor.ts` | **4,754** | Pixel editor, layer manager, animation playback, frame editor, touch handling, undo/redo, autosave, marquee/selection, shape tools, color replace, transform ops, thumbnail cache |
-| `sources/components/desktop/SlotSelector.ts` | **1,242** | Slot dropdown, weapon import UI + canvas preview, custom asset CRUD, color picker, nudge controls |
-| `sources/canvas/renderer.ts` | **1,068** | Draw-call building, image loading, z-sorting, custom animation composition, canvas resizing, palette recoloring, profiler measurement |
-| `sources/state/zip.ts` | **1,111** | Four ZIP export flows with ~70% duplicated boilerplate |
-| `sources/state/commands.ts` | **851** | Global command registry, keyboard shortcuts, zoom logic, editor bridging, ~40 inline command defs |
+| File                                               | Lines     | Responsibilities                                                                                                                      |
+| -------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `sources/components/desktop/part-editor/panels.ts` | **1,295** | Pro editor panel rendering and UI state wiring                                                                                        |
+| `sources/components/desktop/SlotSelector.ts`       | **1,194** | Slot dropdown, import UI, custom asset controls, color picker, nudge controls                                                         |
+| `sources/components/desktop/PartEditor.ts`         | **1,070** | Editor coordinator across canvas, animation, save, history, keyboard, touch, and panel modules                                        |
+| `sources/state/zip.ts`                             | **984**   | ZIP export flows, progress, path assembly, image rendering, archive assembly                                                          |
+| `sources/canvas/renderer.ts`                       | **909**   | Draw-call building, image loading, z-sorting, custom animation composition, canvas resizing, palette recoloring, profiler measurement |
 
-**Impact:** These files are effectively untestable in isolation, resist code review (GitHub collapses them), and create merge-conflict hotspots. `PartEditor.ts` alone accounts for **18% of all source code**.
+**Impact:** The editor split reduced the largest god component substantially, but these files are still review and merge-conflict hotspots. Future refactors should be small and covered by the existing green test lanes.
 
 ### 1.2 Circular / Layer-Violating Dependencies
 
 The intended layering (components → state → canvas → utils) is broken in both directions:
 
 **State imports from Canvas (4 modules):**
+
 - `state.ts:5` → `canvas/renderer.ts`
 - `tween-settings.ts:9` → `canvas/renderer.ts`
 - `commands.ts:13` → `canvas/renderer.ts`
 - `preview-canvas-loading.ts:9` → `canvas/renderer.ts`
 
 **Canvas imports from State (4 modules):**
+
 - `palette-recolor.ts:14` → `state/state.ts`
 - `preview-animation.ts:2` → `state/state.ts`
 - `preview-gif.ts:5` → `state/state.ts`
 - `preview-webp.ts:6` → `state/state.ts`
 
 **State imports from Components (layer violation):**
+
 - `commands.ts:4` → `components/desktop/slot-config.ts`
 - `commands.ts:15` → `components/desktop/pixel-editor-tools.ts`
 
@@ -83,13 +89,14 @@ These break Mithril's virtual-DOM abstraction and can target stale elements.
 
 ### 2.1 Pervasive Type Assertions
 
-| Pattern | Count | Risk |
-|---------|-------|------|
-| `as` assertions | **426** | Bypass compiler; hide refactor breakage |
-| `as unknown as X` | ~12 | Most severe; usually signals schema mismatch |
-| `any` | **20** | Complete type abdication |
+| Pattern           | Count   | Risk                                         |
+| ----------------- | ------- | -------------------------------------------- |
+| `as` assertions   | **426** | Bypass compiler; hide refactor breakage      |
+| `as unknown as X` | ~12     | Most severe; usually signals schema mismatch |
+| `any`             | **20**  | Complete type abdication                     |
 
 **Notable `as unknown as` hotspots:**
+
 - `catalog.ts:410,460,545,603,615,791,803` — Fixture metadata coercion
 - `resolve-hash-param.ts:67,100,124,140` — Interned item expansion
 - `state.ts:40` — `window.canvasRenderer` access
@@ -103,6 +110,7 @@ These break Mithril's virtual-DOM abstraction and can target stale elements.
 ### 2.3 Disabled Strictness Flags (with lingering TODOs)
 
 `tsconfig.json` deliberately disables three `@tsconfig/strictest` flags:
+
 - `noUncheckedIndexedAccess: false` — TODO says "revisit once we have migrated to ts completely". Migration **is** complete in `sources/`; TODO is stale.
 - `noPropertyAccessFromIndexSignature: false` — Same stale TODO.
 - `exactOptionalPropertyTypes: false` — Justified by JSON/external data.
@@ -124,6 +132,7 @@ Additionally, `checkJs: false` means **zero type checking on `scripts/` and `tes
 `sources/state/state-model.ts:79` exports a single mutable `state: State` object. The code itself admits the smell: "Global application state. Mutated in place; Mithril views observe via redraw."
 
 **Consequences:**
+
 - **No change tracking** — `App.ts` and `DesktopApp.ts` diff via `JSON.stringify(state.selections)`, which is O(n) on every redraw.
 - **Untraceable mutations** — Any file can `import { state }` and mutate nested properties.
 - **Duplicate flags** — `isRenderingCharacter` and `renderCharacter.isRendering` represent the same semantic state (the comment literally says "Duplicate of `isRenderingCharacter` consumed by `renderer.js`").
@@ -140,26 +149,26 @@ Additionally, `checkJs: false` means **zero type checking on `scripts/` and `tes
 
 ## 4. Test Suite Debt
 
-### 4.1 Three Divergent Test Frameworks
+### 4.1 Three Test Lanes
 
-| Lane | Runner | Assertion | Mocking |
-|------|--------|-----------|---------|
-| Browser | Testem + Mocha | Chai (`expect`) | Sinon |
-| Node | `node --test` | `node:assert/strict` | Manual monkey-patching |
-| Visual | Playwright | Playwright `expect` | Page-level automation |
+| Lane    | Runner         | Assertion                | Mocking                          |
+| ------- | -------------- | ------------------------ | -------------------------------- |
+| Browser | Testem + Mocha | Chai (`expect`)          | Sinon                            |
+| Node    | Vitest         | Vitest / Node assertions | Manual monkey-patching + helpers |
+| Visual  | Playwright     | Playwright `expect`      | Page-level automation            |
 
-**Debt:** Developers must remember two APIs. Browser specs cannot run in Node for fast CI feedback. `testem.cjs` chains the lanes: `before_tests: "node ./tests/node/run-node-tests.js"`, so Node failures block the browser suite.
+**Debt:** Developers must remember multiple APIs. Browser specs cannot run in Node for fast CI feedback. `testem.cjs` chains the lanes: `before_tests: "node ./tests/node/run-node-tests.js"`, so Node failures block the browser suite.
 
-### 4.2 Four Orphaned Spec Files (P0)
+### 4.2 Resolved: Previously Orphaned Spec Files
 
-These files are **fully implemented but never executed** — they are omitted from `tests/tests.js`:
+These files are now included in the browser suite and were verified by `npm test`:
 
 1. `tests/components/download/ExportWizard_spec.js` (156 lines)
 2. `tests/state/custom-asset-validation_spec.js` (173 lines)
 3. `tests/state/export-options_spec.js` (233 lines)
 4. `tests/state/export-progress_spec.js` (246 lines)
 
-**~800 lines of dead test code** providing false confidence.
+This resolved the original P0 "dead test code" finding.
 
 ### 4.3 Visual Tests: Hard Sleeps & Duplication
 
@@ -190,13 +199,13 @@ These files are **fully implemented but never executed** — they are omitted fr
 
 ### 5.1 Vite Plugins as Workarounds
 
-| Plugin | Workaround Nature |
-|--------|-------------------|
-| `vite-plugin-preview-serve-dist-spritesheets.js` | Bypasses Vite 8 preview 500 errors on `dist/spritesheets/` |
-| `vite-plugin-bundled-css-after-bulma.js` | Regex-based HTML surgery to reorder stylesheets |
-| `vite-plugin-metadata-modulepreload.js` | Heuristic chunk selection by `code.length` |
-| `get-spritesheets-plugin.js` | Platform-specific `rsync`/`robocopy` with manual exit-code mapping |
-| `vite-plugin-webp-encoder-wasm.js` | Manual WASM asset plumbing because package doesn't expose it |
+| Plugin                                           | Workaround Nature                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| `vite-plugin-preview-serve-dist-spritesheets.js` | Bypasses Vite 8 preview 500 errors on `dist/spritesheets/`         |
+| `vite-plugin-bundled-css-after-bulma.js`         | Regex-based HTML surgery to reorder stylesheets                    |
+| `vite-plugin-metadata-modulepreload.js`          | Heuristic chunk selection by `code.length`                         |
+| `get-spritesheets-plugin.js`                     | Platform-specific `rsync`/`robocopy` with manual exit-code mapping |
+| `vite-plugin-webp-encoder-wasm.js`               | Manual WASM asset plumbing because package doesn't expose it       |
 
 **Verdict:** Functional but unmaintainable for new contributors. Every plugin needs an essay-length JSDoc explaining why it exists.
 
@@ -238,15 +247,15 @@ These files are **fully implemented but never executed** — they are omitted fr
 
 ### 6.1 Outdated Packages (18 total)
 
-| Package | Current | Latest | Severity |
-|---------|---------|--------|----------|
-| `eslint` | 9.39.4 | 10.4.1 | Medium (major) |
-| `vite` | 8.0.8 | 8.0.16 | Low (patch) |
-| `purgecss` | 6.0.0 | 8.0.0 | Medium (major) |
-| `sinon` | 21.1.2 | 22.0.0 | Low (major) |
-| `globals` | 16.5.0 | 17.6.0 | Low (major) |
-| `concurrently` | 9.2.1 | 10.0.3 | Medium (major) |
-| `typescript-eslint` | 8.59.0 | 8.61.0 | Low (minor) |
+| Package                      | Current            | Latest             | Severity          |
+| ---------------------------- | ------------------ | ------------------ | ----------------- |
+| `eslint`                     | 9.39.4             | 10.4.1             | Medium (major)    |
+| `vite`                       | 8.0.8              | 8.0.16             | Low (patch)       |
+| `purgecss`                   | 6.0.0              | 8.0.0              | Medium (major)    |
+| `sinon`                      | 21.1.2             | 22.0.0             | Low (major)       |
+| `globals`                    | 16.5.0             | 17.6.0             | Low (major)       |
+| `concurrently`               | 9.2.1              | 10.0.3             | Medium (major)    |
+| `typescript-eslint`          | 8.59.0             | 8.61.0             | Low (minor)       |
 | `@typescript/native-preview` | 7.0.0-dev.20260421 | 7.0.0-dev.20260608 | Low (dev preview) |
 
 ### 6.2 Security Vulnerabilities
@@ -303,11 +312,11 @@ uuid  <11.1.1  moderate  Missing buffer bounds check in v3/v5/v6
 
 ### 8.2 Inconsistent Abbreviations
 
-| Abbreviation | Variants Found |
-|--------------|----------------|
+| Abbreviation          | Variants Found                                                     |
+| --------------------- | ------------------------------------------------------------------ |
 | `anim` vs `animation` | `animName`, `animationName`, `customAnimDef`, `customAnimationDef` |
-| `ctx` vs `context` | `renderCtx`, `customAnimationContext`, `animCtx` |
-| `num` vs `number` | `layerNum`, `animLayerNum`, `frameNumber` |
+| `ctx` vs `context`    | `renderCtx`, `customAnimationContext`, `animCtx`                   |
+| `num` vs `number`     | `layerNum`, `animLayerNum`, `frameNumber`                          |
 
 ---
 
@@ -315,51 +324,50 @@ uuid  <11.1.1  moderate  Missing buffer bounds check in v3/v5/v6
 
 ### P0 — Fix Immediately (blocks correctness or hides bugs)
 
-| # | Action | File(s) |
-|---|--------|---------|
-| 1 | **Add 4 orphaned spec files to `tests/tests.js`** | `tests/tests.js` |
-| 2 | **Fix `for...in` array loops** in z-position scripts | `scripts/zPositioning/update_zpos.js`, `write_z_positions_from_sheets.js` |
-| 3 | **Run `npm audit fix`** to resolve 3 moderate `uuid` vulnerabilities | `package-lock.json` |
-| 4 | **Remove stale TODOs** in `tsconfig.json` (migration is complete) | `tsconfig.json` |
+| #   | Action                                                                | File(s)                            |
+| --- | --------------------------------------------------------------------- | ---------------------------------- |
+| 1   | **Run `npm audit fix`** to resolve 3 moderate `uuid` vulnerabilities  | `package-lock.json`                |
+| 2   | **Remove stale TODOs** in `tsconfig.json` (migration is complete)     | `tsconfig.json`                    |
+| 3   | **Replace or document noisy missing-sprite warnings in visual tests** | `tests/visual/**`, sprite metadata |
 
 ### P1 — High Impact, Medium Effort
 
-| # | Action | File(s) |
-|---|--------|---------|
-| 5 | **Break `PartEditor.ts` into sub-components** (layer panel, toolbar, canvas stage, timeline, modals) | `sources/components/desktop/PartEditor.ts` |
-| 6 | **Deduplicate ZIP export boilerplate** in `zip.ts` (~70% shared code) | `sources/state/zip.ts` |
-| 7 | **Break state↔canvas circular dependency** — move `drawCalls`, `addedCustomAnimations`, `customAreaItems` into a render-state object in `state/` | `sources/canvas/renderer.ts`, `sources/state/*.ts` |
-| 8 | **Consolidate duplicate render-trigger logic** from `App.ts` + `DesktopApp.ts` into one effect | `sources/components/App.ts`, `DesktopApp.ts` |
-| 9 | **Replace hard `waitForTimeout` in visual tests** with explicit readiness signals | `tests/visual/editor-e2e.spec.js`, `test_dropdowns.spec.js` |
-| 10 | **Extract `SLOT_CONFIG`, `getSpritePath`, `expandTemplatePaths`** into `scripts/audit/shared.js` | `scripts/audit_*.js` |
-| 11 | **Define proper `FullItemMetadata` type** and eliminate `Record<string, unknown>` + `as unknown as ItemLite` chain | `sources/state/catalog.ts`, `sources/types/*.ts` |
+| #   | Action                                                                                                                                           | File(s)                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 5   | **Continue editor decomposition** by splitting `part-editor/panels.ts` and reducing `PartEditor.ts` orchestration                                | `sources/components/desktop/part-editor/panels.ts`, `sources/components/desktop/PartEditor.ts` |
+| 6   | **Deduplicate ZIP export boilerplate** in `zip.ts` (~70% shared code)                                                                            | `sources/state/zip.ts`                                                                         |
+| 7   | **Break state↔canvas circular dependency** — move `drawCalls`, `addedCustomAnimations`, `customAreaItems` into a render-state object in `state/` | `sources/canvas/renderer.ts`, `sources/state/*.ts`                                             |
+| 8   | **Consolidate duplicate render-trigger logic** from `App.ts` + `DesktopApp.ts` into one effect                                                   | `sources/components/App.ts`, `DesktopApp.ts`                                                   |
+| 9   | **Replace hard `waitForTimeout` in visual tests** with explicit readiness signals                                                                | `tests/visual/editor-e2e.spec.js`, `test_dropdowns.spec.js`                                    |
+| 10  | **Extract `SLOT_CONFIG`, `getSpritePath`, `expandTemplatePaths`** into `scripts/audit/shared.js`                                                 | `scripts/audit_*.js`                                                                           |
+| 11  | **Define proper `FullItemMetadata` type** and eliminate `Record<string, unknown>` + `as unknown as ItemLite` chain                               | `sources/state/catalog.ts`, `sources/types/*.ts`                                               |
 
 ### P2 — Medium Impact, Medium Effort
 
-| # | Action | File(s) |
-|---|--------|---------|
-| 12 | **Introduce shared Node mocking helper** (or adopt `sinon` in Node tests) | `tests/node/**/*_spec.js` |
-| 13 | **Make `tests/node/run-node-tests.js` recursively discover** all `tests/node/**/*_spec.js` | `tests/node/run-node-tests.js` |
-| 14 | **Refactor `performance-profiler_spec.js` timing test** to mock `performance.now()` or use tolerance | `tests/performance-profiler_spec.js` |
-| 15 | **Remove `state.ts` re-export indirection** — merge `state-model.ts` into `state.ts` or rename unambiguously | `sources/state/state.ts`, `state-model.ts` |
-| 16 | **Remove duplicate `isRenderingCharacter` / `renderCharacter.isRendering`** flags | `sources/state/state-model.ts` |
-| 17 | **Replace `@babel/eslint-parser`** with native ESLint parser for ESM | `eslint.config.js` |
-| 18 | **Expand Prettier config** (`printWidth`, `tabWidth`, `semi`, `singleQuote`, `trailingComma`) | `.prettierrc.json` |
-| 19 | **Expand `.editorconfig`** to `.ts`, `.json`, `.html`, `.css`, `.scss` | `.editorconfig` |
-| 20 | **Remove redundant `serve` script** and consolidate `profile:zip:*` scripts | `package.json` |
-| 21 | **Remove obsolete `mocha` npm override** | `package.json` |
+| #   | Action                                                                                                       | File(s)                                    |
+| --- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| 12  | **Introduce shared Node mocking helper** (or adopt `sinon` in Node tests)                                    | `tests/node/**/*_spec.js`                  |
+| 13  | **Make `tests/node/run-node-tests.js` recursively discover** all `tests/node/**/*_spec.js`                   | `tests/node/run-node-tests.js`             |
+| 14  | **Refactor `performance-profiler_spec.js` timing test** to mock `performance.now()` or use tolerance         | `tests/performance-profiler_spec.js`       |
+| 15  | **Remove `state.ts` re-export indirection** — merge `state-model.ts` into `state.ts` or rename unambiguously | `sources/state/state.ts`, `state-model.ts` |
+| 16  | **Remove duplicate `isRenderingCharacter` / `renderCharacter.isRendering`** flags                            | `sources/state/state-model.ts`             |
+| 17  | **Replace `@babel/eslint-parser`** with native ESLint parser for ESM                                         | `eslint.config.js`                         |
+| 18  | **Expand Prettier config** (`printWidth`, `tabWidth`, `semi`, `singleQuote`, `trailingComma`)                | `.prettierrc.json`                         |
+| 19  | **Expand `.editorconfig`** to `.ts`, `.json`, `.html`, `.css`, `.scss`                                       | `.editorconfig`                            |
+| 20  | **Remove redundant `serve` script** and consolidate `profile:zip:*` scripts                                  | `package.json`                             |
+| 21  | **Remove obsolete `mocha` npm override**                                                                     | `package.json`                             |
 
 ### P3 — Polish / Long-Term
 
-| # | Action | File(s) |
-|---|--------|---------|
-| 22 | **Evaluate unifying test runners** under Vitest (single config, TS tests, Node + DOM environments) | `tests/`, `vite.config.js`, `testem.cjs` |
-| 23 | **Convert tests from `.js` to `.ts`** to match source language | `tests/` |
-| 24 | **Enable `checkJs: true`** in `tsconfig.json` to type-check scripts | `tsconfig.json` |
-| 25 | **Enable `noUncheckedIndexedAccess`** and `noPropertyAccessFromIndexSignature` now that TS migration is complete | `tsconfig.json` |
-| 26 | **Add pre-audit guard** that auto-generates `dist/` before scripts import from it | `scripts/audit_*.js` |
-| 27 | **Use a CSV library** in `scripts/generateSources/credits.js` | `scripts/generateSources/credits.js` |
-| 28 | **Document architecture layering rules** (components → state → canvas → utils) and enforce via ESLint `no-restricted-imports` | `AGENTS.md`, `eslint.config.js` |
+| #   | Action                                                                                                                        | File(s)                                  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 22  | **Evaluate unifying test runners** under Vitest (single config, TS tests, Node + DOM environments)                            | `tests/`, `vite.config.js`, `testem.cjs` |
+| 23  | **Convert tests from `.js` to `.ts`** to match source language                                                                | `tests/`                                 |
+| 24  | **Enable `checkJs: true`** in `tsconfig.json` to type-check scripts                                                           | `tsconfig.json`                          |
+| 25  | **Enable `noUncheckedIndexedAccess`** and `noPropertyAccessFromIndexSignature` now that TS migration is complete              | `tsconfig.json`                          |
+| 26  | **Add pre-audit guard** that auto-generates `dist/` before scripts import from it                                             | `scripts/audit_*.js`                     |
+| 27  | **Use a CSV library** in `scripts/generateSources/credits.js`                                                                 | `scripts/generateSources/credits.js`     |
+| 28  | **Document architecture layering rules** (components → state → canvas → utils) and enforce via ESLint `no-restricted-imports` | `AGENTS.md`, `eslint.config.js`          |
 
 ---
 

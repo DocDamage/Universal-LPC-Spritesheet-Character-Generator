@@ -153,7 +153,7 @@ async function deserializeCustomPart(
     }
   }
 
-  const firstSheet = sheets['walk'] ?? Object.values(sheets)[0];
+  const firstSheet = sheets["walk"] ?? Object.values(sheets)[0];
   if (!firstSheet) return null;
 
   return {
@@ -448,7 +448,7 @@ export async function importCustomPartsZip(
       sheets[animation] = canvas;
     }
 
-    const firstSheet = sheets['walk'] ?? Object.values(sheets)[0];
+    const firstSheet = sheets["walk"] ?? Object.values(sheets)[0];
     if (!firstSheet) continue;
 
     imported.push({

@@ -213,7 +213,9 @@ If an engine is not listed above, try Google. However, it is very likely that yo
 
 - **Lint:** `npm run lint`
 - **Format:** `npm run format:check` (verify) or `npm run format` (apply)
-- **Tests:** `npm test` (Node checks plus browser tests). Visual regression: `npm run test:visual`. Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Type check:** `npm run type-check`
+- **Tests:** `npm run test:node` for Vitest-backed Node/generator checks; `npm test` for Node checks plus the Testem browser suite. Visual regression: `npm run test:visual`. Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Build:** `npm run build`
 - **Editor feature map:** [EDITOR_FEATURES.md](EDITOR_FEATURES.md) lists the sprite editor, importer, shortcut, notification, and custom-part persistence surfaces added to the desktop app.
 
 **Generated files:** [CREDITS.csv](CREDITS.csv) and the z-position CSV under **`scripts/zPositioning/`** are updated by **`npm run validate-site-sources`**. **Vite** runs the metadata plugin; when inputs or **`dist/`** output warrant it, it can refresh those CSVs and always writes the **five** modules under **`dist/`** (`index-`, `palette-`, `item-`, `credits-`, `layers-metadata.js`). The app registers them in **`sources/state/catalog.ts`**. The **`dist/`** tree is gitignored—do not edit generated files by hand. **`npm run dev`** pretty-prints embedded JSON; **`npm run build`** writes compact (see [PR #432](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/pull/432)). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow, catalog API, and staged loading.

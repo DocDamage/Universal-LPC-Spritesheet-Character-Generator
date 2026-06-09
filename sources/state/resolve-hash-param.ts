@@ -99,8 +99,8 @@ export function isInternedItemLite(lite: unknown): boolean {
   if (lite == null || typeof lite !== "object") return false;
   const obj = lite as Record<string, unknown>;
   return (
-    typeof obj['v'] === "number" &&
-    typeof obj['r'] === "number" &&
+    typeof obj["v"] === "number" &&
+    typeof obj["r"] === "number" &&
     !Object.prototype.hasOwnProperty.call(obj, "variants")
   );
 }

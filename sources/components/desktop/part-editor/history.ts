@@ -27,7 +27,9 @@ export function saveHistory(stateObj: PartEditorState): void {
   debouncedAutosave(stateObj);
 }
 
-export function createHistorySnapshot(stateObj: PartEditorState): EditorSnapshot {
+export function createHistorySnapshot(
+  stateObj: PartEditorState,
+): EditorSnapshot {
   return {
     activeLayerId: stateObj.activeLayerId,
     nextLayerNumber: stateObj.nextLayerNumber,
@@ -116,7 +118,9 @@ export async function loadSnapshot(
   }
 }
 
-export function isEditorSnapshot(snapshot: unknown): snapshot is EditorSnapshot {
+export function isEditorSnapshot(
+  snapshot: unknown,
+): snapshot is EditorSnapshot {
   return (
     typeof snapshot === "object" &&
     snapshot !== null &&
@@ -173,4 +177,3 @@ export function resetCanvases(stateObj: PartEditorState): void {
     stateObj.historyIndex = 0;
   }
 }
-

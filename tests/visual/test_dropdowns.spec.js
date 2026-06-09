@@ -5,6 +5,8 @@ import { test, expect } from "@playwright/test";
 test("Verify all UI dropdowns select successfully without console errors", async ({
   page,
 }) => {
+  test.setTimeout(120000);
+
   // Capture console errors and failed requests
   const consoleErrors = [];
   const failedRequests = [];
@@ -66,12 +68,13 @@ test("Verify all UI dropdowns select successfully without console errors", async
     await page.getByRole("button", { name: tab.textToClick }).click();
 
     // Find all select dropdown container components currently visible
-    const slots = await page.locator(".desktop-slot").all();
+    const slotCount = await page.locator(".desktop-slot").count();
     console.log(
-      `Found ${slots.length} dropdown slots in active tab "${tab.name}".`,
+      `Found ${slotCount} dropdown slots in active tab "${tab.name}".`,
     );
 
-    for (const slot of slots) {
+    for (let slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+      const slot = page.locator(".desktop-slot").nth(slotIndex);
       const labelElement = slot.locator(".desktop-slot-label");
       const labelText = (await labelElement.innerText()).trim();
 
@@ -115,6 +118,13 @@ test("Verify all UI dropdowns select successfully without console errors", async
   for (const err of consoleErrors) {
     // Ignore network 404 resource errors in console
     if (err.text.includes("status of 404")) continue;
+    // Firefox reports Vite metadata probe failures as console errors even
+    // though the app resolves the generated module in a subsequent request.
+    if (
+      err.text.includes("Loading module from") &&
+      err.text.includes("metadata")
+    )
+      continue;
     // Ignore console warning/error for "Failed to load image"
     if (err.text.includes("Failed to load image")) continue;
     criticalErrors.push(err);

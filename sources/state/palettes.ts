@@ -96,23 +96,18 @@ export function getMultiRecolors(
         : undefined) ??
       subMeta?.type_name ??
       meta.type_name;
-    if (
-      !subMeta ||
-      !subMeta.type_name ||
-      !types.includes(typeName) ||
-      !subMeta.recolors.length
-    )
-      continue;
+    if (!subMeta || !subMeta.type_name || !types.includes(typeName)) continue;
 
+    const selectedColor = selection.recolor ?? selection.variant ?? "";
     const verifiedRecolor = fixMissingRecolor(
       itemId,
-      selection.recolor ?? "",
+      selectedColor,
       !selection.subId ? null : typeName,
     ).unwrapOr(null);
     if (verifiedRecolor) {
       if (selection.subId) {
         recolors[typeName] = verifiedRecolor;
-      } else if (selection.recolor) {
+      } else if (selectedColor) {
         recolors[subMeta.type_name] = verifiedRecolor;
       }
     }
@@ -121,7 +116,13 @@ export function getMultiRecolors(
   // If body color, force match body color
   if (meta.matchBodyColor) {
     const bodyColor = getBodyColor(itemId, selections).unwrapOr(null);
-    if (bodyColor) recolors[meta.type_name] = bodyColor;
+    if (bodyColor) {
+      for (const recolor of meta.recolors) {
+        if (recolor.material === "body") {
+          recolors[recolor.type_name ?? meta.type_name] = bodyColor;
+        }
+      }
+    }
   }
 
   return Object.keys(recolors).length > 0 ? recolors : null;
@@ -212,8 +213,14 @@ export function getTargetPalette(
     }
   }
 
-  const colors =
+  let colors =
     version !== undefined ? materialMeta.palettes[version]?.[recolor] : null;
+  if (!colors && version === undefined) {
+    for (const palette of Object.values(materialMeta.palettes)) {
+      colors = palette[recolor];
+      if (colors) break;
+    }
+  }
   if (!colors) {
     console.error(
       `Palette colors for ${material}.${version}.${recolor} not found`,

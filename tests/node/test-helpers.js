@@ -1,5 +1,4 @@
 // @ts-nocheck
-import assert from "node:assert/strict";
 
 /**
  * Shared Node-test mocking helpers.  Replaces manual monkey-patching with
@@ -36,7 +35,8 @@ export async function withConsoleError(handler, fn) {
  */
 export async function withWriteFileSync(fs, handler, fn) {
   const original = fs.writeFileSync;
-  fs.writeFileSync = (filePath, contents) => handler(filePath, contents, original);
+  fs.writeFileSync = (filePath, contents) =>
+    handler(filePath, contents, original);
   try {
     await fn();
   } finally {

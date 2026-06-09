@@ -100,7 +100,8 @@ function getRecolorChoices(
     for (const cat of opt.versions) {
       const [material, version] = cat.split(".") as [string, string];
       const materialMeta = paletteMeta.materials[material];
-      const recolors: Record<string, string[]> = materialMeta?.palettes?.[version] ?? {};
+      const recolors: Record<string, string[]> =
+        materialMeta?.palettes?.[version] ?? {};
 
       for (const [paletteName, colors] of Object.entries(recolors)) {
         const key =
@@ -702,7 +703,9 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                     stopPreviewAnimation();
                     setPreviewAnimation(firstAnim);
                     setPreviewShowTransparencyGrid(state.showTransparencyGrid);
-                    setPreviewApplyTransparencyMask(state.applyTransparencyMask);
+                    setPreviewApplyTransparencyMask(
+                      state.applyTransparencyMask,
+                    );
                     startPreviewAnimation();
                     state.selectedAnimation = firstAnim;
                   }

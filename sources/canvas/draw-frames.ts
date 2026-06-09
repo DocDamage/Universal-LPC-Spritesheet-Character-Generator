@@ -72,7 +72,9 @@ export function drawFramesToCustomAnimation(
         const directionMap: Record<string, number> = { n: 0, w: 1, s: 2, e: 3 };
         srcRow = directionMap[direction] || 0;
       } else {
-        srcRow = animationRowsLayout ? animationRowsLayout[srcRowName!] ?? i : i;
+        srcRow = animationRowsLayout
+          ? (animationRowsLayout[srcRowName!] ?? i)
+          : i;
       }
 
       const srcX = FRAME_SIZE * srcColumn;

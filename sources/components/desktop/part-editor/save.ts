@@ -255,4 +255,3 @@ export function applyDirectionChangesToRow(
     ctx.putImageData(frameData, frameIdx * FRAME_SIZE, row * FRAME_SIZE);
   }
 }
-

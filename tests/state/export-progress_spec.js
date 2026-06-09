@@ -21,8 +21,13 @@ import {
 
 describe("state/export-progress.ts", () => {
   beforeEach(() => {
-    // Cancel any lingering progress
+    // Cancel and drain any lingering progress from the previous test.
     cancelExport();
+    try {
+      checkExportAborted();
+    } catch {
+      // Expected when a previous export was active.
+    }
   });
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -207,10 +212,14 @@ describe("state/export-progress.ts", () => {
   // ──────────────────────────────────────────────────────────────────────────
 
   describe("cancelExport", () => {
-    it("aborts the controller and clears current progress", () => {
+    it("aborts the controller and lets the running export observe cancellation", () => {
       var p = createExportProgress("test", "Running", 10);
       cancelExport();
       expect(p.controller.signal.aborted).to.equal(true);
+      expect(getExportProgress()).to.equal(p);
+      expect(function () {
+        checkExportAborted();
+      }).to.throw("Export cancelled");
       expect(getExportProgress()).to.equal(null);
     });
 

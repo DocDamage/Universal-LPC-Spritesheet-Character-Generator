@@ -39,7 +39,8 @@ import {
   renderState,
 } from "../state/render-state.ts";
 
-const { drawCalls, addedCustomAnimations, customAreaItems } = renderState;
+export const { drawCalls, addedCustomAnimations, customAreaItems } =
+  renderState;
 
 declare global {
   interface Window {
@@ -221,8 +222,8 @@ async function runRenderCharacter(
   const profiler = window.profiler;
 
   // Build list of draw calls
-  renderState.drawCalls = [];
-  renderState.addedCustomAnimations = new Set(); // Track which custom animations we've added
+  drawCalls.length = 0;
+  addedCustomAnimations.clear();
 
   appState.isRenderingCharacter = true;
   m.redraw();
@@ -485,7 +486,9 @@ async function runRenderCharacter(
       }
     }
 
-    renderState.customAreaItems = {};
+    for (const key of Object.keys(customAreaItems)) {
+      delete customAreaItems[key];
+    }
 
     // Now handle custom animations (wheelchair, etc.)
     if (addedCustomAnimations.size > 0 && customAnimations) {
@@ -657,7 +660,7 @@ export async function renderSingleItem(
   const customPart = getRuntimeCustomPart(itemId);
   if (customPart) {
     return (
-      customPart.sheets['walk'] ?? Object.values(customPart.sheets)[0] ?? null
+      customPart.sheets["walk"] ?? Object.values(customPart.sheets)[0] ?? null
     );
   }
 
@@ -896,7 +899,7 @@ export async function renderSingleItemAnimation(
   }
 
   // Check if this is a custom animation item
-  const layer1 = meta.layers?.['layer_1'];
+  const layer1 = meta.layers?.["layer_1"];
   const hasCustomAnimation = layer1 && layer1.custom_animation;
 
   if (hasCustomAnimation && customAnimations) {

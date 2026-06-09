@@ -58,7 +58,7 @@ describe("ExportWizard", function () {
       var s = buildExportSummary("gif-preview");
       expect(
         s.fileTree.every(function (f) {
-          return f.indent === 0;
+          return (f.indent ?? 0) === 0;
         }),
       ).to.equal(true);
     });

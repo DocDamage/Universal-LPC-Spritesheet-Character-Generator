@@ -105,13 +105,7 @@ export function parseCredits(
   const notes = creditToUse.notes;
   let lineText = "";
   if (!addedCreditsFor.includes('"' + imageFileName + '" ')) {
-    lineText = toCsvLine([
-      imageFileName,
-      notes,
-      authors,
-      licenses,
-      urls,
-    ]);
+    lineText = toCsvLine([imageFileName, notes, authors, licenses, urls]);
   }
   return [listCreditToUse, lineText, '"' + imageFileName + '" '];
 }
@@ -253,7 +247,13 @@ export function sortCsvList(csvList, categoryTree) {
 export function generateCreditsCsv() {
   sortCsvList(csvList, categoryTree);
 
-  let csvGenerated = toCsvLine(["filename", "notes", "authors", "licenses", "urls"]);
+  let csvGenerated = toCsvLine([
+    "filename",
+    "notes",
+    "authors",
+    "licenses",
+    "urls",
+  ]);
   for (const result of csvList) {
     for (const item of result.csv) {
       csvGenerated += item.lineText;

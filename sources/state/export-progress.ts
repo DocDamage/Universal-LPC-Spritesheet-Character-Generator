@@ -117,7 +117,6 @@ export function failExportProgress(errorMessage: string): void {
 export function cancelExport(): void {
   if (!_currentProgress) return;
   _currentProgress.controller.abort();
-  _currentProgress = null;
   showToast("Export cancelled.", { kind: "warning" });
 }
 

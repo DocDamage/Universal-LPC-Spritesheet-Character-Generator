@@ -447,9 +447,7 @@ test.describe("Part Editor E2E", () => {
             allReq.onsuccess = () => {
               db.close();
               resolve(
-                allReq.result.some((p) =>
-                  p.itemId.startsWith("custom_part_"),
-                ),
+                allReq.result.some((p) => p.itemId.startsWith("custom_part_")),
               );
             };
             allReq.onerror = () => {

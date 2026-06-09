@@ -127,7 +127,10 @@ export function duplicateActiveLayer(stateObj: PartEditorState): void {
   saveHistory(stateObj);
 }
 
-export function moveActiveLayer(stateObj: PartEditorState, direction: -1 | 1): void {
+export function moveActiveLayer(
+  stateObj: PartEditorState,
+  direction: -1 | 1,
+): void {
   const activeIndex = getActiveLayerIndex(stateObj);
   const nextIndex = activeIndex + direction;
   if (
@@ -193,4 +196,3 @@ export function flattenVisibleLayers(stateObj: PartEditorState): void {
   recomposeCanvases(stateObj);
   saveHistory(stateObj);
 }
-

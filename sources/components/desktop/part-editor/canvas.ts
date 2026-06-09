@@ -6,7 +6,10 @@ import { drawShapePreview } from "./shapes.ts";
 import { clamp } from "../../../utils/helpers.ts";
 import m from "mithril";
 
-export function createDirectionCanvases(): Record<Direction, HTMLCanvasElement> {
+export function createDirectionCanvases(): Record<
+  Direction,
+  HTMLCanvasElement
+> {
   const canvases = {
     front: document.createElement("canvas"),
     back: document.createElement("canvas"),
@@ -86,7 +89,6 @@ export function refreshVisibleCanvas(
   ctx.imageSmoothingEnabled = false;
   drawMainGrid(ctx, stateObj.canvases[stateObj.activeDirection], stateObj);
 }
-
 
 export function copyDirectionCanvases(
   source: Record<Direction, HTMLCanvasElement>,
@@ -222,4 +224,3 @@ export function loadDataUrlIntoCanvas(
     img.src = dataUrl;
   });
 }
-

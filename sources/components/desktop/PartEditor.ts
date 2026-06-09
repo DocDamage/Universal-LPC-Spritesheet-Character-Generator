@@ -42,9 +42,22 @@ import {
 
 export { createPartEditorStateForTests } from "./part-editor/state.ts";
 
-import { createDirectionCanvases, cropFrame, drawMainGrid, cloneDirectionCanvases, composeLayersIntoCanvases } from "./part-editor/canvas.ts";
-import { recomposeCanvases, refreshVisibleCanvas } from "./part-editor/canvas.ts";
-import { getActiveLayer, getActiveLayerToolState, resetEditLayers } from "./part-editor/layers.ts";
+import {
+  createDirectionCanvases,
+  cropFrame,
+  drawMainGrid,
+  cloneDirectionCanvases,
+  composeLayersIntoCanvases,
+} from "./part-editor/canvas.ts";
+import {
+  recomposeCanvases,
+  refreshVisibleCanvas,
+} from "./part-editor/canvas.ts";
+import {
+  getActiveLayer,
+  getActiveLayerToolState,
+  resetEditLayers,
+} from "./part-editor/layers.ts";
 import {
   startSelectionInteraction,
   updateSelectionInteraction,
@@ -54,7 +67,11 @@ import {
   pasteClipboard,
   getCanvasPoint,
 } from "./part-editor/selection.ts";
-import { isShapeTool, startShapeInteraction, finishShapeInteraction } from "./part-editor/shapes.ts";
+import {
+  isShapeTool,
+  startShapeInteraction,
+  finishShapeInteraction,
+} from "./part-editor/shapes.ts";
 import { transformActivePixels } from "./part-editor/transform.ts";
 import {
   getAnimationLabel,
@@ -64,10 +81,24 @@ import {
   applyGlobalToFrame,
   saveActiveEditorContext,
 } from "./part-editor/animation.ts";
-import { buildEditedAnimationSheets, createFrameOverrides, createCanvasesFromContext } from "./part-editor/save.ts";
-import { undo, redo, saveHistory, createEditorContextSnapshot, resetCanvases } from "./part-editor/history.ts";
+import {
+  buildEditedAnimationSheets,
+  createFrameOverrides,
+  createCanvasesFromContext,
+} from "./part-editor/save.ts";
+import {
+  undo,
+  redo,
+  saveHistory,
+  createEditorContextSnapshot,
+  resetCanvases,
+} from "./part-editor/history.ts";
 import { checkForDraftRecovery } from "./part-editor/autosave.ts";
-import { handleTouchStart, handleTouchMove, handleTouchEnd } from "./part-editor/touch.ts";
+import {
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+} from "./part-editor/touch.ts";
 import { handleEditorShortcut } from "./part-editor/keyboard.ts";
 import {
   renderProPanel,
@@ -561,7 +592,7 @@ export const PartEditor: m.Component<Record<string, never>, PartEditorState> = {
           globalCanvases.editedCanvases,
           frameOverrides,
         );
-        const firstSheet = sheets['walk'] ?? Object.values(sheets)[0];
+        const firstSheet = sheets["walk"] ?? Object.values(sheets)[0];
         if (!firstSheet) {
           throw new Error("No editable animation sheets could be generated.");
         }
@@ -1104,4 +1135,3 @@ export const partEditorTestApi = {
   switchEditorContext,
   transformActivePixels,
 };
-

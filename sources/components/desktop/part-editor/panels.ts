@@ -1027,7 +1027,9 @@ export function renderSpriteEditorPanel(stateObj: PartEditorState): m.Children {
   ];
 }
 
-export function renderAnimationEditorPanel(stateObj: PartEditorState): m.Children {
+export function renderAnimationEditorPanel(
+  stateObj: PartEditorState,
+): m.Children {
   const frameCount = getAnimationFrameCount(stateObj.frameAnimation);
   const canUseFrameTools = stateObj.availableFrameAnimations.length > 0;
 
@@ -1311,4 +1313,3 @@ export function renderTimelineThumbnails(
     }),
   ]);
 }
-

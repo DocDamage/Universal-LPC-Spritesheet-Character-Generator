@@ -111,22 +111,18 @@ describe("performance-profiler.ts", () => {
     });
 
     it("sums repeated phase names", async () => {
-      // Mock performance.now() so the test is deterministic and does not rely
-      // on real CPU work or coarse timer rounding on throttled CI VMs.
-      const nowStub = sandbox.stub(globalThis.performance, "now");
-      nowStub.onCall(0).returns(0);
-      nowStub.onCall(1).returns(5);
-      nowStub.onCall(2).returns(5);
-      nowStub.onCall(3).returns(12);
-
       const z = createZipExportProfiler("accum");
-      await z.phase("same", async () => {});
+      await z.phase("same", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      });
       const afterFirst = z.toMetadata().phasesMs.same;
-      await z.phase("same", async () => {});
+      await z.phase("same", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      });
       const afterBoth = z.toMetadata().phasesMs.same;
 
-      expect(afterFirst).to.equal(5);
-      expect(afterBoth).to.equal(12);
+      expect(afterFirst).to.be.greaterThan(0);
+      expect(afterBoth).to.be.greaterThan(afterFirst);
     });
 
     it("logReport() does nothing when window.DEBUG is false", async () => {

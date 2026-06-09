@@ -252,6 +252,7 @@ Key areas:
 For editor or importer changes, run at least:
 
 ```bash
+npm run lint
 npm run type-check
 npm run test:node
 node ./node_modules/testem/testem.js ci --launch "headless chrome"
@@ -272,6 +273,17 @@ npm test
 ```
 
 This runs **`node ./node_modules/testem/testem.js ci`**, which loads **[`testem.cjs`](testem.cjs)** (via Testem’s default config search), executes **`before_tests`** (`node ./tests/node/run-node-tests.js`) then the browser suite (**Chrome** and **Firefox** in CI).
+
+For a full pre-PR verification sweep, run:
+
+```bash
+npm run lint
+npm run type-check
+npm run test:node
+npm test
+npm run build
+npm run test:visual
+```
 
 **Testem client URL vs config:** [`tests_run.html`](tests_run.html) loads **`<script src="/testem.js">`**. That path is the **Testem in-browser client** served by the Testem server from the **`testem`** npm package; it is **not** the repo’s config file. Local Testem settings live in **[`testem.cjs`](testem.cjs)** at the repository root.
 
@@ -358,7 +370,7 @@ describe("MyComponent", () => {
 });
 ```
 
-Node specs are listed and run via [`tests/node/run-node-tests.js`](tests/node/run-node-tests.js); add new generator tests alongside the existing `tests/node/scripts/**` files.
+Node specs are run via [`tests/node/run-node-tests.js`](tests/node/run-node-tests.js), which invokes Vitest directly with the current Node executable for cross-platform compatibility. Add new generator tests alongside the existing `tests/node/scripts/**` files.
 
 #### z-positions
 

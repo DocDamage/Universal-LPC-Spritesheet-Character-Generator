@@ -346,13 +346,14 @@ export async function recolorWithPalette(
   for (const [typeName, palette] of Object.entries(sourcePalettes)) {
     const targetColor = targetColors[typeName];
     if (targetColor === undefined) {
-      throw new Error(
-        `Unknown target palette color: ${JSON.stringify(targetColors)}`,
-      );
+      continue;
     }
+    const targetColorKey = targetColor.includes(".")
+      ? targetColor
+      : `${palette.version}.${targetColor}`;
     const targetPalette = getTargetPalette(
       palette.material,
-      targetColor,
+      targetColorKey,
     ).unwrapOr(null);
     if (!targetPalette) {
       throw new Error(

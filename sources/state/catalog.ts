@@ -134,7 +134,7 @@ export function duplicateCustomPart(
     newSheets[animation] = newCanvas;
   }
 
-  const firstSheet = newSheets['walk'] ?? Object.values(newSheets)[0];
+  const firstSheet = newSheets["walk"] ?? Object.values(newSheets)[0];
   const duplicated: CustomPart = {
     itemId: newItemId,
     name: `${part.name} (Copy)`,

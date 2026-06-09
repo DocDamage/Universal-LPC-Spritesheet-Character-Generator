@@ -11,7 +11,10 @@ export function isShapeTool(tool: PartEditorState["tool"]): tool is ShapeTool {
   return tool === "line" || tool === "rect" || tool === "ellipse";
 }
 
-export function startShapeInteraction(stateObj: PartEditorState, point: Point): void {
+export function startShapeInteraction(
+  stateObj: PartEditorState,
+  point: Point,
+): void {
   clearSelectionState(stateObj, true);
   stateObj.shapeStart = point;
   stateObj.shapeEnd = point;
@@ -75,7 +78,11 @@ export function getRectanglePoints(
   return points;
 }
 
-export function getEllipsePoints(start: Point, end: Point, filled: boolean): Point[] {
+export function getEllipsePoints(
+  start: Point,
+  end: Point,
+  filled: boolean,
+): Point[] {
   const rect = normalizeSelectionRect(start, end);
   if (rect.width <= 1 || rect.height <= 1) {
     return rect.width >= rect.height
@@ -166,4 +173,3 @@ export function drawBrushPreviewPoint(
     }
   }
 }
-

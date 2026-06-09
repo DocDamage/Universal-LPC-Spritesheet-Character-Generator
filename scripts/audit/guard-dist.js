@@ -32,7 +32,6 @@ export function guardDistGenerated() {
   );
 
   if (result.status !== 0) {
-    // eslint-disable-next-line no-console
     console.error("[audit-guard] Build failed. Aborting audit.");
     process.exit(1);
   }
@@ -41,7 +40,6 @@ export function guardDistGenerated() {
     (f) => !fs.existsSync(path.join(distDir, f)),
   );
   if (stillMissing.length > 0) {
-    // eslint-disable-next-line no-console
     console.error(
       `[audit-guard] Files still missing after build: ${stillMissing.join(", ")}. Aborting.`,
     );

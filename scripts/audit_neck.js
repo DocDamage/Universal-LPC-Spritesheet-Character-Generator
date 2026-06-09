@@ -6,12 +6,7 @@ import { guardDistGenerated } from "./guard-dist.js";
 import { itemMetadata } from "../dist/item-metadata.js";
 import { itemLayers } from "../dist/layers-metadata.js";
 import { metadataIndexes } from "../dist/index-metadata.js";
-import {
-  ANIMATIONS,
-  variantToFilename,
-  remapAnimationName,
-  getSpritePath,
-} from "./shared.js";
+import { remapAnimationName, getSpritePath } from "./shared.js";
 
 guardDistGenerated();
 

@@ -104,12 +104,15 @@ export function mergeMetadataForTests(writes) {
   );
   let lite = rawLite;
   if (indexSrc.includes("const variantArrays = ")) {
-    const variantArrays = /** @type {string[][]} */ (
-      extractTopLevelJsonLiteral(indexSrc, "variantArrays")
+    const variantArrays = /** @type {string[][]} */ extractTopLevelJsonLiteral(
+      indexSrc,
+      "variantArrays",
     );
-    const recolorVariantArrays = /** @type {string[][]} */ (
-      extractTopLevelJsonLiteral(indexSrc, "recolorVariantArrays")
-    );
+    const recolorVariantArrays =
+      /** @type {string[][]} */ extractTopLevelJsonLiteral(
+        indexSrc,
+        "recolorVariantArrays",
+      );
     lite = {};
     for (const id of Object.keys(rawLite)) {
       lite[id] = expandInternedItemLite(
@@ -145,17 +148,22 @@ export function mergeMetadataForTests(writes) {
  */
 export function extractMetadataGlobalsFromWrites(writes) {
   const indexSrc = writes.get("index-metadata.js") ?? "";
-  const byTypeName = /** @type {Record<string, object[]>} */ (
-    extractTopLevelJsonLiteral(indexSrc, "byTypeName")
-  );
+  const byTypeName =
+    /** @type {Record<string, object[]>} */ extractTopLevelJsonLiteral(
+      indexSrc,
+      "byTypeName",
+    );
   const metadataIndexes = indexSrc.includes("const variantArrays = ")
     ? expandMetadataIndexesWithInternedArrays({
-        variantArrays: /** @type {string[][]} */ (
-          extractTopLevelJsonLiteral(indexSrc, "variantArrays")
+        variantArrays: /** @type {string[][]} */ extractTopLevelJsonLiteral(
+          indexSrc,
+          "variantArrays",
         ),
-        recolorVariantArrays: /** @type {string[][]} */ (
-          extractTopLevelJsonLiteral(indexSrc, "recolorVariantArrays")
-        ),
+        recolorVariantArrays:
+          /** @type {string[][]} */ extractTopLevelJsonLiteral(
+            indexSrc,
+            "recolorVariantArrays",
+          ),
         byTypeName,
         hashMatch: { itemsByTypeName: byTypeName },
       })

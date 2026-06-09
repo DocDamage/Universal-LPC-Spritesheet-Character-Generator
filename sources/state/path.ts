@@ -228,7 +228,10 @@ export function replaceInPath(
       }),
     );
 
-    const resolved = pathDeps.es6DynamicTemplate(path, replacements as Record<string, string>);
+    const resolved = pathDeps.es6DynamicTemplate(
+      path,
+      replacements as Record<string, string>,
+    );
     cacheReplacementPath(meta, cacheKey, resolved);
     return resolved;
   }

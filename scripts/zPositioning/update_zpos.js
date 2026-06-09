@@ -34,7 +34,6 @@ fs.readdirSync(SHEETS_DIR, {
             return console.error(e);
           }
         }
-        entryIdx += 1;
       }
     } else {
       return;

@@ -127,4 +127,3 @@ export function createPartEditorStateForTests(
   }
   return stateObj;
 }
-

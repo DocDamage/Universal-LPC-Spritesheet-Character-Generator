@@ -155,4 +155,3 @@ export function hexToRgbColor(hex: string): RgbColor {
     b: parseInt(clean.slice(4, 6), 16),
   };
 }
-

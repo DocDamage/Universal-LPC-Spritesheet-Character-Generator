@@ -2,6 +2,7 @@ import m from "mithril";
 import { canUseFeature } from "../../state/feature-gates.ts";
 import { listStudioProjects } from "../../state/studio-projects.ts";
 import { FreeWorkflowTools } from "./workflow-tools/FreeWorkflowTools.ts";
+import { ProductInfoPanel } from "./workflow-tools/ProductInfoPanel.ts";
 import { ProWorkflowTools } from "./workflow-tools/ProWorkflowTools.ts";
 import { StudioWorkflowTools } from "./workflow-tools/StudioWorkflowTools.ts";
 import type {
@@ -59,6 +60,7 @@ export const WorkflowToolsPanel: m.Component<
         panelState: vnode.state,
         projects,
       }),
+      m(ProductInfoPanel),
     ]);
   },
 };

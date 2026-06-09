@@ -14,8 +14,13 @@ import {
 import { triggerRender } from "../../render-effect.ts";
 import type { WorkflowToolsState } from "./types.ts";
 import {
+  buildExportReadinessChecks,
+  characterPresets,
+  exportDiagnosticReport,
   exportContactSheet,
   exportProductionChecklist,
+  licensePrinciples,
+  productRoadmap,
 } from "./workflow-helpers.ts";
 
 type StudioWorkflowToolsAttrs = {
@@ -41,6 +46,20 @@ export const StudioWorkflowTools: m.Component<StudioWorkflowToolsAttrs> = {
 
     return m("div.workflow-tier", [
       m("h4", "Studio"),
+      m("div.workflow-card-grid", [
+        characterPresets
+          .filter((preset) => preset.plan === "Studio")
+          .map((preset) =>
+            m("article.workflow-mini-card", { key: preset.name }, [
+              m("strong", preset.name),
+              m("span", preset.role),
+              m("p", preset.description),
+              m("div.workflow-chip-row", [
+                preset.tags.map((tag) => m("span.workflow-chip", tag)),
+              ]),
+            ]),
+          ),
+      ]),
       m("div.studio-project-actions", [
         m(
           "button.button.is-small",
@@ -68,6 +87,20 @@ export const StudioWorkflowTools: m.Component<StudioWorkflowToolsAttrs> = {
             },
           },
           "Checklist",
+        ),
+        m(
+          "button.button.is-small",
+          {
+            type: "button",
+            onclick: () => {
+              downloadFile(
+                exportDiagnosticReport(buildExportReadinessChecks(), projects),
+                "lpc-diagnostic-report.md",
+                "text/markdown",
+              );
+            },
+          },
+          "Diagnostic Report",
         ),
         m(
           "select.select.is-small",
@@ -144,6 +177,22 @@ export const StudioWorkflowTools: m.Component<StudioWorkflowToolsAttrs> = {
             ]),
           ]),
         ),
+      ]),
+      m("div.workflow-info-grid", [
+        m("article.workflow-info-card", [
+          m("h5", "Roadmap"),
+          m(
+            "ul",
+            productRoadmap.slice(0, 6).map((item) => m("li", item)),
+          ),
+        ]),
+        m("article.workflow-info-card", [
+          m("h5", "Asset Policy"),
+          m(
+            "ul",
+            licensePrinciples.map((item) => m("li", item)),
+          ),
+        ]),
       ]),
     ]);
   },

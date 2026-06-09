@@ -1,7 +1,12 @@
 import m from "mithril";
 import { downloadFile } from "../../../canvas/download.ts";
 import type { WorkflowToolsState } from "./types.ts";
-import { persistProSettings } from "./workflow-helpers.ts";
+import {
+  buildExportReadinessChecks,
+  characterPresets,
+  persistProSettings,
+  readinessScore,
+} from "./workflow-helpers.ts";
 
 type ProWorkflowToolsAttrs = {
   enabled: boolean;
@@ -23,8 +28,37 @@ export const ProWorkflowTools: m.Component<ProWorkflowToolsAttrs> = {
       ]);
     }
 
+    const readinessChecks = buildExportReadinessChecks();
+    const score = readinessScore(readinessChecks);
+
     return m("div.workflow-tier", [
       m("h4", "Pro"),
+      m("div.workflow-readiness", [
+        m("div.workflow-readiness-header", [
+          m("strong", "Export Readiness"),
+          m("span.studio-panel-pill", `${score}%`),
+        ]),
+        readinessChecks.map((check) =>
+          m("div.workflow-check", { class: `workflow-check-${check.status}` }, [
+            m("span.workflow-check-dot"),
+            m("div", [m("strong", check.label), m("p", check.detail)]),
+          ]),
+        ),
+      ]),
+      m("div.workflow-card-grid", [
+        characterPresets
+          .filter((preset) => preset.plan === "Pro")
+          .map((preset) =>
+            m("article.workflow-mini-card", { key: preset.name }, [
+              m("strong", preset.name),
+              m("span", preset.role),
+              m("p", preset.description),
+              m("div.workflow-chip-row", [
+                preset.tags.map((tag) => m("span.workflow-chip", tag)),
+              ]),
+            ]),
+          ),
+      ]),
       m("div.studio-field-grid", [
         m("input.input.is-small", {
           value: panelState.paletteName,

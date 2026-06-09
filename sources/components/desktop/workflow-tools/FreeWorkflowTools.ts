@@ -5,6 +5,7 @@ import { triggerRender } from "../../render-effect.ts";
 import type { WorkflowToolsAttrs, WorkflowToolsState } from "./types.ts";
 import { createStudioProjectSnapshot } from "../../../state/studio-projects.ts";
 import {
+  characterPresets,
   pushUndo,
   restoreSnapshot,
   saveFavorites,
@@ -23,6 +24,35 @@ export const FreeWorkflowTools: m.Component<FreeWorkflowToolsAttrs> = {
 
     return m("div.workflow-tier", [
       m("h4", "Free"),
+      m("div.workflow-card-grid", [
+        characterPresets
+          .filter((preset) => preset.plan === "Free")
+          .map((preset) =>
+            m("article.workflow-mini-card", { key: preset.name }, [
+              m("strong", preset.name),
+              m("span", preset.role),
+              m("p", preset.description),
+              m("div.workflow-chip-row", [
+                preset.tags.map((tag) => m("span.workflow-chip", tag)),
+              ]),
+              m(
+                "button.button.is-small",
+                {
+                  type: "button",
+                  onclick: async () => {
+                    pushUndo(panelState);
+                    randomizeAll(vnode.attrs.catalog);
+                    await triggerRender();
+                    showToast(`${preset.name} preset applied.`, {
+                      kind: "success",
+                    });
+                  },
+                },
+                "Load Preset",
+              ),
+            ]),
+          ),
+      ]),
       m("div.studio-project-actions", [
         starterTemplates.map((template) =>
           m(

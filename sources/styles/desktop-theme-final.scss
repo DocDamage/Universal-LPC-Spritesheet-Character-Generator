@@ -689,18 +689,84 @@ body,
 }
 
 .animation-preview-frame {
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden !important;
 }
 
 .animation-preview-frame .desktop-preview {
+  display: grid !important;
+  grid-template-rows: 32px minmax(86px, 1fr) 42px 54px;
+  gap: 4px !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
   overflow: hidden !important;
+}
+
+.animation-preview-frame .desktop-preview-header {
+  align-content: start;
+  height: 32px;
+  overflow: hidden;
+}
+
+.animation-preview-frame .desktop-anim-select {
+  width: 88px !important;
+  height: 24px !important;
+  padding-right: 4px !important;
+}
+
+.animation-preview-frame .desktop-preview-playback-btn,
+.animation-preview-frame .desktop-preview-export-btn {
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+}
+
+.animation-preview-frame .desktop-preview-canvas-wrapper {
+  min-height: 0 !important;
+  height: 100%;
+}
+
+.animation-preview-frame .desktop-animation-status {
+  height: 42px;
+  overflow: hidden;
+}
+
+.animation-preview-frame .desktop-animation-status span {
+  min-height: 18px;
+  padding: 1px 5px !important;
+  font-size: 8px !important;
+}
+
+.animation-preview-frame .desktop-direction-preview {
+  height: 54px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 3px !important;
+  overflow: hidden;
+}
+
+.animation-preview-frame .desktop-direction-preview-card {
+  height: 46px !important;
+  padding: 2px !important;
+  gap: 1px !important;
+}
+
+.animation-preview-frame .desktop-direction-preview-card img {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.animation-preview-frame .desktop-direction-preview-card span {
+  font-size: 7px !important;
 }
 
 .animation-preview-frame .desktop-scale-strip {
   width: 100%;
-  max-height: 124px;
-  overflow: auto;
-  padding: 4px !important;
+  min-height: 0;
+  height: 54px;
+  overflow: hidden;
+  padding: 3px !important;
   border: 7px solid transparent;
   border-image: var(--book-card-url) 5 fill stretch;
   background: transparent !important;
@@ -708,7 +774,12 @@ body,
 }
 
 .animation-preview-frame .desktop-scale-strip h5 {
-  margin: 0 0 3px !important;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  margin: 0 !important;
   color: var(--book-ink) !important;
   font-size: clamp(10px, 0.9vw, 12px) !important;
   line-height: 1 !important;
@@ -722,11 +793,24 @@ body,
 
 .animation-preview-frame .desktop-scale-card {
   flex: 0 0 auto;
-  padding: 3px;
+  width: 44px !important;
+  height: 40px !important;
+  padding: 2px;
   border: 6px solid transparent;
   border-image: var(--book-control-url) 5 fill stretch;
   background: transparent !important;
+  overflow: hidden;
   image-rendering: pixelated;
+}
+
+.animation-preview-frame .desktop-scale-card:nth-child(n + 5) {
+  display: none !important;
+}
+
+.animation-preview-frame .scale-canvas-container,
+.animation-preview-frame .scale-canvas-container img {
+  width: 24px !important;
+  height: 24px !important;
 }
 
 .animation-range-value {

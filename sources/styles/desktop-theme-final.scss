@@ -660,6 +660,28 @@ body,
   background-position: 92.3% 75%;
 }
 
+.book-tab.action-body .tab-icon {
+  background-position: 84.61% 50%;
+}
+
+.book-tab.action-gear .tab-icon {
+  background-position: 30.76% 0;
+}
+
+.book-tab.action-random .tab-icon {
+  background-position: 7.69% 25%;
+}
+
+.book-tab.action-export .tab-icon {
+  background-position: 61.53% 0;
+}
+
+.book-tab:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.45) brightness(0.82);
+  opacity: 0.75;
+}
+
 .book-tab .tab-label {
   position: absolute;
   width: 1px;

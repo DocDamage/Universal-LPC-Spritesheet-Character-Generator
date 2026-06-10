@@ -366,6 +366,65 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       : allSlots;
 
     const activePage = state.isFlipping ? state.targetBookPage : state.bookPage;
+    const activeSlot = SLOT_CONFIG.find(
+      (slot) => slot.label === state.activeSlotLabel,
+    );
+    const topActions = [
+      {
+        label: "Body",
+        title: "Show body part slots",
+        icon: "👤",
+        tabClass: "tab-book",
+        actionClass: "action-body",
+        active: state.bookPage === "creator" && state.activeTab === "character",
+        onclick: () => {
+          state.activeTab = "character";
+          vnode.state.slotSearch = "";
+          if (state.bookPage !== "creator") triggerPageFlip("creator");
+        },
+      },
+      {
+        label: "Gear",
+        title: "Show equipment slots",
+        icon: "🛡️",
+        tabClass: "tab-swords",
+        actionClass: "action-gear",
+        active:
+          state.bookPage === "creator" && state.activeTab === "accessories",
+        onclick: () => {
+          state.activeTab = "accessories";
+          vnode.state.slotSearch = "";
+          if (state.bookPage !== "creator") triggerPageFlip("creator");
+        },
+      },
+      {
+        label: "Roll",
+        title: activeSlot?.canRandomize
+          ? `Randomize ${activeSlot.label}`
+          : "Current slot cannot be randomized",
+        icon: "🎲",
+        tabClass: "tab-floppy",
+        actionClass: "action-random",
+        active: false,
+        disabled: !activeSlot?.canRandomize,
+        onclick: () => {
+          if (activeSlot?.canRandomize) {
+            randomizeSlot(activeSlot, catalog);
+          }
+        },
+      },
+      {
+        label: "PNG",
+        title: "Export full spritesheet as PNG",
+        icon: "📤",
+        tabClass: "tab-gear",
+        actionClass: "action-export",
+        active: false,
+        onclick: () => {
+          executeCommand("app.export.png");
+        },
+      },
+    ];
 
     // Helper to render Left Page contents based on current bookPage
     const renderLeftPage = () => {
@@ -807,22 +866,21 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
             : "book-bg-frame-1",
         },
         [
-          // Top tags (Tabs)
+          // Top tags: quick creator commands. Side bookmarks handle page navigation.
           m(
             "div.book-tabs",
-            BOOK_PAGES.map((page) =>
+            topActions.map((action) =>
               m(
-                `button.book-tab.${page.tabClass}`,
+                `button.book-tab.${action.tabClass}.${action.actionClass}`,
                 {
-                  class: activePage === page.id ? "active" : "",
-                  title: page.title,
-                  onclick: () => {
-                    triggerPageFlip(page.id);
-                  },
+                  class: action.active ? "active" : "",
+                  disabled: action.disabled,
+                  title: action.title,
+                  onclick: action.onclick,
                 },
                 [
-                  m("span.tab-icon", page.icon),
-                  m("span.tab-label", page.label),
+                  m("span.tab-icon", action.icon),
+                  m("span.tab-label", action.label),
                 ],
               ),
             ),

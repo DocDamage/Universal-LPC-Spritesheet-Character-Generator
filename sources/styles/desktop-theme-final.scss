@@ -126,7 +126,7 @@ body,
 .onboarding-step,
 .about-section {
   background: #f7c99a !important;
-  border: 2px dashed #d98152 !important;
+  border: 2px solid #d98152 !important;
   border-radius: 4px !important;
   color: #4a2617 !important;
 }
@@ -144,6 +144,240 @@ body,
   background: #e89b63 !important;
   border-color: #b85e33 !important;
   color: #fff8df !important;
+}
+
+.book-page-right .studio-panel,
+.book-page-right .workflow-tools-panel {
+  width: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+  padding: 6px !important;
+  border: 10px solid transparent !important;
+  border-image: var(--book-frame-url) 8 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--book-ink) !important;
+  image-rendering: pixelated;
+}
+
+.pixel-settings-frame,
+.workflow-frame {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+}
+
+.pixel-settings-frame {
+  flex: 0 0 110px !important;
+  min-height: 110px !important;
+}
+
+.workflow-frame {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+}
+
+.pixel-settings-frame .studio-panel,
+.workflow-frame .workflow-tools-panel {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.pixel-settings-frame .studio-upsell-card {
+  display: none !important;
+}
+
+.book-page-right .studio-panel-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center !important;
+  gap: 5px !important;
+  margin: 0 0 5px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.book-page-right .studio-panel-header,
+.book-page-right .studio-panel-header + *,
+.book-page-right .workflow-tier,
+.book-page-right .workflow-tools-panel > * {
+  border-color: transparent !important;
+}
+
+.book-page-right .studio-panel-header h3,
+.book-page-right .workflow-tier h4,
+.book-page-right .workflow-mini-card strong,
+.book-page-right .workflow-info-card h5,
+.book-page-right .workflow-readiness-header strong,
+.book-page-right .studio-project-meta strong,
+.book-page-right .studio-gallery-card strong {
+  color: var(--book-ink) !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(9px, 0.82vw, 11px) !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  letter-spacing: 0 !important;
+}
+
+.book-page-right .studio-panel-pill,
+.book-page-right .workflow-chip,
+.book-page-right .studio-project-badges .studio-panel-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  min-width: 0;
+  padding: 1px 5px !important;
+  border: 5px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  font-size: clamp(8px, 0.75vw, 10px) !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+  image-rendering: pixelated;
+}
+
+.book-page-right .studio-upsell-card,
+.book-page-right .workflow-mini-card,
+.book-page-right .workflow-info-card,
+.book-page-right .workflow-readiness,
+.book-page-right .studio-gallery-card,
+.book-page-right .studio-project-row,
+.book-page-right .studio-project-save,
+.book-page-right .studio-project-actions {
+  min-width: 0;
+  padding: 6px !important;
+  border: 7px solid transparent !important;
+  border-image: var(--book-card-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--book-ink) !important;
+  image-rendering: pixelated;
+}
+
+.book-page-right .workflow-tier {
+  margin-top: 5px !important;
+  padding-top: 5px !important;
+  border-top: 0 !important;
+}
+
+.book-page-right .workflow-card-grid,
+.book-page-right .workflow-info-grid,
+.book-page-right .studio-gallery-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  margin-bottom: 5px !important;
+  overflow: hidden !important;
+}
+
+.book-page-right .workflow-mini-card,
+.book-page-right .workflow-info-card,
+.book-page-right .studio-gallery-card {
+  max-height: 84px;
+  gap: 3px !important;
+  overflow: hidden !important;
+}
+
+.book-page-right .workflow-mini-card span,
+.book-page-right .workflow-mini-card p,
+.book-page-right .workflow-info-card li,
+.book-page-right .workflow-check p,
+.book-page-right .studio-panel p,
+.book-page-right .studio-panel li,
+.book-page-right .studio-empty,
+.book-page-right .studio-gallery-card span,
+.book-page-right .studio-project-meta span {
+  color: var(--book-ink-soft) !important;
+  font-size: clamp(8px, 0.72vw, 10px) !important;
+  line-height: 1.18 !important;
+  margin: 0 !important;
+}
+
+.book-page-right .workflow-mini-card p,
+.book-page-right .workflow-info-card li,
+.book-page-right .studio-gallery-card span {
+  display: -webkit-box;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.book-page-right .workflow-chip-row,
+.book-page-right .studio-project-badges {
+  max-height: 21px;
+  gap: 3px !important;
+  overflow: hidden !important;
+}
+
+.book-page-right .workflow-check {
+  grid-template-columns: 12px minmax(0, 1fr) !important;
+  gap: 5px !important;
+}
+
+.book-page-right .workflow-check-dot {
+  width: 12px !important;
+  height: 12px !important;
+  margin-top: 1px !important;
+  border: 4px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.book-page-right .workflow-check-ready .workflow-check-dot {
+  border-image-source: var(--book-box-url) !important;
+}
+
+.book-page-right .studio-panel .button,
+.book-page-right .workflow-tools-panel .button,
+.book-page-right .workflow-tool-button,
+.book-page-right .studio-import-button {
+  min-height: 24px !important;
+  padding: 2px 6px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(8px, 0.72vw, 10px) !important;
+  line-height: 1 !important;
+  image-rendering: pixelated;
+}
+
+.book-page-right .studio-panel .button:hover,
+.book-page-right .workflow-tools-panel .button:hover,
+.book-page-right .workflow-tool-button:hover,
+.book-page-right .studio-import-button:hover {
+  border-image-source: var(--book-box-url) !important;
+  transform: none !important;
+}
+
+.book-page-right .studio-panel .input,
+.book-page-right .studio-panel .textarea,
+.book-page-right .studio-panel select,
+.book-page-right .workflow-tools-panel select {
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  appearance: none !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  image-rendering: pixelated;
 }
 
 .command-palette-overlay,

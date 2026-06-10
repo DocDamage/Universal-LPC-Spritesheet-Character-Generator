@@ -697,11 +697,11 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
       switch (state.bookPage) {
         case "pixel":
           return [
-            m("div.book-frame.frame-inset", [
+            m("div.book-frame.frame-inset.pixel-settings-frame", [
               m("div.book-frame-title", "Pixel Settings & Layers"),
               m(StudioPanel),
             ]),
-            m("div.book-frame.frame-inset", [
+            m("div.book-frame.frame-inset.workflow-frame", [
               m("div.book-frame-title", "Workflow & Actions"),
               m(WorkflowToolsPanel, { catalog }),
             ]),

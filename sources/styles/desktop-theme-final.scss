@@ -188,3 +188,342 @@ body,
     max-width: none;
   }
 }
+
+/* Fantasy book UI: use the Pixel Vault style assets as the shell, not as a replacement layout. */
+.desktop-book-wrapper {
+  --book-paper: #efd7af;
+  --book-paper-deep: #dfaa72;
+  --book-ink: #3f2415;
+  --book-ink-soft: #7d4f2e;
+  --book-line: #c9784c;
+  --book-shadow: rgba(0, 0, 0, 0.72);
+  --book-page-url: url("../../styles/rpg-ui-assets/Page + Animation/Page1.png");
+  --book-bookmarks-url: url("../../styles/rpg-ui-assets/Bookmarks/1 22x20.png");
+  --book-box-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/23.png");
+  --book-box-soft-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/25.png");
+  --book-title-url: url("../../styles/rpg-ui-assets/Titles/24.png");
+
+  width: 100vw;
+  height: 100vh;
+  padding: clamp(16px, 4vh, 36px) clamp(18px, 5vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(110, 61, 35, 0.42), transparent 34rem),
+    linear-gradient(135deg, #15100d 0%, #080707 100%);
+  image-rendering: pixelated;
+}
+
+.book-ui {
+  width: min(1180px, calc(100vw - 108px), calc((100vh - 80px) * 1.576));
+  height: auto;
+  aspect-ratio: 290 / 184;
+  position: relative;
+  flex: 0 0 auto;
+  background-image: var(--book-page-url) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  box-shadow: 0 20px 0 -8px rgba(0, 0, 0, 0.35), 0 26px 54px var(--book-shadow) !important;
+  transform: translateY(10px);
+}
+
+.book-ui.book-bg-frame-2 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page2.png") !important; }
+.book-ui.book-bg-frame-3 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page3.png") !important; }
+.book-ui.book-bg-frame-4 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page4.png") !important; }
+.book-ui.book-bg-frame-5 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page5.png") !important; }
+.book-ui.book-bg-frame-6 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page6.png") !important; }
+.book-ui.book-bg-frame-7 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page7.png") !important; }
+.book-ui.book-bg-frame-8 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page8.png") !important; }
+.book-ui.book-bg-frame-9 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page9.png") !important; }
+
+.book-ui::before {
+  content: "";
+  position: absolute;
+  inset: 7.8% 49.2% 9.8% 48.6%;
+  background: linear-gradient(90deg, rgba(95, 49, 27, 0.2), rgba(255, 237, 198, 0.35), rgba(95, 49, 27, 0.24));
+  pointer-events: none;
+  z-index: 2;
+}
+
+.book-tabs {
+  position: absolute !important;
+  top: -3.5% !important;
+  left: 9.4% !important;
+  display: flex !important;
+  gap: 0.7% !important;
+  z-index: 8 !important;
+}
+
+.book-tab {
+  width: clamp(52px, 6.8vw, 78px) !important;
+  height: clamp(34px, 4.1vw, 47px) !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 0 !important;
+  border: 7px solid transparent !important;
+  border-image: var(--book-box-soft-url) 7 fill repeat !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  image-rendering: pixelated;
+  transition: transform 120ms ease, filter 120ms ease !important;
+}
+
+.book-tab:hover,
+.book-tab.active {
+  transform: translateY(-5px) !important;
+  filter: brightness(1.07);
+}
+
+.book-tab.active {
+  border-image-source: var(--book-box-url) !important;
+}
+
+.book-tab .tab-icon {
+  font-size: clamp(16px, 2vw, 24px) !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 0 rgba(255, 238, 197, 0.7);
+}
+
+.book-tab .tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.book-ui .book-bookmarks {
+  position: absolute;
+  top: 12%;
+  right: -5.2%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 7;
+}
+
+.book-ui .book-bookmark {
+  --bookmark-w: clamp(42px, 5.6vw, 64px);
+  width: var(--bookmark-w) !important;
+  height: calc(var(--bookmark-w) * 0.91) !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background-color: transparent !important;
+  background-image: var(--book-bookmarks-url) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 495% !important;
+  background-position: 0 calc(var(--bookmark-index) * 25%) !important;
+  image-rendering: pixelated;
+  display: grid;
+  place-items: center;
+  padding: 0 0 0 18% !important;
+  color: #fff7d6;
+  text-shadow: 0 1px 1px #1f120c;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.book-ui .book-bookmark:hover,
+.book-ui .book-bookmark.active {
+  transform: translateX(8px);
+  filter: brightness(1.08);
+}
+
+.bookmark-icon {
+  font-size: clamp(15px, 1.8vw, 21px);
+  line-height: 1;
+}
+
+.book-pages-container {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  z-index: 4 !important;
+}
+
+.book-page-left,
+.book-page-right {
+  position: absolute !important;
+  top: 14.4% !important;
+  width: 36.4% !important;
+  height: 72.2% !important;
+  padding: clamp(8px, 1.25vw, 15px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: clamp(7px, 1vw, 12px) !important;
+  overflow: auto !important;
+  color: var(--book-ink) !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--book-line) transparent;
+}
+
+.book-page-left {
+  left: 10.4% !important;
+}
+
+.book-page-right {
+  left: 53.3% !important;
+}
+
+.book-frame {
+  position: relative;
+  min-height: 0;
+  padding: clamp(8px, 1vw, 12px) !important;
+  border: 8px solid transparent !important;
+  border-image: var(--book-box-soft-url) 8 fill repeat !important;
+  background: rgba(239, 215, 175, 0.16) !important;
+  color: var(--book-ink) !important;
+  box-shadow: inset 0 0 0 1px rgba(146, 76, 44, 0.24);
+}
+
+.book-frame-title {
+  min-height: 22px;
+  margin: 0 0 6px !important;
+  padding: 3px 10px 5px !important;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  color: #fff3d0 !important;
+  text-shadow: 0 1px 1px #4d2818;
+  border: 0 !important;
+  background-image: var(--book-title-url);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  font-size: clamp(10px, 1.1vw, 13px) !important;
+  letter-spacing: 0 !important;
+}
+
+.slot-grid-container {
+  margin: 0 !important;
+  padding: 0 2px 0 0 !important;
+}
+
+.slot-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(6px, 0.8vw, 10px) !important;
+}
+
+.slot-grid-btn,
+.desktop-tab-btn,
+.desktop-btn,
+.active-slot-randomize-btn,
+.desktop-preview-playback-btn,
+.desktop-preview-export-btn {
+  border: 7px solid transparent !important;
+  border-image: var(--book-box-soft-url) 7 fill repeat !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.slot-grid-btn {
+  height: clamp(48px, 5.4vw, 62px) !important;
+  padding: 4px 8px !important;
+}
+
+.slot-grid-btn:hover,
+.slot-grid-btn.active,
+.desktop-tab-btn:hover,
+.desktop-tab-btn.active,
+.desktop-btn:hover,
+.active-slot-randomize-btn:hover,
+.desktop-preview-playback-btn:hover,
+.desktop-preview-export-btn:hover {
+  border-image-source: var(--book-box-url) !important;
+  transform: translateY(-1px);
+}
+
+.slot-grid-label,
+.slot-grid-val,
+.desktop-toggle,
+.desktop-preview-header,
+.desktop-animation-status,
+.desktop-scale-card span,
+.desktop-direction-preview-card span {
+  color: var(--book-ink) !important;
+}
+
+.active-slot-editor {
+  margin-top: 0 !important;
+  flex-shrink: 0;
+}
+
+.desktop-preview {
+  min-height: 0;
+  height: 100%;
+  gap: 8px;
+}
+
+.desktop-preview-header {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.desktop-preview-canvas-wrapper {
+  flex: 1 1 auto;
+  min-height: 180px;
+  border: 8px solid transparent;
+  border-image: var(--book-box-soft-url) 8 fill repeat;
+  background: rgba(218, 158, 96, 0.32) !important;
+}
+
+.desktop-action-bar {
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  gap: 8px !important;
+}
+
+.desktop-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px !important;
+  width: 100%;
+  max-width: none !important;
+}
+
+.desktop-btn {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 1px 6px !important;
+  font-size: clamp(10px, 1vw, 12px) !important;
+}
+
+.desktop-toggles {
+  order: 2;
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 4px !important;
+  width: 100%;
+}
+
+.desktop-toggle {
+  justify-content: flex-start;
+  font-size: clamp(9px, 0.95vw, 11px) !important;
+}
+
+@media (max-width: 760px) {
+  .desktop-book-wrapper {
+    padding: 12px;
+    overflow: auto;
+    align-items: flex-start;
+  }
+
+  .book-ui {
+    width: min(720px, calc(100vw - 24px));
+    min-width: 560px;
+    transform: none;
+  }
+}

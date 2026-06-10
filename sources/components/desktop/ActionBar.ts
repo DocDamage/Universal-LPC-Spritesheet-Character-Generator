@@ -26,6 +26,29 @@ type ActionBarAttrs = {
   catalog: CatalogReader;
 };
 
+function commandButton(
+  className: string,
+  iconClass: string,
+  label: string,
+  commandId: string,
+  fallbackTitle: string,
+): m.Children {
+  return m(
+    `button.desktop-btn.${className}`,
+    {
+      onclick: () => {
+        executeCommand(commandId);
+      },
+      title: getCommandTitle(commandId, fallbackTitle),
+      "aria-label": label,
+    },
+    [
+      m(`span.rpg-command-icon.${iconClass}`, { "aria-hidden": "true" }),
+      m("span.rpg-command-label", label),
+    ],
+  );
+}
+
 export const ActionBar: m.Component<ActionBarAttrs> = {
   view() {
     return m("div.desktop-action-bar", [
@@ -84,109 +107,61 @@ export const ActionBar: m.Component<ActionBarAttrs> = {
       ]),
       // Buttons row
       m("div.desktop-buttons", [
-        m(
-          "button.desktop-btn",
-          {
-            onclick: () => {
-              executeCommand("app.load.clipboard");
-            },
-            title: getCommandTitle(
-              "app.load.clipboard",
-              "Load character from clipboard JSON",
-            ),
-          },
-          "📋 Load",
+        commandButton(
+          "desktop-btn-load",
+          "rpg-icon-load",
+          "Load",
+          "app.load.clipboard",
+          "Load character from clipboard JSON",
         ),
-        m(
-          "button.desktop-btn",
-          {
-            onclick: () => {
-              executeCommand("app.save.clipboard");
-            },
-            title: getCommandTitle(
-              "app.save.clipboard",
-              "Save character to clipboard as JSON",
-            ),
-          },
-          "💾 Save",
+        commandButton(
+          "desktop-btn-save",
+          "rpg-icon-save",
+          "Save",
+          "app.save.clipboard",
+          "Save character to clipboard as JSON",
         ),
-        m(
-          "button.desktop-btn",
-          {
-            onclick: () => {
-              executeCommand("app.share.url");
-            },
-            title: getCommandTitle(
-              "app.share.url",
-              "Copy character URL to clipboard",
-            ),
-          },
-          "🔗 Share",
+        commandButton(
+          "desktop-btn-share",
+          "rpg-icon-share",
+          "Share",
+          "app.share.url",
+          "Copy character URL to clipboard",
         ),
-        m(
-          "button.desktop-btn",
-          {
-            onclick: () => {
-              executeCommand("app.export.json");
-            },
-            title: getCommandTitle(
-              "app.export.json",
-              "Download character configuration as a JSON file",
-            ),
-          },
-          "⬇ JSON",
+        commandButton(
+          "desktop-btn-json",
+          "rpg-icon-json",
+          "JSON",
+          "app.export.json",
+          "Download character configuration as a JSON file",
         ),
-        m(
-          "button.desktop-btn",
-          {
-            onclick: () => {
-              executeCommand("app.export.png");
-            },
-            title: getCommandTitle(
-              "app.export.png",
-              "Export full spritesheet as PNG",
-            ),
-          },
-          "📤 Export PNG",
+        commandButton(
+          "desktop-btn-png",
+          "rpg-icon-png",
+          "PNG",
+          "app.export.png",
+          "Export full spritesheet as PNG",
         ),
-        m(
-          "button.desktop-btn",
-          {
-            onclick: () => {
-              executeCommand("app.export.credits");
-            },
-            title: getCommandTitle(
-              "app.export.credits",
-              "Download asset credits as CSV",
-            ),
-          },
-          "📜 Credits",
+        commandButton(
+          "desktop-btn-credits",
+          "rpg-icon-credits",
+          "Credits",
+          "app.export.credits",
+          "Download asset credits as CSV",
         ),
-        m(
-          "button.desktop-btn.desktop-btn-random",
-          {
-            onclick: () => {
-              executeCommand("app.randomize");
-            },
-            title: getCommandTitle(
-              "app.randomize",
-              "Randomly select items for all slots",
-            ),
-          },
-          "🎲 Randomize",
+        commandButton(
+          "desktop-btn-random",
+          "rpg-icon-random",
+          "Random",
+          "app.randomize",
+          "Randomly select items for all slots",
         ),
-        m(
-          "button.desktop-btn.desktop-btn-danger",
-          {
-            onclick: () => {
-              executeCommand("app.reset");
-            },
-            title: getCommandTitle(
-              "app.reset",
-              "Reset all character selections back to defaults",
-            ),
-          },
-          "↺ Reset All",
+        commandButton(
+          "desktop-btn-danger",
+          "rpg-icon-reset",
+          "Reset",
+          "app.reset",
+          "Reset all character selections back to defaults",
         ),
       ]),
     ]);

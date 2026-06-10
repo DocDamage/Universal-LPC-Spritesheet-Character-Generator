@@ -35,6 +35,28 @@ type DesktopPreviewState = {
   wheelHandler: EventListener | null;
 };
 
+function previewIconButton(
+  iconClass: string,
+  label: string,
+  attrs: m.Attributes,
+): m.Children {
+  return m("button.desktop-preview-playback-btn", attrs, [
+    m(`span.rpg-command-icon.${iconClass}`, { "aria-hidden": "true" }),
+    m("span.rpg-command-label", label),
+  ]);
+}
+
+function exportIconButton(
+  iconClass: string,
+  label: string,
+  attrs: m.Attributes,
+): m.Children {
+  return m("button.desktop-preview-export-btn", attrs, [
+    m(`span.rpg-command-icon.${iconClass}`, { "aria-hidden": "true" }),
+    m("span.rpg-command-label", label),
+  ]);
+}
+
 function refreshDirectionalFrames(
   vnode: m.Vnode<Record<string, never>, DesktopPreviewState>,
 ): boolean {
@@ -236,22 +258,19 @@ export const DesktopPreview: m.Component<
           ),
         ),
         m("div.desktop-preview-playback", [
-          m(
-            "button.desktop-preview-playback-btn",
-            {
-              type: "button",
-              title: "Step backward",
-              onclick: () => {
-                stepPreviewAnimation(-1);
-                vnode.state.isPlaying = false;
-                stopStatusRefresh(vnode);
-                refreshAnimationStatus(vnode);
-              },
+          previewIconButton("rpg-icon-prev", "Prev", {
+            type: "button",
+            title: "Step backward",
+            onclick: () => {
+              stepPreviewAnimation(-1);
+              vnode.state.isPlaying = false;
+              stopStatusRefresh(vnode);
+              refreshAnimationStatus(vnode);
             },
-            "Prev",
-          ),
-          m(
-            "button.desktop-preview-playback-btn",
+          }),
+          previewIconButton(
+            vnode.state.isPlaying ? "rpg-icon-pause" : "rpg-icon-play",
+            vnode.state.isPlaying ? "Pause" : "Play",
             {
               type: "button",
               title: vnode.state.isPlaying ? "Pause preview" : "Play preview",
@@ -268,26 +287,22 @@ export const DesktopPreview: m.Component<
                 refreshAnimationStatus(vnode);
               },
             },
-            vnode.state.isPlaying ? "Pause" : "Play",
           ),
-          m(
-            "button.desktop-preview-playback-btn",
-            {
-              type: "button",
-              title: "Step forward",
-              onclick: () => {
-                stepPreviewAnimation(1);
-                vnode.state.isPlaying = false;
-                stopStatusRefresh(vnode);
-                refreshAnimationStatus(vnode);
-              },
+          previewIconButton("rpg-icon-next", "Next", {
+            type: "button",
+            title: "Step forward",
+            onclick: () => {
+              stepPreviewAnimation(1);
+              vnode.state.isPlaying = false;
+              stopStatusRefresh(vnode);
+              refreshAnimationStatus(vnode);
             },
-            "Next",
-          ),
+          }),
         ]),
         m("div.desktop-preview-exports", [
-          m(
-            "button.desktop-preview-export-btn",
+          exportIconButton(
+            "rpg-icon-gif",
+            vnode.state.exportBusy === "gif" ? "GIF..." : "GIF",
             {
               type: "button",
               disabled: vnode.state.exportBusy !== null,
@@ -314,10 +329,10 @@ export const DesktopPreview: m.Component<
                 }
               },
             },
-            vnode.state.exportBusy === "gif" ? "GIF..." : "GIF",
           ),
-          m(
-            "button.desktop-preview-export-btn",
+          exportIconButton(
+            "rpg-icon-webp",
+            vnode.state.exportBusy === "webp" ? "WebP..." : "WebP",
             {
               type: "button",
               disabled: vnode.state.exportBusy !== null,
@@ -344,7 +359,6 @@ export const DesktopPreview: m.Component<
                 }
               },
             },
-            vnode.state.exportBusy === "webp" ? "WebP..." : "WebP",
           ),
         ]),
       ]),

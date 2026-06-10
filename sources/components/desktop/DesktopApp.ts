@@ -398,7 +398,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
           );
 
         case "animation":
-          return m("div.book-frame.frame-inset", [
+          return m("div.book-frame.frame-inset.animation-options-frame", [
             m("div.book-frame-title", "Animation Options"),
             m("div.desktop-slot", [
               m("label.desktop-slot-label", "Animation"),
@@ -436,6 +436,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
             m("div.desktop-slot", [
               m("label.desktop-slot-label", "In-betweens"),
               m("input", {
+                class: "desktop-range",
                 type: "range",
                 min: 1,
                 max: 10,
@@ -446,15 +447,12 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
                   );
                 },
               }),
-              m(
-                "span",
-                { style: { marginLeft: "8px", fontWeight: "bold" } },
-                state.previewTweenInbetweens,
-              ),
+              m("span.animation-range-value", state.previewTweenInbetweens),
             ]),
             m("div.desktop-slot", [
               m("label.desktop-slot-label", "FPS"),
               m("input", {
+                class: "desktop-range",
                 type: "range",
                 min: 1,
                 max: 60,
@@ -465,11 +463,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
                   );
                 },
               }),
-              m(
-                "span",
-                { style: { marginLeft: "8px", fontWeight: "bold" } },
-                state.previewTweenFps,
-              ),
+              m("span.animation-range-value", state.previewTweenFps),
             ]),
           ]);
 
@@ -716,7 +710,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         case "animation":
           return [
             m(
-              "div.book-frame.frame-inset",
+              "div.book-frame.frame-inset.animation-preview-frame",
               {
                 style: {
                   display: "flex",
@@ -787,7 +781,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         default:
           return [
             m(
-              "div.book-frame.frame-inset",
+              "div.book-frame.frame-inset.creator-preview-frame",
               {
                 style: {
                   display: "flex",
@@ -800,7 +794,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
                 m(DesktopPreview),
               ],
             ),
-            m("div.book-frame.frame-inset", [
+            m("div.book-frame.frame-inset.creator-export-frame", [
               m("div.book-frame-title", "Selections & Export"),
               m(ActionBar, { catalog }),
               m(PlanSelector),

@@ -548,10 +548,44 @@ body,
 .desktop-preview-header {
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   padding: 0 !important;
   background: transparent !important;
   border: 0 !important;
+}
+
+.desktop-anim-select {
+  width: min(118px, 100%) !important;
+  min-width: 0 !important;
+  height: 28px !important;
+  padding: 1px 18px 1px 5px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  appearance: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(9px, 0.85vw, 11px) !important;
+  image-rendering: pixelated;
+}
+
+.desktop-preview-playback,
+.desktop-preview-exports {
+  gap: 3px !important;
+}
+
+.desktop-preview-playback-btn,
+.desktop-preview-export-btn {
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  padding: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
 }
 
 .desktop-preview-canvas-wrapper {
@@ -563,12 +597,176 @@ body,
   image-rendering: pixelated;
 }
 
-.book-page-right > .book-frame.frame-inset:first-child {
+.animation-options-frame {
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: clamp(12px, 1.25vw, 16px) !important;
+  background: transparent !important;
+}
+
+.animation-options-frame .book-frame-title {
+  margin-bottom: 2px !important;
+}
+
+.animation-options-frame .desktop-slot {
+  display: grid !important;
+  grid-template-columns: 76px minmax(0, 1fr) 22px;
+  align-items: center !important;
+  gap: 6px !important;
+  width: 100%;
+  min-height: 32px;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.animation-options-frame .desktop-slot-label {
+  color: var(--book-ink) !important;
+  font-size: clamp(9px, 0.85vw, 11px) !important;
+  line-height: 1 !important;
+  text-align: right;
+}
+
+.animation-options-frame .desktop-slot-select {
+  grid-column: 2 / 4;
+  width: 100% !important;
+  height: 29px !important;
+  min-height: 29px !important;
+  padding: 1px 6px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-box-url) 5 fill stretch !important;
+  appearance: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  image-rendering: pixelated;
+}
+
+.animation-options-frame .desktop-range {
+  grid-column: 2;
+  width: 100%;
+  height: 18px;
+  appearance: none;
+  border: 5px solid transparent;
+  border-image: var(--book-box-url) 5 fill stretch;
+  background: transparent;
+  image-rendering: pixelated;
+}
+
+.animation-options-frame .desktop-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border: 0;
+  background: transparent;
+  image-rendering: pixelated;
+}
+
+.animation-options-frame .desktop-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 5px solid transparent;
+  border-image: var(--book-box-url) 5 fill stretch;
+  background: transparent;
+  image-rendering: pixelated;
+}
+
+.animation-options-frame .desktop-range::-moz-range-track {
+  height: 4px;
+  border: 0;
+  background: transparent;
+}
+
+.animation-options-frame .desktop-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 5px solid transparent;
+  border-image: var(--book-box-url) 5 fill stretch;
+  background: transparent;
+}
+
+.animation-preview-frame {
+  overflow: hidden !important;
+}
+
+.animation-preview-frame .desktop-preview {
+  overflow: hidden !important;
+}
+
+.animation-preview-frame .desktop-scale-strip {
+  width: 100%;
+  max-height: 124px;
+  overflow: auto;
+  padding: 4px !important;
+  border: 7px solid transparent;
+  border-image: var(--book-card-url) 5 fill stretch;
+  background: transparent !important;
+  image-rendering: pixelated;
+}
+
+.animation-preview-frame .desktop-scale-strip h5 {
+  margin: 0 0 3px !important;
+  color: var(--book-ink) !important;
+  font-size: clamp(10px, 0.9vw, 12px) !important;
+  line-height: 1 !important;
+}
+
+.animation-preview-frame .desktop-scale-grid {
+  display: flex !important;
+  gap: 6px !important;
+  width: max-content;
+}
+
+.animation-preview-frame .desktop-scale-card {
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 6px solid transparent;
+  border-image: var(--book-control-url) 5 fill stretch;
+  background: transparent !important;
+  image-rendering: pixelated;
+}
+
+.animation-range-value {
+  grid-column: 3;
+  min-width: 20px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid transparent;
+  border-image: var(--book-box-url) 5 fill stretch;
+  color: var(--book-ink) !important;
+  font-size: clamp(10px, 0.9vw, 12px) !important;
+  line-height: 1;
+  image-rendering: pixelated;
+}
+
+.desktop-direction-preview,
+.desktop-animation-status {
+  padding: 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.desktop-direction-preview-card,
+.desktop-animation-status span {
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  image-rendering: pixelated;
+}
+
+.book-page-right > .creator-preview-frame {
   flex: 1 1 0 !important;
   min-height: 0 !important;
 }
 
-.book-page-right > .book-frame.frame-inset:last-child {
+.book-page-right > .creator-export-frame {
   flex: 0 0 132px !important;
   min-height: 132px !important;
   overflow: hidden !important;
@@ -698,7 +896,7 @@ body,
   background-position: 7.69% 0;
 }
 
-.desktop-action-bar .rpg-command-icon {
+.book-ui .rpg-command-icon {
   width: 16px !important;
   min-width: 16px !important;
   height: 16px !important;
@@ -714,39 +912,63 @@ body,
   image-rendering: pixelated;
 }
 
-.desktop-action-bar .rpg-icon-load {
+.book-ui .rpg-icon-load {
   background-position: 38.46% 0;
 }
 
-.desktop-action-bar .rpg-icon-save {
+.book-ui .rpg-icon-save {
   background-position: 46.15% 0;
 }
 
-.desktop-action-bar .rpg-icon-share {
+.book-ui .rpg-icon-share {
   background-position: 23.07% 25%;
 }
 
-.desktop-action-bar .rpg-icon-json {
+.book-ui .rpg-icon-json {
   background-position: 53.84% 0;
 }
 
-.desktop-action-bar .rpg-icon-png {
+.book-ui .rpg-icon-png {
   background-position: 61.53% 0;
 }
 
-.desktop-action-bar .rpg-icon-credits {
+.book-ui .rpg-icon-credits {
   background-position: 69.23% 0;
 }
 
-.desktop-action-bar .rpg-icon-random {
+.book-ui .rpg-icon-random {
   background-position: 84.61% 50%;
 }
 
-.desktop-action-bar .rpg-icon-reset {
+.book-ui .rpg-icon-reset {
   background-position: 92.3% 75%;
 }
 
-.desktop-action-bar .rpg-command-label {
+.book-ui .rpg-icon-prev {
+  background-position: 15.38% 25%;
+}
+
+.book-ui .rpg-icon-play {
+  background-position: 23.07% 25%;
+}
+
+.book-ui .rpg-icon-pause {
+  background-position: 30.76% 25%;
+}
+
+.book-ui .rpg-icon-next {
+  background-position: 38.46% 25%;
+}
+
+.book-ui .rpg-icon-gif {
+  background-position: 53.84% 0;
+}
+
+.book-ui .rpg-icon-webp {
+  background-position: 61.53% 0;
+}
+
+.book-ui .rpg-command-label {
   position: absolute;
   width: 1px;
   height: 1px;

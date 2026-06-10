@@ -579,9 +579,10 @@ body,
 .book-tabs {
   position: absolute !important;
   top: -2.7% !important;
-  left: 9.3% !important;
-  display: flex !important;
-  gap: clamp(6px, 0.85vw, 10px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: clamp(24px, 2.55vw, 31px) !important;
+  display: block !important;
   z-index: 8 !important;
 }
 
@@ -603,27 +604,34 @@ body,
   color: var(--book-ink) !important;
   image-rendering: pixelated;
   transition: transform 120ms ease, filter 120ms ease !important;
+  position: absolute !important;
+  top: 0 !important;
+  transform: translateX(-50%) !important;
 }
 
 .book-tab.tab-book {
   --tab-index: 0;
+  left: 15.4%;
 }
 
 .book-tab.tab-swords {
   --tab-index: 1;
+  left: 31.7%;
 }
 
 .book-tab.tab-floppy {
   --tab-index: 2;
+  left: 62.6%;
 }
 
 .book-tab.tab-gear {
   --tab-index: 3;
+  left: 79.3%;
 }
 
 .book-tab:hover,
 .book-tab.active {
-  transform: translateY(-4px) !important;
+  transform: translateX(-50%) translateY(-4px) !important;
   filter: brightness(1.07);
 }
 

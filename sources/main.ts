@@ -5,6 +5,7 @@ import "./styles/critical-entry.scss";
 import "../styles/desktop-style.scss";
 import deferredStylesheetHref from "./styles/deferred-entry.scss?url";
 import desktopThemeFinalHref from "./styles/desktop-theme-final.scss?url";
+import bookUiPolishHref from "./styles/book-ui-polish.scss?url";
 import "./vendor-globals.ts";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import {
@@ -106,7 +107,11 @@ window.setDefaultSelections = async function () {
 void loadAllMetadata();
 const customPartsHydrated = hydrateCustomPartsFromStorage();
 
-scheduleDeferredStylesheetLoad(deferredStylesheetHref, desktopThemeFinalHref);
+scheduleDeferredStylesheetLoad(
+  deferredStylesheetHref,
+  desktopThemeFinalHref,
+  bookUiPolishHref,
+);
 
 type DeferredIdleCallback = (
   callback: () => void,

@@ -31,14 +31,26 @@ export function buildSlotViewData(
 ) {
   // ── Slot options & selection ──────────────────────────────────────
 
-  let options = getSlotOptions(slot, catalog);
+  const allUnfilteredOptions = getSlotOptions(slot, catalog);
+  let options = [...allUnfilteredOptions];
   const filterText = stateObj.slotItemFilter.trim().toLowerCase();
   if (filterText) {
     options = options.filter((opt) =>
       opt.label.toLowerCase().includes(filterText),
     );
   }
+  const builtInOptions = options.filter((opt) => !opt.itemId.startsWith("custom_"));
+  const customOptions = options.filter((opt) => opt.itemId.startsWith("custom_"));
+
   const selectedValue = getSlotSelectedValue(slot, catalog);
+  const selectedOpt = allUnfilteredOptions.find((o) => o.value === selectedValue);
+  const selectedBuiltInValue = selectedOpt && !selectedOpt.itemId.startsWith("custom_")
+    ? selectedOpt.value
+    : "";
+  const selectedCustomValue = selectedOpt && selectedOpt.itemId.startsWith("custom_")
+    ? selectedOpt.value
+    : "";
+
   const hasSelection = selectedValue !== "";
   const isBodyType = slot.kind === "bodyType";
   const canImportWeapon = slot.label === "Mainhand";
@@ -93,7 +105,7 @@ export function buildSlotViewData(
 
   let selectedItemId: string | null = null;
   if (hasSelection && !isBodyType) {
-    const opt = options.find((o) => o.value === selectedValue);
+    const opt = allUnfilteredOptions.find((o) => o.value === selectedValue);
     if (opt) {
       selectedItemId = opt.itemId;
     }
@@ -110,7 +122,11 @@ export function buildSlotViewData(
 
   return {
     options,
+    builtInOptions,
+    customOptions,
     selectedValue,
+    selectedBuiltInValue,
+    selectedCustomValue,
     hasSelection,
     isBodyType,
     canImportWeapon,

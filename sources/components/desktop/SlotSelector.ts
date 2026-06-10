@@ -49,11 +49,19 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
     // Canvas preview drawing (side-effect, runs every render)
     drawPreviewCanvases(slot, vnode.state);
 
-    // Slot selection change handler
-    const onChange = createSlotChangeHandler(
+    // Slot selection change handlers
+    const onBuiltInChange = createSlotChangeHandler(
       slot,
       catalog,
-      data.options,
+      data.builtInOptions,
+      data.isBodyType,
+      vnode.state,
+    );
+
+    const onCustomChange = createSlotChangeHandler(
+      slot,
+      catalog,
+      data.customOptions,
       data.isBodyType,
       vnode.state,
     );
@@ -78,19 +86,45 @@ export const SlotSelector: m.Component<SlotSelectorAttrs, SlotSelectorState> = {
                 style: { marginBottom: "4px", width: "100%" },
               })
             : null,
-          m(
-            "select.desktop-slot-select",
-            {
-              value: data.selectedValue,
-              onchange: onChange,
-            },
-            [
-              m("option", { value: "" }, "None"),
-              ...data.options.map((opt) =>
-                m("option", { value: opt.value }, opt.label),
-              ),
-            ],
-          ),
+          m("div.desktop-slot-selects-container", {
+            style: {
+              display: "flex",
+              gap: "4px",
+              flex: "1 1 0%",
+              minWidth: "0",
+            }
+          }, [
+            m(
+              "select.desktop-slot-select",
+              {
+                value: data.selectedBuiltInValue,
+                onchange: onBuiltInChange,
+                style: { flex: "1 1 0%", minWidth: "0" },
+              },
+              [
+                m("option", { value: "" }, "None"),
+                ...data.builtInOptions.map((opt) =>
+                  m("option", { value: opt.value }, opt.label),
+                ),
+              ],
+            ),
+            data.customOptions.length > 0
+              ? m(
+                  "select.desktop-slot-select.desktop-slot-select-custom",
+                  {
+                    value: data.selectedCustomValue,
+                    onchange: onCustomChange,
+                    style: { flex: "1 1 0%", minWidth: "0" },
+                  },
+                  [
+                    m("option", { value: "" }, "Custom..."),
+                    ...data.customOptions.map((opt) =>
+                      m("option", { value: opt.value }, opt.label),
+                    ),
+                  ],
+                )
+              : null,
+          ]),
 
           slot.canRandomize
             ? m(

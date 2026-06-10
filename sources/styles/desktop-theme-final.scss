@@ -39,10 +39,7 @@ body,
 
 .desktop-panel-body {
   background-color: #f7c99a !important;
-  background-image:
-    linear-gradient(90deg, rgba(184, 94, 51, 0.13) 1px, transparent 1px),
-    linear-gradient(rgba(184, 94, 51, 0.13) 1px, transparent 1px) !important;
-  background-size: 44px 44px !important;
+  background-image: none !important;
   color: #4a2617;
 }
 
@@ -578,18 +575,18 @@ body,
 
 .book-tabs {
   position: absolute !important;
-  top: -2.7% !important;
+  top: -3.26% !important;
   left: 0 !important;
   right: 0 !important;
-  height: clamp(24px, 2.55vw, 31px) !important;
+  height: 7.07% !important;
   display: block !important;
   z-index: 8 !important;
 }
 
 .book-tab {
   --tab-index: 0;
-  width: clamp(66px, 7.1vw, 82px) !important;
-  height: clamp(24px, 2.55vw, 31px) !important;
+  width: 12.41% !important;
+  height: 100% !important;
   padding: 0 !important;
   display: grid !important;
   place-items: center !important;
@@ -611,22 +608,22 @@ body,
 
 .book-tab.tab-book {
   --tab-index: 0;
-  left: 15.4%;
+  left: 19.48% !important;
 }
 
 .book-tab.tab-swords {
   --tab-index: 1;
-  left: 31.7%;
+  left: 37.41% !important;
 }
 
 .book-tab.tab-floppy {
   --tab-index: 2;
-  left: 62.6%;
+  left: 62.24% !important;
 }
 
 .book-tab.tab-gear {
   --tab-index: 3;
-  left: 79.3%;
+  left: 80.17% !important;
 }
 
 .book-tab:hover,
@@ -699,23 +696,23 @@ body,
 }
 
 .book-ui .book-bookmarks {
-  --bookmark-w: clamp(42px, 5.6vw, 64px);
-  position: absolute;
-  top: 13.1%;
-  right: 0.8%;
-  width: var(--bookmark-w);
-  height: calc(var(--bookmark-w) * 4.5);
-  display: grid;
-  grid-template-rows: repeat(4, 1fr);
-  gap: 0;
-  z-index: 7;
-  overflow: visible;
+  --bookmark-w: 7.59% !important;
+  position: absolute !important;
+  top: 15.5% !important;
+  right: 1.38% !important;
+  width: var(--bookmark-w) !important;
+  height: calc(var(--bookmark-w) * 4.5) !important;
+  display: grid !important;
+  grid-template-rows: repeat(4, 1fr) !important;
+  gap: 0 !important;
+  z-index: 7 !important;
+  overflow: visible !important;
   border: 0 !important;
   outline: 0 !important;
   background-color: transparent !important;
-  background-image: var(--book-bookmarks-url);
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-image: var(--book-bookmarks-url) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
   box-shadow: none !important;
   image-rendering: pixelated;
 }
@@ -1249,9 +1246,9 @@ body,
 
 .creator-selector-list .desktop-slot {
   display: grid !important;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 74px minmax(0, 1fr);
   align-items: center !important;
-  gap: 3px !important;
+  gap: 4px !important;
   min-height: 26px !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -1265,10 +1262,11 @@ body,
   font-family: "CuteFantasy", monospace !important;
   font-size: clamp(9px, 0.82vw, 11px) !important;
   line-height: 1 !important;
-  text-align: right;
+  text-align: left;
+  padding-right: 3px;
   white-space: nowrap;
   align-self: center;
-  justify-self: end;
+  justify-self: start;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1295,6 +1293,8 @@ body,
   font-size: clamp(9px, 0.82vw, 11px) !important;
   line-height: 1 !important;
   align-self: center;
+  background-color: transparent !important;
+  color: #3a1f0e !important;
 }
 
 .creator-selector-list .desktop-slot-dice,
@@ -1350,17 +1350,7 @@ body,
   justify-content: center;
   overflow: hidden !important;
   cursor: zoom-in;
-  background-image:
-    linear-gradient(45deg, rgba(85, 98, 112, 0.36) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(85, 98, 112, 0.36) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(85, 98, 112, 0.36) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(85, 98, 112, 0.36) 75%);
-  background-position:
-    0 0,
-    0 8px,
-    8px -8px,
-    -8px 0;
-  background-size: 16px 16px;
+  background: transparent !important;
   image-rendering: pixelated;
 }
 
@@ -1739,7 +1729,7 @@ body,
   position: absolute !important;
   left: 13.6% !important;
   right: 13.6% !important;
-  bottom: 6.8% !important;
+  bottom: 4.8% !important;
   height: 62px !important;
   z-index: 9 !important;
   display: grid !important;

@@ -1,0 +1,638 @@
+/*
+ * LPC Studio book UI polish pass
+ *
+ * Load after desktop-theme-final.scss. This keeps the existing Mithril layout
+ * intact and tightens the final art direction around the Pixel Vault fantasy
+ * book assets already referenced by the theme.
+ */
+
+:root {
+  --lpc-book-bg: #11100f;
+  --lpc-book-shadow: rgba(17, 8, 3, 0.68);
+  --lpc-book-ink: var(--book-ink, #4a2617);
+  --lpc-book-ink-soft: var(--book-ink-soft, #6d3a22);
+  --lpc-book-line: rgba(122, 62, 36, 0.34);
+  --lpc-book-line-strong: rgba(122, 62, 36, 0.72);
+  --lpc-book-page: #f4c792;
+  --lpc-book-page-deep: #d7925d;
+  --lpc-book-card: rgba(255, 222, 169, 0.44);
+  --lpc-book-card-strong: rgba(255, 226, 176, 0.74);
+  --lpc-book-focus: #f3aa63;
+  --lpc-book-red: #9c3a2f;
+  --lpc-book-blue: #315d84;
+  --lpc-book-green: #537a34;
+  --lpc-book-gold: #b66e2f;
+  --lpc-book-purple: #68508f;
+  --lpc-book-safe-gutter: clamp(18px, 2vw, 34px);
+  --lpc-book-page-gap: clamp(7px, 0.8vw, 12px);
+}
+
+html,
+body,
+#desktop-app-root,
+.desktop-app {
+  min-width: 320px;
+}
+
+.desktop-app {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(113, 64, 34, 0.22), transparent 44rem),
+    radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.46), transparent 40rem),
+    var(--lpc-book-bg) !important;
+  color: var(--lpc-book-ink) !important;
+  image-rendering: pixelated;
+}
+
+.desktop-app *,
+.desktop-app *::before,
+.desktop-app *::after {
+  image-rendering: pixelated;
+}
+
+.desktop-title-bar,
+.desktop-palette-bar,
+.desktop-action-bar {
+  background: #120e0b !important;
+  border-color: #4d2818 !important;
+  color: #f5d7a2 !important;
+}
+
+.desktop-title,
+.desktop-palette-label,
+.desktop-toggle-label {
+  color: #f5d7a2 !important;
+  text-shadow: 1px 1px 0 #2a140b;
+}
+
+.desktop-content {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: clamp(10px, 1.3vw, 18px) !important;
+  gap: 0 !important;
+  background:
+    radial-gradient(ellipse at center, rgba(77, 40, 24, 0.28), transparent 64%),
+    #11100f !important;
+}
+
+/* Main open-book stage. Multiple class names are covered so this remains safe
+ * if the current branch names the shell slightly differently. */
+.book-shell,
+.book-stage,
+.book-spread,
+.book-layout,
+.desktop-book,
+.book-ui-shell {
+  width: min(1180px, calc(100vw - 28px));
+  max-height: calc(100vh - 120px);
+  aspect-ratio: 290 / 184;
+  margin: auto;
+  filter: drop-shadow(0 14px 0 rgba(0, 0, 0, 0.18))
+    drop-shadow(0 24px 24px rgba(0, 0, 0, 0.48));
+  isolation: isolate;
+}
+
+.book-shell,
+.book-stage,
+.book-spread,
+.desktop-book {
+  overflow: visible !important;
+}
+
+.book-page-left,
+.book-page-right {
+  min-width: 0;
+  min-height: 0;
+  color: var(--lpc-book-ink) !important;
+  text-shadow: none !important;
+}
+
+.book-page-left {
+  padding-right: clamp(24px, 3.1vw, 52px) !important;
+}
+
+.book-page-right {
+  padding-left: clamp(24px, 3.1vw, 52px) !important;
+}
+
+.book-page-left > *,
+.book-page-right > * {
+  min-width: 0;
+}
+
+/* Subtle readable page texture without fighting the source artwork. */
+.book-page-left::after,
+.book-page-right::after {
+  pointer-events: none;
+}
+
+.book-frame,
+.frame-inset,
+.book-panel,
+.creator-slots-frame,
+.animation-options-frame,
+.app-preferences-frame,
+.onboarding-info-frame,
+.pixel-settings-frame,
+.workflow-frame {
+  min-width: 0;
+  color: var(--lpc-book-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.book-frame,
+.frame-inset {
+  background:
+    linear-gradient(90deg, var(--lpc-book-line) 1px, transparent 1px),
+    linear-gradient(var(--lpc-book-line) 1px, transparent 1px),
+    rgba(255, 226, 176, 0.32) !important;
+  background-size: 28px 28px !important;
+  border-color: transparent !important;
+}
+
+.book-frame-title,
+.book-section-title,
+.desktop-preview-title,
+.studio-panel-header h3,
+.workflow-tier h4 {
+  color: var(--lpc-book-ink) !important;
+  letter-spacing: 0.02em !important;
+  text-shadow: 1px 1px 0 rgba(255, 236, 184, 0.55) !important;
+}
+
+.book-frame-title {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 22px;
+  margin-bottom: 5px !important;
+  padding: 0 2px 5px !important;
+  border-bottom: 1px solid var(--lpc-book-line) !important;
+  font-size: clamp(10px, 0.95vw, 14px) !important;
+  line-height: 1 !important;
+}
+
+/* Top / bookmark actions: make them feel like usable bookmarks, not web pills. */
+.book-tabs,
+.book-page-tabs,
+.book-action-tabs,
+.book-tab-row,
+.book-bookmarks,
+.desktop-tabs-bar {
+  gap: 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.book-tab,
+.book-page-tab,
+.book-action-tab,
+.bookmark-tab,
+.desktop-tab-btn,
+.book-tabs button,
+.book-page-tabs button,
+.book-action-tabs button {
+  min-height: 26px !important;
+  border-radius: 0 !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url, none) 5 fill stretch !important;
+  background: transparent !important;
+  color: var(--lpc-book-ink) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(9px, 0.84vw, 12px) !important;
+  line-height: 1 !important;
+}
+
+.book-tab:hover,
+.book-page-tab:hover,
+.book-action-tab:hover,
+.bookmark-tab:hover,
+.desktop-tab-btn:hover,
+.book-tabs button:hover,
+.book-page-tabs button:hover,
+.book-action-tabs button:hover {
+  filter: brightness(1.06) saturate(1.08);
+  transform: translateY(-1px);
+}
+
+.book-tab.active,
+.book-page-tab.active,
+.book-action-tab.active,
+.bookmark-tab.active,
+.desktop-tab-btn.active,
+.book-tabs button.active,
+.book-page-tabs button.active,
+.book-action-tabs button.active {
+  border-image-source: var(--book-box-url, var(--book-control-url, none)) !important;
+  background: rgba(255, 228, 170, 0.5) !important;
+  color: #3f1f12 !important;
+}
+
+/* Creator page slot list. */
+.desktop-slots-scroll {
+  min-height: 0;
+  padding-right: 4px !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lpc-book-page-deep) transparent;
+}
+
+.desktop-slots-scroll::-webkit-scrollbar {
+  width: 7px !important;
+}
+
+.desktop-slots-scroll::-webkit-scrollbar-track {
+  background: rgba(90, 48, 28, 0.12) !important;
+  border: 0 !important;
+}
+
+.desktop-slots-scroll::-webkit-scrollbar-thumb {
+  min-height: 24px;
+  background: var(--lpc-book-page-deep) !important;
+  border: 2px solid rgba(255, 220, 160, 0.5) !important;
+  border-radius: 0 !important;
+}
+
+.desktop-slot-search,
+.desktop-slot-item-filter,
+.desktop-slot-select,
+.desktop-palette-select,
+.book-page-left input,
+.book-page-left select,
+.book-page-right input,
+.book-page-right select {
+  min-width: 0;
+  border-radius: 0 !important;
+  color: var(--lpc-book-ink) !important;
+  font-family: "CuteFantasy", monospace !important;
+  box-shadow: none !important;
+}
+
+.desktop-slot-search,
+.desktop-slot-item-filter {
+  min-height: 24px !important;
+  padding: 2px 6px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url, none) 5 fill stretch !important;
+  background: rgba(255, 236, 192, 0.45) !important;
+  font-size: clamp(9px, 0.82vw, 11px) !important;
+}
+
+.desktop-slot-search::placeholder,
+.desktop-slot-item-filter::placeholder {
+  color: rgba(74, 38, 23, 0.58) !important;
+  font-style: normal !important;
+}
+
+.book-page-left .desktop-slots-scroll .desktop-slot,
+.book-page-right .desktop-slots-scroll .desktop-slot {
+  display: grid !important;
+  grid-template-columns: minmax(70px, 0.54fr) minmax(0, 1fr);
+  align-items: start !important;
+  gap: 5px !important;
+  margin: 0 0 5px !important;
+  padding: 5px !important;
+  border: 7px solid transparent !important;
+  border-image: var(--book-card-url, var(--book-control-url, none)) 5 fill stretch !important;
+  background: var(--lpc-book-card) !important;
+  color: var(--lpc-book-ink) !important;
+}
+
+.book-page-left .desktop-slot-label,
+.book-page-right .desktop-slot-label {
+  overflow: hidden;
+  color: var(--lpc-book-ink) !important;
+  font-size: clamp(9px, 0.8vw, 11px) !important;
+  line-height: 1.05 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-slot-control {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 22px);
+  align-items: center !important;
+  gap: 3px !important;
+  min-width: 0;
+}
+
+.desktop-slot-control .desktop-slot-item-filter {
+  grid-column: 1 / -1;
+}
+
+.desktop-slot-select {
+  width: 100% !important;
+  min-height: 24px !important;
+  padding: 2px 19px 2px 5px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url, none) 5 fill stretch !important;
+  background-color: rgba(255, 238, 199, 0.52) !important;
+  font-size: clamp(9px, 0.82vw, 11px) !important;
+  appearance: none !important;
+}
+
+.desktop-slot-select:focus,
+.desktop-slot-search:focus,
+.desktop-slot-item-filter:focus,
+.book-page-left input:focus,
+.book-page-left select:focus,
+.book-page-right input:focus,
+.book-page-right select:focus {
+  outline: 1px solid var(--lpc-book-focus) !important;
+  outline-offset: -2px !important;
+}
+
+.desktop-slot-dice,
+.desktop-slot-edit,
+.desktop-slot-import,
+.desktop-title-btn,
+.desktop-btn,
+.workflow-tool-button,
+.studio-panel .button,
+.part-editor-pro-button {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  image-rendering: pixelated;
+}
+
+.desktop-slot-dice,
+.desktop-slot-edit,
+.desktop-slot-import {
+  width: 22px !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url, none) 5 fill stretch !important;
+  background: rgba(255, 236, 192, 0.42) !important;
+  color: var(--lpc-book-ink) !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+}
+
+.desktop-slot-dice:hover,
+.desktop-slot-edit:hover,
+.desktop-slot-import:hover,
+.desktop-btn:hover,
+.workflow-tool-button:hover,
+.studio-panel .button:hover {
+  border-image-source: var(--book-box-url, var(--book-control-url, none)) !important;
+  filter: brightness(1.08);
+  transform: none !important;
+}
+
+.desktop-slot-color {
+  width: 18px !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  border: 4px solid rgba(74, 38, 23, 0.62) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 192, 0.5) !important;
+}
+
+/* Preview page: keep the character as the hero and reduce UI noise around it. */
+.creator-character-preview,
+.desktop-preview-canvas,
+.book-preview-well,
+.preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background:
+    linear-gradient(45deg, rgba(122, 62, 36, 0.12) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(122, 62, 36, 0.12) 25%, transparent 25%),
+    rgba(255, 235, 190, 0.28) !important;
+  background-position: 0 0, 0 7px !important;
+  background-size: 14px 14px !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--lpc-book-line) !important;
+}
+
+.creator-character-preview {
+  min-height: clamp(130px, 24vh, 260px);
+  padding: clamp(8px, 1.2vw, 16px) !important;
+}
+
+.creator-character-preview-img,
+.desktop-preview-canvas canvas,
+canvas {
+  image-rendering: pixelated !important;
+  image-rendering: crisp-edges !important;
+}
+
+.creator-character-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 0 rgba(82, 45, 27, 0.24));
+}
+
+.book-page-right .desktop-preview-header,
+.book-page-right .desktop-preview-zoom,
+.book-page-right .studio-panel-pill,
+.book-page-right .workflow-chip {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.book-page-right .studio-panel,
+.book-page-right .workflow-tools-panel,
+.book-page-right .studio-upsell-card,
+.book-page-right .workflow-mini-card,
+.book-page-right .workflow-info-card,
+.book-page-right .workflow-readiness,
+.book-page-right .studio-gallery-card,
+.book-page-right .studio-project-row,
+.book-page-right .studio-project-save,
+.book-page-right .studio-project-actions {
+  background-color: rgba(255, 231, 181, 0.22) !important;
+}
+
+.book-page-right .studio-panel p,
+.book-page-right .workflow-tools-panel p,
+.book-page-right .workflow-mini-card span,
+.book-page-right .workflow-info-card li,
+.book-page-right .studio-gallery-card span {
+  color: var(--lpc-book-ink-soft) !important;
+}
+
+/* Page flip polish: the art should feel like a page turn, not a sliding div. */
+.book-page-flip,
+.book-flip-page,
+.page-flip-frame,
+.book-turn-frame {
+  pointer-events: none;
+  transform-origin: center center;
+  filter: drop-shadow(0 8px 4px rgba(0, 0, 0, 0.28));
+}
+
+.book-page-flip img,
+.book-flip-page img,
+.page-flip-frame img,
+.book-turn-frame img {
+  image-rendering: pixelated !important;
+}
+
+/* Make disabled/locked controls look printed into the page instead of broken. */
+.desktop-app button:disabled,
+.desktop-app .is-locked,
+.desktop-app [aria-disabled="true"] {
+  opacity: 0.48 !important;
+  filter: grayscale(0.35) saturate(0.7) !important;
+}
+
+/* Tighter animation/settings pages. */
+.animation-options-frame .desktop-slot,
+.app-preferences-frame .desktop-slot {
+  color: var(--lpc-book-ink) !important;
+}
+
+.animation-options-frame .desktop-range {
+  accent-color: var(--lpc-book-page-deep);
+}
+
+.animation-range-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: var(--lpc-book-ink) !important;
+  font-size: clamp(9px, 0.8vw, 11px) !important;
+}
+
+/* Prevent long app text from punching through the book margins. */
+.book-page-left p,
+.book-page-right p,
+.book-page-left li,
+.book-page-right li,
+.book-page-left span,
+.book-page-right span,
+.book-page-left label,
+.book-page-right label {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1180px) {
+  .book-shell,
+  .book-stage,
+  .book-spread,
+  .book-layout,
+  .desktop-book,
+  .book-ui-shell {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 112px);
+  }
+
+  .book-page-left {
+    padding-right: clamp(18px, 2.6vw, 36px) !important;
+  }
+
+  .book-page-right {
+    padding-left: clamp(18px, 2.6vw, 36px) !important;
+  }
+
+  .book-page-left .desktop-slots-scroll .desktop-slot,
+  .book-page-right .desktop-slots-scroll .desktop-slot {
+    grid-template-columns: minmax(58px, 0.45fr) minmax(0, 1fr);
+    gap: 4px !important;
+    padding: 4px !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .desktop-app {
+    overflow: auto !important;
+  }
+
+  .desktop-content {
+    align-items: flex-start !important;
+    min-height: calc(100vh - 96px);
+    overflow: visible !important;
+  }
+
+  .book-shell,
+  .book-stage,
+  .book-spread,
+  .book-layout,
+  .desktop-book,
+  .book-ui-shell {
+    width: min(100%, 520px);
+    max-height: none;
+    aspect-ratio: auto;
+  }
+
+  .book-page-left,
+  .book-page-right {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .book-page-left .desktop-slots-scroll .desktop-slot,
+  .book-page-right .desktop-slots-scroll .desktop-slot {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-slot-control {
+    grid-template-columns: minmax(0, 1fr) repeat(3, 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-tab,
+  .book-page-tab,
+  .book-action-tab,
+  .bookmark-tab,
+  .desktop-tab-btn,
+  .desktop-slot-dice,
+  .desktop-slot-edit,
+  .desktop-slot-import,
+  .desktop-btn,
+  .workflow-tool-button,
+  .studio-panel .button {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* Bookmark / Right tab adjustments to use individual ribbon sprites */
+.book-ui .book-bookmarks {
+  background-image: none !important;
+}
+
+.book-ui .book-bookmark {
+  background-image: var(--book-bookmarks-url) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 500% !important;
+  transition: transform 120ms ease, filter 120ms ease !important;
+  
+  &:nth-child(1) {
+    background-position: 0 0% !important; /* Red / Book icon */
+  }
+  &:nth-child(2) {
+    background-position: 0 50% !important; /* Green / Sword icon */
+  }
+  &:nth-child(3) {
+    background-position: 0 25% !important; /* Blue / Potion icon */
+  }
+  &:nth-child(4) {
+    background-position: 0 100% !important; /* Brown / Gear icon */
+  }
+
+  /* Hide the modern emoji overlays */
+  .bookmark-icon {
+    display: none !important;
+  }
+
+  /* Pull bookmark out slightly on hover/active */
+  &:hover,
+  &.active {
+    transform: translateX(4px) !important;
+    filter: brightness(1.12) !important;
+  }
+}
+

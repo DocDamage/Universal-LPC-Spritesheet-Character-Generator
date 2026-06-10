@@ -192,6 +192,96 @@ body,
   display: none !important;
 }
 
+.app-preferences-frame,
+.onboarding-info-frame {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.app-preferences-frame {
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.app-preferences-frame .desktop-slot {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  image-rendering: pixelated;
+}
+
+.app-preferences-frame .desktop-slot input[type="checkbox"] {
+  appearance: none !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 !important;
+  border: 4px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  background: transparent !important;
+  image-rendering: pixelated;
+}
+
+.app-preferences-frame .desktop-slot input[type="checkbox"]:checked {
+  border-image-source: var(--book-box-url) !important;
+  background-image: var(--book-icons-url) !important;
+  background-repeat: no-repeat !important;
+  background-size: 1400% 500% !important;
+  background-position: 7.69% 0 !important;
+}
+
+.app-preferences-frame .desktop-slot span {
+  color: var(--book-ink) !important;
+  font-size: clamp(10px, 0.95vw, 13px) !important;
+  line-height: 1.1 !important;
+}
+
+.onboarding-info-frame {
+  gap: 7px !important;
+  padding-bottom: 18px !important;
+}
+
+.onboarding-info-frame .settings-info-copy {
+  flex: 0 0 auto;
+  max-height: 88px;
+  margin: 0 !important;
+  overflow: hidden;
+  color: var(--book-ink-soft) !important;
+  font-size: clamp(9px, 0.82vw, 11px) !important;
+  line-height: 1.28 !important;
+}
+
+.onboarding-info-frame .desktop-title-btn {
+  width: min(190px, 100%) !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  margin: 0 auto !important;
+  padding: 2px 8px !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-box-url) 5 fill stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(8px, 0.78vw, 10px) !important;
+  line-height: 1 !important;
+  image-rendering: pixelated;
+}
+
+.onboarding-info-frame .desktop-title-btn:hover {
+  border-image-source: var(--book-box-url) !important;
+  transform: none !important;
+}
+
 .book-page-right .studio-panel-header {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto;

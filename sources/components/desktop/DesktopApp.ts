@@ -468,7 +468,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
           ]);
 
         case "settings":
-          return m("div.book-frame.frame-inset", [
+          return m("div.book-frame.frame-inset.app-preferences-frame", [
             m("div.book-frame-title", "App Preferences"),
             m(
               "label.desktop-slot",
@@ -727,17 +727,15 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
 
         case "settings":
           return [
-            m("div.book-frame.frame-inset", [
+            m("div.book-frame.frame-inset.onboarding-info-frame", [
               m("div.book-frame-title", "Onboarding & Info"),
               m(
-                "p",
-                { style: { margin: "4px 0", fontSize: "13px" } },
+                "p.settings-info-copy",
                 "Welcome to the pixel-art Character Generator! Configure your character spritesheets using the creator page, design custom parts using the pixel editor, play animations in the animation tab, and tweak global options here.",
               ),
               m(
                 "button.desktop-title-btn",
                 {
-                  style: { width: "100%", height: "28px", marginTop: "12px" },
                   onclick: () => {
                     state.showOnboarding = true;
                   },
@@ -747,7 +745,6 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
               m(
                 "button.desktop-title-btn",
                 {
-                  style: { width: "100%", height: "28px", marginTop: "8px" },
                   onclick: () => {
                     executeCommand("app.shortcuts.toggle");
                   },
@@ -757,7 +754,6 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
               m(
                 "button.desktop-title-btn",
                 {
-                  style: { width: "100%", height: "28px", marginTop: "8px" },
                   onclick: () => {
                     executeCommand("app.about.toggle");
                   },
@@ -767,7 +763,6 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
               m(
                 "button.desktop-title-btn",
                 {
-                  style: { width: "100%", height: "28px", marginTop: "8px" },
                   onclick: () => {
                     executeCommand("app.reset");
                   },

@@ -888,15 +888,11 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
 
           m(
             "div.book-bookmarks",
-            BOOK_PAGES.map((page, index) =>
+            BOOK_PAGES.map((page) =>
               m(
                 "button.book-bookmark",
                 {
                   class: activePage === page.id ? "active" : "",
-                  style: { "--bookmark-index": index } as Record<
-                    string,
-                    number
-                  >,
                   title: page.title,
                   onclick: () => {
                     triggerPageFlip(page.id);

@@ -534,7 +534,7 @@ body,
 
   width: 100vw;
   height: 100vh;
-  padding: clamp(16px, 4vh, 36px) clamp(18px, 5vw, 64px);
+  padding: clamp(8px, 1.6vh, 18px) clamp(8px, 1.8vw, 24px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -546,7 +546,7 @@ body,
 }
 
 .book-ui {
-  width: min(1180px, calc(100vw - 108px), calc((100vh - 80px) * 1.576));
+  width: min(1500px, calc(100vw - 28px), calc((100vh - 28px) * 1.576));
   height: auto;
   aspect-ratio: 290 / 184;
   position: relative;
@@ -555,7 +555,7 @@ body,
   background-size: 100% 100% !important;
   background-repeat: no-repeat !important;
   box-shadow: 0 20px 0 -8px rgba(0, 0, 0, 0.35), 0 26px 54px var(--book-shadow) !important;
-  transform: translateY(10px);
+  transform: none;
 }
 
 .book-ui.book-bg-frame-2 { background-image: url("../../styles/rpg-ui-assets/Page + Animation/Page2.png") !important; }
@@ -671,7 +671,7 @@ body,
 .book-ui .book-bookmarks {
   position: absolute;
   top: 13.1%;
-  right: -3.9%;
+  right: 0.8%;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -701,7 +701,7 @@ body,
 
 .book-ui .book-bookmark:hover,
 .book-ui .book-bookmark.active {
-  transform: translateX(8px);
+  transform: translateX(3px);
   filter: brightness(1.08);
 }
 

@@ -7,6 +7,7 @@ import { SlotSelector } from "./SlotSelector.ts";
 import { DesktopPreview } from "./DesktopPreview.ts";
 import { ActionBar } from "./ActionBar.ts";
 import { SLOT_CONFIG, randomizeSlot } from "./slot-config.ts";
+import { CreatorCharacterPreview } from "./CreatorCharacterPreview.ts";
 import { PartEditor } from "./PartEditor.ts";
 import { PlanSelector } from "./PlanSelector.ts";
 import { StudioPanel } from "./StudioPanel.ts";
@@ -742,7 +743,7 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
               state.bookPage === "creator"
                 ? m("div.creator-center-stage", [
                     m("div.book-frame-title", "Character"),
-                    m(DesktopPreview),
+                    m(CreatorCharacterPreview),
                   ])
                 : null,
               state.bookPage === "creator"

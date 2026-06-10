@@ -6,13 +6,7 @@ import type { CatalogReader } from "../../state/catalog.ts";
 import { SlotSelector } from "./SlotSelector.ts";
 import { DesktopPreview } from "./DesktopPreview.ts";
 import { ActionBar } from "./ActionBar.ts";
-import {
-  SLOT_CONFIG,
-  getSlotSelectedValue,
-  getSlotOptions,
-  randomizeSlot,
-  type SlotDef,
-} from "./slot-config.ts";
+import { SLOT_CONFIG, randomizeSlot } from "./slot-config.ts";
 import { PartEditor } from "./PartEditor.ts";
 import { PlanSelector } from "./PlanSelector.ts";
 import { StudioPanel } from "./StudioPanel.ts";
@@ -227,52 +221,6 @@ function triggerPageFlip(
   }, 45); // ~360ms total flip animation
 }
 
-const SLOT_EMOJIS: Record<string, string> = {
-  Gender: "👥",
-  Body: "🧍",
-  Race: "👽",
-  Hair: "💇",
-  Eyebrows: "🤨",
-  Eyes: "👀",
-  Ears: "👂",
-  Nose: "👃",
-  "Facial Hair": "🧔",
-  Wrinkles: "👵",
-  Wounds: "🤕",
-  Tail: "🐒",
-  Wings: "🪶",
-  Horns: "😈",
-  Expression: "🎭",
-  Shadow: "👤",
-  Wheelchair: "♿",
-  Prosthetics: "🦾",
-  Mask: "😷",
-  Hat: "🎩",
-  Headcover: "🧕",
-  Visor: "🥽",
-  "Facial Decor": "🕶️",
-  Jewelry: "📿",
-  "Hair Acc.": "🎀",
-  "Suit/Armor": "🛡️",
-  Coverall: "🦺",
-  Shirt: "👕",
-  Jacket: "🧥",
-  Vest: "🎽",
-  Bandana: "🧣",
-  Gloves: "🥊",
-  Belt: "🎗️",
-  Cargo: "🎒",
-  Pants: "👖",
-  Shoes: "🥾",
-  Shoulders: "🛡️",
-  Back: "🎒",
-  Neck: "🧣",
-  Mainhand: "🗡️",
-  Offhand: "🛡️",
-  Ammo: "🏹",
-  Accessories: "💍",
-};
-
 const BOOK_PAGES = [
   {
     id: "creator",
@@ -303,20 +251,6 @@ const BOOK_PAGES = [
     tabClass: "tab-gear",
   },
 ] as const;
-
-function getSlotSelectedValueLabel(
-  slot: SlotDef,
-  catalog: CatalogReader,
-): string {
-  if (slot.kind === "bodyType") {
-    return state.bodyType === "male" ? "Male" : "Female";
-  }
-  const options = getSlotOptions(slot, catalog);
-  const val = getSlotSelectedValue(slot, catalog);
-  if (!val) return "None";
-  const opt = options.find((o) => o.value === val);
-  return opt ? opt.label : "None";
-}
 
 export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
   oninit(vnode) {
@@ -355,15 +289,8 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
 
   view(vnode) {
     const { catalog } = vnode.attrs;
-    const search = (vnode.state.slotSearch || "").toLowerCase().trim();
-    const allSlots = SLOT_CONFIG.filter((s) =>
-      state.activeTab === "character"
-        ? s.panel === "left"
-        : s.panel === "right",
-    );
-    const slots = search
-      ? allSlots.filter((s) => s.label.toLowerCase().includes(search))
-      : allSlots;
+    const bodySlots = SLOT_CONFIG.filter((s) => s.panel === "left");
+    const gearSlots = SLOT_CONFIG.filter((s) => s.panel === "right");
 
     const activePage = state.isFlipping ? state.targetBookPage : state.bookPage;
     const activeSlot = SLOT_CONFIG.find(
@@ -630,123 +557,23 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         case "creator":
         default:
           return [
-            m("div.book-frame.frame-inset", { key: "categories" }, [
-              m("div.book-frame-title", "Slot Categories"),
-              m("div.desktop-tabs-bar", [
+            m(
+              "div.book-frame.frame-inset.creator-selector-panel.creator-selector-panel--body",
+              { key: "body-selectors" },
+              [
+                m("div.book-frame-title", "Body Parts"),
                 m(
-                  "button.desktop-tab-btn",
-                  {
-                    class: state.activeTab === "character" ? "active" : "",
-                    onclick: () => {
-                      state.activeTab = "character";
-                      vnode.state.slotSearch = "";
-                      const firstSlot = SLOT_CONFIG.find(
-                        (s) => s.panel === "left",
-                      );
-                      if (firstSlot) state.activeSlotLabel = firstSlot.label;
-                    },
-                  },
-                  `👤 Body Parts`,
-                ),
-                m(
-                  "button.desktop-tab-btn",
-                  {
-                    class: state.activeTab === "accessories" ? "active" : "",
-                    onclick: () => {
-                      state.activeTab = "accessories";
-                      vnode.state.slotSearch = "";
-                      const firstSlot = SLOT_CONFIG.find(
-                        (s) => s.panel === "right",
-                      );
-                      if (firstSlot) state.activeSlotLabel = firstSlot.label;
-                    },
-                  },
-                  `🛡️ Equipment`,
-                ),
-              ]),
-              m("input.desktop-slot-search", {
-                type: "text",
-                placeholder: `Search ${state.activeTab === "character" ? "body" : "gear"} slots...`,
-                value: vnode.state.slotSearch,
-                oninput: (e: Event) => {
-                  vnode.state.slotSearch = (e.target as HTMLInputElement).value;
-                },
-              }),
-            ]),
-            m("div.slot-grid-container", { key: "grid" }, [
-              slots.length === 0
-                ? m(
-                    "div.desktop-no-results",
-                    `No slots match "${vnode.state.slotSearch}"`,
-                  )
-                : m(
-                    "div.slot-grid",
-                    slots.map((slot) => {
-                      const isSelected = state.activeSlotLabel === slot.label;
-                      const valueLabel = getSlotSelectedValueLabel(
-                        slot,
-                        catalog,
-                      );
-                      const emoji = SLOT_EMOJIS[slot.label] || "📦";
-                      return m(
-                        "button.slot-grid-btn",
-                        {
-                          class: isSelected ? "active" : "",
-                          onclick: () => {
-                            state.activeSlotLabel = slot.label;
-                          },
-                        },
-                        [
-                          m("span.slot-grid-icon", emoji),
-                          m("div.slot-grid-text", [
-                            m("span.slot-grid-label", slot.label),
-                            m("span.slot-grid-val", valueLabel),
-                          ]),
-                        ],
-                      );
+                  "div.creator-selector-list",
+                  bodySlots.map((slot) =>
+                    m(SlotSelector, {
+                      key: slot.label,
+                      slot,
+                      catalog,
                     }),
                   ),
-            ]),
-            (() => {
-              const currentActiveSlot =
-                slots.find((s) => s.label === state.activeSlotLabel) ||
-                slots[0];
-              if (
-                currentActiveSlot &&
-                state.activeSlotLabel !== currentActiveSlot.label
-              ) {
-                state.activeSlotLabel = currentActiveSlot.label;
-              }
-              const activeSlot = SLOT_CONFIG.find(
-                (s) => s.label === state.activeSlotLabel,
-              );
-              if (!activeSlot) return null;
-              return m(
-                "div.active-slot-editor.book-frame.frame-inset",
-                { key: activeSlot.label },
-                [
-                  m("div.active-slot-editor-header", [
-                    m(
-                      "span.active-slot-editor-title",
-                      `Editing: ${activeSlot.label}`,
-                    ),
-                    activeSlot.canRandomize
-                      ? m(
-                          "button.active-slot-randomize-btn",
-                          {
-                            title: `Randomize ${activeSlot.label}`,
-                            onclick: () => {
-                              randomizeSlot(activeSlot, catalog);
-                            },
-                          },
-                          "🎲 Randomize",
-                        )
-                      : null,
-                  ]),
-                  m(SlotSelector, { slot: activeSlot, catalog }),
-                ],
-              );
-            })(),
+                ),
+              ],
+            ),
           ];
       }
     };
@@ -835,24 +662,22 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
         default:
           return [
             m(
-              "div.book-frame.frame-inset.creator-preview-frame",
-              {
-                style: {
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                },
-              },
+              "div.book-frame.frame-inset.creator-selector-panel.creator-selector-panel--gear",
+              { key: "gear-selectors" },
               [
-                m("div.book-frame-title", "Character Preview"),
-                m(DesktopPreview),
+                m("div.book-frame-title", "Equipment"),
+                m(
+                  "div.creator-selector-list",
+                  gearSlots.map((slot) =>
+                    m(SlotSelector, {
+                      key: slot.label,
+                      slot,
+                      catalog,
+                    }),
+                  ),
+                ),
               ],
             ),
-            m("div.book-frame.frame-inset.creator-export-frame", [
-              m("div.book-frame-title", "Selections & Export"),
-              m(ActionBar, { catalog }),
-              m(PlanSelector),
-            ]),
           ];
       }
     };
@@ -914,6 +739,18 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
               m("div.book-page-left", renderLeftPage()),
               // Render Right Page
               m("div.book-page-right", renderRightPage()),
+              state.bookPage === "creator"
+                ? m("div.creator-center-stage", [
+                    m("div.book-frame-title", "Character"),
+                    m(DesktopPreview),
+                  ])
+                : null,
+              state.bookPage === "creator"
+                ? m("div.creator-bottom-actions", [
+                    m(ActionBar, { catalog }),
+                    m(PlanSelector),
+                  ])
+                : null,
             ],
           ),
         ],

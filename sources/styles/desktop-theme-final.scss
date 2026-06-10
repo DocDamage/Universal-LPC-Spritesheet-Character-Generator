@@ -1211,15 +1211,182 @@ body,
   image-rendering: pixelated;
 }
 
-.book-page-right > .creator-preview-frame {
-  flex: 1 1 0 !important;
+.creator-selector-panel {
+  flex: 1 1 auto !important;
+  width: 78% !important;
   min-height: 0 !important;
+  padding: clamp(8px, 0.9vw, 11px) !important;
+  overflow: hidden !important;
 }
 
-.book-page-right > .creator-export-frame {
-  flex: 0 0 132px !important;
-  min-height: 132px !important;
+.creator-selector-panel--body {
+  margin-right: auto !important;
+}
+
+.creator-selector-panel--gear {
+  margin-left: auto !important;
+}
+
+.creator-selector-list {
+  height: calc(100% - 26px);
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: minmax(26px, auto);
+  gap: 2px;
+  padding: 0 3px 78px 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--book-line) transparent;
+}
+
+.creator-selector-list .desktop-slot {
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center !important;
+  gap: 3px !important;
+  min-height: 26px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.creator-selector-list .desktop-slot-label {
+  color: var(--book-ink) !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(9px, 0.82vw, 11px) !important;
+  line-height: 1 !important;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.creator-selector-list .desktop-slot-control {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 19px);
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.creator-selector-list .desktop-slot-item-filter {
+  display: none !important;
+}
+
+.creator-selector-list .desktop-slot-select {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 24px !important;
+  padding: 1px 16px 1px 5px !important;
+  font-family: "CuteFantasy", monospace !important;
+  font-size: clamp(9px, 0.82vw, 11px) !important;
+  line-height: 1 !important;
+}
+
+.creator-selector-list .desktop-slot-dice,
+.creator-selector-list .desktop-slot-edit,
+.creator-selector-list .desktop-slot-import {
+  width: 19px !important;
+  min-width: 19px !important;
+  height: 19px !important;
+  padding: 0 !important;
+  border: 4px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  background: transparent !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+  image-rendering: pixelated;
+}
+
+.creator-selector-list .desktop-slot-color {
+  width: 19px !important;
+  height: 19px !important;
+  border: 4px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  image-rendering: pixelated;
+}
+
+.creator-center-stage {
+  position: absolute;
+  top: 26.2%;
+  left: 39.6%;
+  width: 20.8%;
+  height: 34.5%;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.creator-center-stage .book-frame-title {
+  align-self: center;
+  margin-bottom: 0 !important;
+}
+
+.creator-center-stage .desktop-preview {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  overflow: visible !important;
+}
+
+.creator-center-stage .desktop-preview-header,
+.creator-center-stage .desktop-animation-status,
+.creator-center-stage .desktop-direction-preview,
+.creator-center-stage .desktop-scale-strip {
+  display: none !important;
+}
+
+.creator-center-stage .desktop-preview-canvas-wrapper {
+  flex: 0 0 auto !important;
+  width: clamp(82px, 10.4vw, 124px) !important;
+  height: clamp(112px, 15vw, 170px) !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
   overflow: hidden !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.creator-center-stage #desktop-preview-canvas {
+  flex: 0 0 auto !important;
+  width: clamp(328px, 41.6vw, 496px) !important;
+  height: clamp(82px, 10.4vw, 124px) !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  box-shadow: none !important;
+}
+
+.creator-bottom-actions {
+  position: absolute;
+  left: 13.5%;
+  right: 13.5%;
+  bottom: 9.8%;
+  height: 62px;
+  z-index: 9;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 138px;
+  gap: 8px;
+  align-items: end;
+  pointer-events: auto;
+}
+
+.creator-bottom-actions .desktop-action-bar {
+  grid-template-rows: 18px 24px !important;
+}
+
+.creator-bottom-actions .desktop-plan-selector {
+  align-self: stretch;
+  margin-top: 0 !important;
 }
 
 .desktop-action-bar {
@@ -1512,6 +1679,62 @@ body,
   color: var(--book-ink) !important;
   font-size: clamp(8px, 0.75vw, 10px) !important;
   line-height: 1;
+}
+
+.book-ui .creator-selector-panel {
+  flex: 0 0 auto !important;
+  width: 78% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: clamp(8px, 0.9vw, 11px) !important;
+  overflow: hidden !important;
+}
+
+.book-ui .creator-selector-panel--body {
+  margin-right: auto !important;
+}
+
+.book-ui .creator-selector-panel--gear {
+  margin-left: auto !important;
+}
+
+.book-ui .creator-selector-list {
+  height: calc(100% - 26px);
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: minmax(26px, auto);
+  gap: 2px;
+  padding: 0 3px 78px 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--book-line) transparent;
+}
+
+.book-ui .creator-center-stage {
+  position: absolute !important;
+  top: 26.2% !important;
+  left: 39.6% !important;
+  width: 20.8% !important;
+  height: 34.5% !important;
+  z-index: 8 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  pointer-events: auto;
+}
+
+.book-ui .creator-bottom-actions {
+  position: absolute !important;
+  left: 13.5% !important;
+  right: 13.5% !important;
+  bottom: 9.8% !important;
+  height: 62px !important;
+  z-index: 9 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 138px !important;
+  gap: 8px !important;
+  align-items: end !important;
+  pointer-events: auto;
 }
 
 @media (max-width: 760px) {

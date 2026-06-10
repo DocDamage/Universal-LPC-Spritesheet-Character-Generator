@@ -1,9 +1,10 @@
 // Main entry point - initializes and mounts the Mithril application
 
 import m from "mithril";
-import "../styles/desktop-style.scss";
 import "./styles/critical-entry.scss";
+import "../styles/desktop-style.scss";
 import deferredStylesheetHref from "./styles/deferred-entry.scss?url";
+import desktopThemeFinalHref from "./styles/desktop-theme-final.scss?url";
 import "./vendor-globals.ts";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import {
@@ -105,23 +106,25 @@ window.setDefaultSelections = async function () {
 void loadAllMetadata();
 const customPartsHydrated = hydrateCustomPartsFromStorage();
 
-scheduleDeferredStylesheetLoad(deferredStylesheetHref);
+scheduleDeferredStylesheetLoad(deferredStylesheetHref, desktopThemeFinalHref);
 
 type DeferredIdleCallback = (
   callback: () => void,
   options?: { timeout?: number },
 ) => number;
 
-function scheduleDeferredStylesheetLoad(href: string): void {
+function scheduleDeferredStylesheetLoad(...hrefs: string[]): void {
   const load = () => {
-    if (document.querySelector(`link[data-lpc-deferred-styles="${href}"]`)) {
-      return;
+    for (const href of hrefs) {
+      if (document.querySelector(`link[data-lpc-deferred-styles="${href}"]`)) {
+        continue;
+      }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.dataset["lpcDeferredStyles"] = href;
+      document.head.append(link);
     }
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = href;
-    link.dataset["lpcDeferredStyles"] = href;
-    document.head.append(link);
   };
 
   const idleWindow = window as Window & {

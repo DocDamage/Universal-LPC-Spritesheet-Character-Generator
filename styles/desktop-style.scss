@@ -7,29 +7,29 @@
 
 /* ─── CSS Custom Properties ─── */
 :root {
-  --bg-darkest: #1b120c;
-  --bg-dark: #291b10;
-  --bg-mid: #382516;
-  --bg-panel: #47301c;
-  --bg-raised: #593c23;
-  --bg-hover: #704c2c;
-  --bg-active: #8c5f37;
+  --bg-darkest: #11100f;
+  --bg-dark: #18100b;
+  --bg-mid: #9f5f34;
+  --bg-panel: #f3c291;
+  --bg-raised: #ffd1a2;
+  --bg-hover: #efaa72;
+  --bg-active: #e7965c;
 
-  --accent-primary: #df9e57;
-  --accent-secondary: #c07830;
+  --accent-primary: #df8750;
+  --accent-secondary: #b85e33;
   --accent-gold: #f59e0b;
   --accent-emerald: #5c9e31;
   --accent-rose: #a73e3e;
   --accent-sky: #4ba3cd;
 
-  --border-subtle: rgba(223, 158, 87, 0.15);
-  --border-mid: rgba(223, 158, 87, 0.35);
-  --border-bright: rgba(223, 158, 87, 0.75);
+  --border-subtle: rgba(181, 88, 46, 0.3);
+  --border-mid: rgba(181, 88, 46, 0.68);
+  --border-bright: rgba(255, 219, 164, 0.95);
 
-  --text-primary: #f5eae0;
-  --text-secondary: #d9c7b8;
-  --text-muted: #8c7664;
-  --text-accent: #ffd8a8;
+  --text-primary: #4a2617;
+  --text-secondary: #6d3a22;
+  --text-muted: #8f5632;
+  --text-accent: #fff0cd;
 
   --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -81,7 +81,7 @@ body, button, select, input, label, a {
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background: var(--bg-darkest);
+  background: #11100f;
   color: var(--text-primary);
   font-family: "CuteFantasy", monospace;
   font-size: 16px;
@@ -93,11 +93,7 @@ body, button, select, input, label, a {
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Fantasy grid background */
-  background-image:
-    linear-gradient(rgba(223, 158, 87, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(223, 158, 87, 0.02) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: none;
 }
 
 /* ─── Title Bar ─── */
@@ -105,7 +101,7 @@ body, button, select, input, label, a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #1a1a35 0%, #1e1e40 100%);
+  background: #181514;
   padding: 0 12px;
   border-bottom: 1px solid var(--border-mid);
   flex-shrink: 0;
@@ -188,7 +184,7 @@ body, button, select, input, label, a {
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  background: var(--bg-dark);
+  background: #20130c;
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
   height: 30px;
@@ -238,24 +234,29 @@ body, button, select, input, label, a {
   display: flex;
   flex: 1;
   overflow: hidden;
-  gap: 6px;
-  padding: 6px;
+  gap: 12px;
+  padding: 14px;
   min-height: 0;
   min-width: 0;
 }
 
 /* ─── Panels ─── */
 .desktop-panel {
-  background: var(--bg-panel);
+  background: #f4c494;
   border: 12px solid transparent;
-  border-image: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png") 24 fill repeat;
-  padding: 0px;
+  border-image-source: url("./cute-fantasy-ui/sliced_frames/frame_96_24.png");
+  border-image-slice: 24;
+  border-image-repeat: stretch;
+  padding: 0;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   min-width: 0;
   position: relative;
-  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  box-shadow:
+    0 0 0 2px #7a3e24,
+    8px 8px 0 rgba(0, 0, 0, 0.45);
   image-rendering: pixelated;
 }
 
@@ -271,13 +272,13 @@ body, button, select, input, label, a {
   gap: 8px;
   min-height: 28px;
   padding: 4px 8px;
-  border-bottom: 2px solid var(--bg-darkest);
-  background: rgba(13, 13, 18, 0.44);
+  border-bottom: 2px solid #d98152;
+  background: #ffd0a1;
   flex-shrink: 0;
 }
 
 .desktop-panel-layout-title {
-  color: var(--text-muted);
+  color: #7a3e24;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.7px;
@@ -332,7 +333,12 @@ body, button, select, input, label, a {
   min-width: 0;
   width: 100%;
   flex-direction: column;
-  padding: 6px 8px;
+  padding: 10px 12px;
+  background:
+    linear-gradient(90deg, rgba(184, 94, 51, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(184, 94, 51, 0.12) 1px, transparent 1px),
+    #f5c998;
+  background-size: 42px 42px;
 }
 
 .desktop-panel-resize-handle {
@@ -385,19 +391,19 @@ body, button, select, input, label, a {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-dark);
+  background: #f3c291;
 }
 
 /* ─── Tabs ─── */
 .desktop-tabs-bar {
   display: flex;
-  background: var(--bg-darkest);
+  background: #f7cfa3;
   border-radius: var(--radius-md);
   padding: 3px;
   margin-bottom: 8px;
   gap: 2px;
   flex-shrink: 0;
-  border: 1px solid var(--border-subtle);
+  border: 2px solid #d98152;
 }
 
 .desktop-tab-btn {
@@ -464,19 +470,19 @@ body, button, select, input, label, a {
 /* ─── Slot Search ─── */
 .desktop-slot-search {
   width: 100%;
-  background: var(--bg-darkest);
+  background: #fff8f0;
   border: 4px solid transparent;
   border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
-  color: var(--text-primary);
+  color: #2c1b10;
   padding: 2px 6px;
-  font-size: 14px;
-  font-family: inherit;
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
   margin-bottom: 6px;
   flex-shrink: 0;
   image-rendering: pixelated;
 
   &::placeholder {
-    color: var(--text-muted);
+    color: #8f5632;
     font-style: italic;
   }
 
@@ -545,12 +551,14 @@ body, button, select, input, label, a {
   border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
   color: var(--text-primary);
   padding: 1px 4px;
-  font-size: 14px;
+  font-size: 13px;
   min-width: 0;
   cursor: pointer;
   height: 24px;
-  font-family: inherit;
-  image-rendering: pixelated;
+  font-family: system-ui, sans-serif;
+  font-smooth: always;
+  -webkit-font-smoothing: subpixel-antialiased;
+  image-rendering: auto;
   appearance: none;
   background-image: url("data:image/svg+xml;utf8,<svg fill='%23df9e57' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
   background-repeat: no-repeat;
@@ -1157,11 +1165,11 @@ body, button, select, input, label, a {
   width: 100%;
   padding: 6px 12px;
   font-size: 11px;
-  color: var(--text-secondary);
+  color: #ffd1a2;
   flex-shrink: 0;
   gap: 8px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 2px solid #5d3f22;
+  background: #2c1b10;
 }
 
 .desktop-preview-header > * {
@@ -1169,13 +1177,13 @@ body, button, select, input, label, a {
 }
 
 .desktop-preview-zoom {
-  font-family: "JetBrains Mono", monospace;
+  font-family: system-ui, sans-serif !important;
   font-size: 10px;
-  color: var(--text-muted);
-  background: var(--bg-raised);
+  color: #ffd1a2;
+  background: #5d3f22;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #7a5a3a;
 }
 
 .desktop-preview-playback {
@@ -1196,12 +1204,12 @@ body, button, select, input, label, a {
 .desktop-preview-export-btn {
   height: 24px;
   min-width: 42px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #5d3f22;
   border-radius: var(--radius-sm);
-  background: var(--bg-raised);
-  color: var(--text-secondary);
+  background: #3e2818;
+  color: #ffeedd;
   cursor: pointer;
-  font: inherit;
+  font-family: system-ui, sans-serif !important;
   font-size: 10px;
   font-weight: 700;
   padding: 0 7px;
@@ -1213,7 +1221,8 @@ body, button, select, input, label, a {
   &:hover:not(:disabled),
   &:focus:not(:disabled) {
     border-color: var(--accent-primary);
-    color: var(--text-primary);
+    background: #5d3f22;
+    color: #ffffff;
     outline: none;
   }
 
@@ -4097,3 +4106,550 @@ body, button, select, input, label, a {
     max-height: none;
   }
 }
+
+/* ─── Book-Themed UI Layout ─── */
+.desktop-book-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: #0b0705;
+  background-image: 
+    radial-gradient(rgba(184, 94, 51, 0.1) 1.5px, transparent 0),
+    radial-gradient(rgba(184, 94, 51, 0.1) 1.5px, transparent 0);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+  overflow: hidden;
+  position: relative;
+  image-rendering: pixelated;
+  font-family: "CuteFantasy", monospace;
+}
+
+.book-ui {
+  position: relative;
+  width: 1160px;
+  height: 736px;
+  image-rendering: pixelated;
+  user-select: none;
+  flex-shrink: 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transition: background-image 0.05s ease-out;
+
+  /* Animated Page Flip Background Frames */
+  &.book-bg-frame-1 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page1.png"); }
+  &.book-bg-frame-2 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page2.png"); }
+  &.book-bg-frame-3 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page3.png"); }
+  &.book-bg-frame-4 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page4.png"); }
+  &.book-bg-frame-5 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page5.png"); }
+  &.book-bg-frame-6 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page6.png"); }
+  &.book-bg-frame-7 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page7.png"); }
+  &.book-bg-frame-8 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page8.png"); }
+  &.book-bg-frame-9 { background-image: url("./rpg-ui-assets/Page%20+%20Animation/Page9.png"); }
+
+  .book-tabs {
+    position: absolute;
+    top: -32px;
+    left: 48px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .book-tab {
+    position: relative;
+    border-style: solid;
+    border-width: 6px;
+    border-image: url("./rpg-ui-assets/Sizeable%20Boxes/24.png") 6 fill repeat;
+    image-rendering: pixelated;
+    cursor: pointer;
+    background-color: transparent;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 2px 14px;
+    height: 36px;
+    color: #4a2617;
+    font-family: "CuteFantasy", monospace;
+    font-size: 14px;
+    font-weight: bold;
+    transition: transform 0.1s ease, color 0.1s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      color: #6d3a22;
+    }
+    
+    &.active {
+      height: 42px;
+      border-width: 8px;
+      border-image: url("./rpg-ui-assets/Sizeable%20Boxes/25.png") 8 fill repeat;
+      color: #ffd1a2;
+      transform: translateY(-6px);
+      z-index: 11;
+      
+      &:hover {
+        transform: translateY(-8px);
+      }
+    }
+
+    .tab-icon {
+      font-size: 16px;
+      margin-top: 0;
+      &.active {
+        font-size: 16px;
+        margin-top: 0;
+      }
+    }
+    .tab-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: bold;
+      font-family: system-ui, sans-serif;
+    }
+  }
+
+  .book-bookmarks {
+    position: absolute;
+    top: 60px;
+    right: -48px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+  }
+
+  .book-bookmark {
+    width: 56px;
+    height: 132px;
+    background-image: url("./cute-fantasy-ui/book_slice_1.png");
+    background-size: 1120px 864px;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+    
+    &:hover {
+      transform: translateX(4px);
+    }
+    
+    &.bookmark-red {
+      background-position: -764px -62px;
+      &.active { transform: translateX(8px); }
+    }
+    &.bookmark-blue {
+      background-position: -860px -62px;
+      &.active { transform: translateX(8px); }
+    }
+    &.bookmark-green {
+      background-position: -956px -62px;
+      &.active { transform: translateX(8px); }
+    }
+    &.bookmark-yellow {
+      background-position: -1052px -60px;
+      &.active { transform: translateX(8px); }
+    }
+
+    .bookmark-icon {
+      font-size: 18px;
+      margin-left: 8px;
+    }
+  }
+
+  .book-pages-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1160px;
+    height: 736px;
+    display: flex;
+    padding: 32px 48px;
+    box-sizing: border-box;
+    z-index: 5;
+    transition: opacity 0.15s ease;
+    
+    &.page-flipping-fade {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  }
+
+  .book-page-left {
+    position: absolute;
+    top: 48px;
+    left: 64px;
+    width: 468px;
+    height: 640px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    image-rendering: auto !important;
+    font-smooth: always !important;
+    -webkit-font-smoothing: subpixel-antialiased !important;
+    -moz-osx-font-smoothing: auto !important;
+    color: #2c1b10 !important;
+
+    button, select, option, input, textarea {
+      font-family: system-ui, sans-serif !important;
+      font-smooth: always !important;
+      -webkit-font-smoothing: subpixel-antialiased !important;
+      -moz-osx-font-smoothing: auto !important;
+      image-rendering: auto !important;
+    }
+    
+    /* Scrollbar styling specifically for pages */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary) transparent;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--accent-secondary);
+      border-radius: 3px;
+    }
+  }
+
+  .book-page-right {
+    position: absolute;
+    top: 48px;
+    left: 628px;
+    width: 468px;
+    height: 640px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    image-rendering: auto !important;
+    font-smooth: always !important;
+    -webkit-font-smoothing: subpixel-antialiased !important;
+    -moz-osx-font-smoothing: auto !important;
+    color: #2c1b10 !important;
+
+    button, select, option, input, textarea {
+      font-family: system-ui, sans-serif !important;
+      font-smooth: always !important;
+      -webkit-font-smoothing: subpixel-antialiased !important;
+      -moz-osx-font-smoothing: auto !important;
+      image-rendering: auto !important;
+    }
+    
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary) transparent;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--accent-secondary);
+      border-radius: 3px;
+    }
+  }
+}
+
+/* Page Sub-containers / Indented Frames */
+.book-frame {
+  background: rgba(181, 88, 46, 0.08);
+  border: 12px solid transparent;
+  border-image-source: url("./cute-fantasy-ui/UI_Frames.png");
+  border-image-slice: 24;
+  border-image-repeat: stretch;
+  border-image-width: 12px;
+  image-rendering: pixelated;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  
+  &.frame-inset {
+    border-image-source: url("./cute-fantasy-ui/UI_Selectors.png");
+    border-image-slice: 8;
+    border-image-width: 6px;
+  }
+}
+
+.book-frame-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-subtle);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Category Grid for Character Creator */
+.creator-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.creator-grid-cell {
+  aspect-ratio: 1;
+  background: var(--bg-raised);
+  border: 8px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_brown_normal.png") 8 fill repeat;
+  image-rendering: pixelated;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: bold;
+  font-size: 11px;
+  text-align: center;
+  transition: transform 0.1s ease;
+  
+  &:hover {
+    border-image: url("./cute-fantasy-ui/buttons/btn_brown_wide.png") 8 fill repeat;
+    transform: scale(1.05);
+  }
+  
+  &.active {
+    border-image: url("./cute-fantasy-ui/buttons/btn_gold_normal.png") 8 fill repeat;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.creator-cell-icon {
+  font-size: 22px;
+  margin-bottom: 2px;
+}
+
+/* ─── Refined Slot Grid & Dedicated Editor Styles ─── */
+.slot-grid-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  margin-bottom: 8px;
+  padding-right: 4px;
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.slot-grid-btn {
+  background: transparent;
+  border: 6px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_brown_normal.png") 8 fill repeat;
+  image-rendering: pixelated;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  outline: none;
+  text-align: left;
+  transition: transform 0.1s ease;
+  min-width: 0;
+  height: 52px;
+  box-sizing: border-box;
+
+  &:hover {
+    border-image: url("./cute-fantasy-ui/buttons/btn_brown_wide.png") 8 fill repeat;
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-image: url("./cute-fantasy-ui/buttons/btn_gold_normal.png") 8 fill repeat;
+  }
+}
+
+.slot-grid-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.slot-grid-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  image-rendering: auto !important;
+  font-smooth: always !important;
+  -webkit-font-smoothing: subpixel-antialiased !important;
+  -moz-osx-font-smoothing: auto !important;
+}
+
+.slot-grid-label {
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color: #2c1b10;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slot-grid-val {
+  font-family: system-ui, sans-serif;
+  font-size: 9px;
+  color: #6a4f3b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dedicated Active Editor */
+.active-slot-editor {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px;
+  border: 8px solid transparent;
+  border-image: url("./cute-fantasy-ui/UI_Selectors.png") 8 fill repeat;
+  background: rgba(181, 88, 46, 0.04);
+  
+  .desktop-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    
+    &.has-importer {
+      flex-wrap: nowrap;
+    }
+  }
+
+  .desktop-slot-label {
+    display: none; /* Hide squeezed side label */
+  }
+
+  .desktop-slot-control {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .desktop-slot-select {
+    height: 32px;
+    font-family: system-ui, sans-serif;
+    font-size: 13px;
+    color: #2c1b10;
+    padding: 4px 8px;
+  }
+
+  .desktop-slot-dice,
+  .desktop-slot-edit,
+  .desktop-slot-import {
+    height: 32px;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  /* Inline Color Picker Grid */
+  .desktop-color-picker {
+    position: static;
+    max-width: none;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+  
+  .desktop-color-picker-grid {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+  }
+
+  .desktop-color-swatch {
+    width: auto;
+    aspect-ratio: 1;
+    height: 38px;
+  }
+
+  /* Inline Importer Panel */
+  .desktop-slot-import-panel {
+    margin-left: 0;
+    width: 100%;
+    flex: 1;
+    background: rgba(12, 13, 20, 0.92);
+  }
+}
+
+.active-slot-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px dashed #d5bfa7;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+
+.active-slot-editor-title {
+  font-family: "CuteFantasy", monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #5d3f22;
+  text-transform: uppercase;
+}
+
+.active-slot-randomize-btn {
+  background: transparent;
+  border: 6px solid transparent;
+  border-image: url("./cute-fantasy-ui/buttons/btn_brown_normal.png") 8 fill repeat;
+  image-rendering: pixelated;
+  padding: 0 10px;
+  height: 28px;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color: #2c1b10;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    border-image: url("./cute-fantasy-ui/buttons/btn_brown_wide.png") 8 fill repeat;
+    transform: translateY(-1px);
+  }
+}
+
+.desktop-animation-status {
+  font-family: system-ui, sans-serif !important;
+  font-smooth: always !important;
+  -webkit-font-smoothing: subpixel-antialiased !important;
+  -moz-osx-font-smoothing: auto !important;
+}
+

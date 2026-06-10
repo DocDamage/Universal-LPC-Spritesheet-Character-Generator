@@ -64,6 +64,11 @@ export type State = {
   enabledAnimations: Record<string, boolean>;
 
   activeTab: "character" | "accessories";
+  bookPage: "creator" | "pixel" | "animation" | "settings";
+  activeSlotLabel: string;
+  isFlipping: boolean;
+  flipFrame: number;
+  targetBookPage: "creator" | "pixel" | "animation" | "settings" | null;
   editingPart: { slotLabel: string; itemId: string } | null;
   appPlan: AppPlan;
 
@@ -117,6 +122,11 @@ export const state: State = {
     ANIMATIONS.map((anim) => [anim.value, false]),
   ),
   activeTab: "character",
+  bookPage: "creator",
+  activeSlotLabel: "Gender",
+  isFlipping: false,
+  flipFrame: 1,
+  targetBookPage: null,
   editingPart: null,
   appPlan: BUILD_TIER,
 

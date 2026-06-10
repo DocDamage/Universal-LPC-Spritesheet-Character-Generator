@@ -1,11 +1,12 @@
 // Main desktop app layout component
 import m from "mithril";
 import { state } from "../../state/state.ts";
+import { ANIMATIONS } from "../../state/constants.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
 import { SlotSelector } from "./SlotSelector.ts";
 import { DesktopPreview } from "./DesktopPreview.ts";
 import { ActionBar } from "./ActionBar.ts";
-import { SLOT_CONFIG } from "./slot-config.ts";
+import { SLOT_CONFIG, getSlotSelectedValue, getSlotOptions, randomizeSlot } from "./slot-config.ts";
 import { PartEditor } from "./PartEditor.ts";
 import { PlanSelector } from "./PlanSelector.ts";
 import { StudioPanel } from "./StudioPanel.ts";
@@ -192,6 +193,87 @@ function renderPanelShell(
   );
 }
 
+function triggerPageFlip(newPage: "creator" | "pixel" | "animation" | "settings") {
+  if (state.isFlipping) return;
+  if (state.bookPage === newPage) return;
+
+  state.isFlipping = true;
+  state.flipFrame = 1;
+  state.targetBookPage = newPage;
+  m.redraw();
+
+  const interval = window.setInterval(() => {
+    state.flipFrame++;
+    // Swaps content behind the page at frame 5 (halfway fold)
+    if (state.flipFrame === 5) {
+      state.bookPage = newPage;
+    }
+    if (state.flipFrame > 9) {
+      window.clearInterval(interval);
+      state.isFlipping = false;
+      state.targetBookPage = null;
+    }
+    m.redraw();
+  }, 45); // ~360ms total flip animation
+}
+
+const SLOT_EMOJIS: Record<string, string> = {
+  Gender: "👥",
+  Body: "🧍",
+  Race: "👽",
+  Hair: "💇",
+  Eyebrows: "🤨",
+  Eyes: "👀",
+  Ears: "👂",
+  Nose: "👃",
+  "Facial Hair": "🧔",
+  Wrinkles: "👵",
+  Wounds: "🤕",
+  Tail: "🐒",
+  Wings: "🪶",
+  Horns: "😈",
+  Expression: "🎭",
+  Shadow: "👤",
+  Wheelchair: "♿",
+  Prosthetics: "🦾",
+  Mask: "😷",
+  Hat: "🎩",
+  Headcover: "🧕",
+  Visor: "🥽",
+  "Facial Decor": "🕶️",
+  Jewelry: "📿",
+  "Hair Acc.": "🎀",
+  "Suit/Armor": "🛡️",
+  Coverall: "🦺",
+  Shirt: "👕",
+  Jacket: "🧥",
+  Vest: "🎽",
+  Bandana: "🧣",
+  Gloves: "🥊",
+  Belt: "🎗️",
+  Cargo: "🎒",
+  Pants: "👖",
+  Shoes: "🥾",
+  Shoulders: "🛡️",
+  Back: "🎒",
+  Neck: "🧣",
+  Mainhand: "🗡️",
+  Offhand: "🛡️",
+  Ammo: "🏹",
+  Accessories: "💍",
+};
+
+function getSlotSelectedValueLabel(slot: any, catalog: CatalogReader): string {
+  if (slot.kind === "bodyType") {
+    return state.bodyType === "male" ? "Male" : "Female";
+  }
+  const options = getSlotOptions(slot, catalog);
+  const val = getSlotSelectedValue(slot, catalog);
+  if (!val) return "None";
+  const opt = options.find((o) => o.value === val);
+  return opt ? opt.label : "None";
+}
+
 export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
   oninit(vnode) {
     initDefaultCommands();
@@ -204,6 +286,9 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
     vnode.state.onPanelResizeMove = null;
     vnode.state.onPanelResizeUp = null;
     state.showOnboarding = shouldShowOnboarding();
+    if (!state.activeSlotLabel) {
+      state.activeSlotLabel = "Gender";
+    }
   },
 
   onremove(vnode) {
@@ -239,158 +324,321 @@ export const DesktopApp: m.Component<DesktopAppAttrs, DesktopAppState> = {
     const leftCount = SLOT_CONFIG.filter((s) => s.panel === "left").length;
     const rightCount = SLOT_CONFIG.filter((s) => s.panel === "right").length;
 
-    return m("div.desktop-app", [
-      // Title bar
-      m("div.desktop-title-bar", [
-        m("div.desktop-title", [
-          m("span.desktop-title-icon", "🎨"),
-          "LPC Character Generator",
-        ]),
-        m("div.desktop-title-controls", [
-          m("button.desktop-title-btn", { title: "Minimize" }, "−"),
-          m("button.desktop-title-btn", { title: "Maximize" }, "□"),
-          m(
-            "button.desktop-title-btn.desktop-title-btn-close",
-            { title: "Close" },
-            "×",
-          ),
-        ]),
-      ]),
+    const activePage = state.isFlipping ? state.targetBookPage : state.bookPage;
 
-      // Palette selector (top bar)
-      m("div.desktop-palette-bar", [
-        m("label.desktop-palette-label", "Palette"),
-        m("select.desktop-palette-select", [
-          m("option", { value: "default" }, "Default"),
-        ]),
-        m(PlanSelector),
-        m("div.desktop-palette-spacer"),
-        m(
-          "button.desktop-title-btn",
-          {
-            type: "button",
-            title: "Open command palette (Ctrl+K)",
-            onclick: () => {
-              executeCommand("app.commandPalette.toggle");
-            },
-          },
-          "⌕",
-        ),
-        m(
-          "button.desktop-title-btn",
-          {
-            type: "button",
-            title: "Keyboard shortcuts (Ctrl+/)",
-            onclick: () => {
-              executeCommand("app.shortcuts.toggle");
-            },
-          },
-          "?",
-        ),
-        m(
-          "button.desktop-title-btn",
-          {
-            type: "button",
-            title: "Getting started",
-            onclick: () => {
-              state.showOnboarding = true;
-            },
-          },
-          "i",
-        ),
-        m(
-          "button.desktop-title-btn",
-          {
-            type: "button",
-            title: "Reset panel layout",
-            onclick: () => {
-              vnode.state.layout = getDefaultDesktopLayout();
-              persistLayout(vnode);
-              showToast("Panel layout reset.", { kind: "success" });
-            },
-          },
-          "⇤",
-        ),
-        m(
-          "button.desktop-title-btn",
-          {
-            type: "button",
-            title: "About this app",
-            onclick: () => {
-              executeCommand("app.about.toggle");
-            },
-          },
-          "ⓘ",
-        ),
-        m(
-          "button.desktop-title-btn.desktop-title-btn-close",
-          {
-            title: getCommandTitle("app.reset", "Reset all selections"),
-            onclick: () => {
-              executeCommand("app.reset");
-            },
-          },
-          "✕",
-        ),
-      ]),
-
-      // Main content area
-      m("div.desktop-content", [
-        renderPanelShell(vnode, "slots", [
-          m("div.desktop-tabs-bar", [
-            m(
-              "button.desktop-tab-btn",
-              {
-                class: state.activeTab === "character" ? "active" : "",
-                onclick: () => {
-                  state.activeTab = "character";
-                  vnode.state.slotSearch = "";
+    // Helper to render Left Page contents based on current bookPage
+    const renderLeftPage = () => {
+      switch (state.bookPage) {
+        case "pixel":
+          return m("div.book-frame.frame-inset", { style: { height: "100%", display: "flex", flexDirection: "column" } }, [
+            m("div.book-frame-title", "Pixel Editor Canvas"),
+            m("div", { style: { flex: 1, display: "flex", flexDirection: "column", minHeight: 0 } }, [
+              m(PartEditor)
+            ])
+          ]);
+        
+        case "animation":
+          return m("div.book-frame.frame-inset", [
+            m("div.book-frame-title", "Animation Options"),
+            m("div.desktop-slot", [
+              m("label.desktop-slot-label", "Animation"),
+              m("select.desktop-slot-select", {
+                value: state.selectedAnimation,
+                onchange: (e: Event) => {
+                  const anim = (e.target as HTMLSelectElement).value;
+                  state.selectedAnimation = anim;
+                }
+              }, ANIMATIONS.map(anim => m("option", { value: anim.value }, anim.label)))
+            ]),
+            m("div.desktop-slot", [
+              m("label.desktop-slot-label", "Tween Mode"),
+              m("select.desktop-slot-select", {
+                value: state.previewTweenMode,
+                onchange: (e: Event) => {
+                  state.previewTweenMode = (e.target as HTMLSelectElement).value as any;
+                }
+              }, [
+                m("option", { value: "off" }, "Off"),
+                m("option", { value: "tween" }, "Tween"),
+              ])
+            ]),
+            m("div.desktop-slot", [
+              m("label.desktop-slot-label", "In-betweens"),
+              m("input", {
+                type: "range",
+                min: 1,
+                max: 10,
+                value: state.previewTweenInbetweens,
+                oninput: (e: Event) => {
+                  state.previewTweenInbetweens = parseInt((e.target as HTMLInputElement).value);
+                }
+              }),
+              m("span", { style: { marginLeft: "8px", fontWeight: "bold" } }, state.previewTweenInbetweens)
+            ]),
+            m("div.desktop-slot", [
+              m("label.desktop-slot-label", "FPS"),
+              m("input", {
+                type: "range",
+                min: 1,
+                max: 60,
+                value: state.previewTweenFps,
+                oninput: (e: Event) => {
+                  state.previewTweenFps = parseInt((e.target as HTMLInputElement).value);
+                }
+              }),
+              m("span", { style: { marginLeft: "8px", fontWeight: "bold" } }, state.previewTweenFps)
+            ]),
+          ]);
+        
+        case "settings":
+          return m("div.book-frame.frame-inset", [
+            m("div.book-frame-title", "App Preferences"),
+            m("label.desktop-slot", { style: { display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px" } }, [
+              m("input", {
+                type: "checkbox",
+                checked: state.showTransparencyGrid,
+                onchange: (e: Event) => {
+                  state.showTransparencyGrid = (e.target as HTMLInputElement).checked;
+                }
+              }),
+              m("span", "Show Transparency Grid")
+            ]),
+            m("label.desktop-slot", { style: { display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px" } }, [
+              m("input", {
+                type: "checkbox",
+                checked: state.applyTransparencyMask,
+                onchange: (e: Event) => {
+                  state.applyTransparencyMask = (e.target as HTMLInputElement).checked;
+                }
+              }),
+              m("span", "Apply Transparency Mask")
+            ]),
+            m("label.desktop-slot", { style: { display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px" } }, [
+              m("input", {
+                type: "checkbox",
+                checked: state.matchBodyColorEnabled,
+                onchange: (e: Event) => {
+                  state.matchBodyColorEnabled = (e.target as HTMLInputElement).checked;
+                }
+              }),
+              m("span", "Match Body Color")
+            ]),
+            m("label.desktop-slot", { style: { display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px" } }, [
+              m("input", {
+                type: "checkbox",
+                checked: state.compactDisplay,
+                onchange: (e: Event) => {
+                  state.compactDisplay = (e.target as HTMLInputElement).checked;
+                }
+              }),
+              m("span", "Compact Display")
+            ]),
+          ]);
+        
+        case "creator":
+        default:
+          return [
+            m("div.book-frame.frame-inset", { key: "categories" }, [
+              m("div.book-frame-title", "Slot Categories"),
+              m("div.desktop-tabs-bar", [
+                m(
+                  "button.desktop-tab-btn",
+                  {
+                    class: state.activeTab === "character" ? "active" : "",
+                    onclick: () => {
+                      state.activeTab = "character";
+                      vnode.state.slotSearch = "";
+                      const firstSlot = SLOT_CONFIG.find(s => s.panel === "left");
+                      if (firstSlot) state.activeSlotLabel = firstSlot.label;
+                    },
+                  },
+                  `👤 Body Parts`,
+                ),
+                m(
+                  "button.desktop-tab-btn",
+                  {
+                    class: state.activeTab === "accessories" ? "active" : "",
+                    onclick: () => {
+                      state.activeTab = "accessories";
+                      vnode.state.slotSearch = "";
+                      const firstSlot = SLOT_CONFIG.find(s => s.panel === "right");
+                      if (firstSlot) state.activeSlotLabel = firstSlot.label;
+                    },
+                  },
+                  `🛡️ Equipment`,
+                ),
+              ]),
+              m("input.desktop-slot-search", {
+                type: "text",
+                placeholder: `Search ${state.activeTab === "character" ? "body" : "gear"} slots...`,
+                value: vnode.state.slotSearch,
+                oninput: (e: Event) => {
+                  vnode.state.slotSearch = (e.target as HTMLInputElement).value;
                 },
-              },
-              `Body (${leftCount})`,
-            ),
-            m(
-              "button.desktop-tab-btn",
-              {
-                class: state.activeTab === "accessories" ? "active" : "",
+              }),
+            ]),
+            m("div.slot-grid-container", { key: "grid" }, [
+              slots.length === 0
+                ? m("div.desktop-no-results", `No slots match "${vnode.state.slotSearch}"`)
+                : m("div.slot-grid", slots.map((slot) => {
+                    const isSelected = state.activeSlotLabel === slot.label;
+                    const valueLabel = getSlotSelectedValueLabel(slot, catalog);
+                    const emoji = SLOT_EMOJIS[slot.label] || "📦";
+                    return m("button.slot-grid-btn", {
+                      class: isSelected ? "active" : "",
+                      onclick: () => {
+                        state.activeSlotLabel = slot.label;
+                      }
+                    }, [
+                      m("span.slot-grid-icon", emoji),
+                      m("div.slot-grid-text", [
+                        m("span.slot-grid-label", slot.label),
+                        m("span.slot-grid-val", valueLabel)
+                      ])
+                    ]);
+                  }))
+            ]),
+            (() => {
+              const currentActiveSlot = slots.find(s => s.label === state.activeSlotLabel) || slots[0];
+              if (currentActiveSlot && state.activeSlotLabel !== currentActiveSlot.label) {
+                state.activeSlotLabel = currentActiveSlot.label;
+              }
+              const activeSlot = SLOT_CONFIG.find(s => s.label === state.activeSlotLabel);
+              if (!activeSlot) return null;
+              return m("div.active-slot-editor.book-frame.frame-inset", { key: activeSlot.label }, [
+                m("div.active-slot-editor-header", [
+                  m("span.active-slot-editor-title", `Editing: ${activeSlot.label}`),
+                  activeSlot.canRandomize
+                    ? m("button.active-slot-randomize-btn", {
+                        title: `Randomize ${activeSlot.label}`,
+                        onclick: () => {
+                          randomizeSlot(activeSlot, catalog);
+                        }
+                      }, "🎲 Randomize")
+                    : null
+                ]),
+                m(SlotSelector, { slot: activeSlot, catalog })
+              ]);
+            })()
+          ];
+      }
+    };
+
+    // Helper to render Right Page contents based on current bookPage
+    const renderRightPage = () => {
+      switch (state.bookPage) {
+        case "pixel":
+          return [
+            m("div.book-frame.frame-inset", [
+              m("div.book-frame-title", "Pixel Settings & Layers"),
+              m(StudioPanel)
+            ]),
+            m("div.book-frame.frame-inset", [
+              m("div.book-frame-title", "Workflow & Actions"),
+              m(WorkflowToolsPanel, { catalog })
+            ])
+          ];
+        
+        case "animation":
+          return [
+            m("div.book-frame.frame-inset", { style: { display: "flex", flexDirection: "column", alignItems: "center" } }, [
+              m("div.book-frame-title", "Animation Live Preview"),
+              m(DesktopPreview)
+            ])
+          ];
+        
+        case "settings":
+          return [
+            m("div.book-frame.frame-inset", [
+              m("div.book-frame-title", "Onboarding & Info"),
+              m("p", { style: { margin: "4px 0", fontSize: "13px" } }, "Welcome to the pixel-art Character Generator! Configure your character spritesheets using the creator page, design custom parts using the pixel editor, play animations in the animation tab, and tweak global options here."),
+              m("button.desktop-title-btn", {
+                style: { width: "100%", height: "28px", marginTop: "12px" },
+                onclick: () => { state.showOnboarding = true; }
+              }, "Show Getting Started Guide"),
+              m("button.desktop-title-btn", {
+                style: { width: "100%", height: "28px", marginTop: "8px" },
+                onclick: () => { executeCommand("app.shortcuts.toggle"); }
+              }, "Keyboard Shortcuts"),
+              m("button.desktop-title-btn", {
+                style: { width: "100%", height: "28px", marginTop: "8px" },
+                onclick: () => { executeCommand("app.about.toggle"); }
+              }, "About Application"),
+              m("button.desktop-title-btn", {
+                style: { width: "100%", height: "28px", marginTop: "8px" },
                 onclick: () => {
-                  state.activeTab = "accessories";
-                  vnode.state.slotSearch = "";
-                },
-              },
-              `Gear (${rightCount})`,
-            ),
+                  executeCommand("app.reset");
+                }
+              }, "Reset All Selections"),
+            ])
+          ];
+        
+        case "creator":
+        default:
+          return [
+            m("div.book-frame.frame-inset", { style: { display: "flex", flexDirection: "column", alignItems: "center" } }, [
+              m("div.book-frame-title", "Character Preview"),
+              m(DesktopPreview)
+            ]),
+            m("div.book-frame.frame-inset", [
+              m("div.book-frame-title", "Selections & Export"),
+              m(ActionBar, { catalog }),
+              m(PlanSelector)
+            ])
+          ];
+      }
+    };
+
+    return m("div.desktop-book-wrapper", [
+      m("div.book-ui", {
+        class: state.isFlipping ? `book-bg-frame-${state.flipFrame}` : "book-bg-frame-1"
+      }, [
+        // Top tags (Tabs)
+        m("div.book-tabs", [
+          m("button.book-tab.tab-book", {
+            class: activePage === "creator" ? "active" : "",
+            title: "Character Creator",
+            onclick: () => { triggerPageFlip("creator"); }
+          }, [
+            m("span.tab-icon", "📖"),
+            m("span.tab-label", "Creator")
           ]),
-          // Search within slots
-          m("input.desktop-slot-search", {
-            type: "text",
-            placeholder: `Search ${state.activeTab === "character" ? "body" : "gear"} slots...`,
-            value: vnode.state.slotSearch,
-            oninput: (e: Event) => {
-              vnode.state.slotSearch = (e.target as HTMLInputElement).value;
-            },
-          }),
-          m("div.desktop-slots-scroll", [
-            slots.length === 0
-              ? m(
-                  "div.desktop-no-results",
-                  `No slots match "${vnode.state.slotSearch}"`,
-                )
-              : slots.map((slot) => m(SlotSelector, { slot, catalog })),
+          m("button.book-tab.tab-swords", {
+            class: activePage === "pixel" ? "active" : "",
+            title: "Pixel Editor",
+            onclick: () => { triggerPageFlip("pixel"); }
+          }, [
+            m("span.tab-icon", "⚔️"),
+            m("span.tab-label", "Pixel Editor")
+          ]),
+          m("button.book-tab.tab-floppy", {
+            class: activePage === "animation" ? "active" : "",
+            title: "Animation Editor",
+            onclick: () => { triggerPageFlip("animation"); }
+          }, [
+            m("span.tab-icon", "💾"),
+            m("span.tab-label", "Animation")
+          ]),
+          m("button.book-tab.tab-gear", {
+            class: activePage === "settings" ? "active" : "",
+            title: "Settings",
+            onclick: () => { triggerPageFlip("settings"); }
+          }, [
+            m("span.tab-icon", "⚙️"),
+            m("span.tab-label", "Settings")
           ]),
         ]),
 
-        renderPanelShell(vnode, "preview", [m(DesktopPreview)]),
-
-        renderPanelShell(vnode, "tools", [
-          m(PartEditor),
-          m(StudioPanel),
-          m(WorkflowToolsPanel, { catalog }),
+        // Left and Right Pages
+        m("div.book-pages-container", {
+          class: state.isFlipping ? "page-flipping-fade" : ""
+        }, [
+          // Render Left Page
+          m("div.book-page-left", renderLeftPage()),
+          // Render Right Page
+          m("div.book-page-right", renderRightPage()),
         ]),
       ]),
-
-      // Bottom action bar
-      m(ActionBar, { catalog }),
 
       // Global Modals / Overlays
       m(CommandPaletteModal),

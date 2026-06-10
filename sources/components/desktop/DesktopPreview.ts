@@ -152,7 +152,7 @@ export const DesktopPreview: m.Component<
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       let newZoom = vnode.state.zoomLevel + delta;
-      newZoom = Math.max(0.5, Math.min(5, newZoom));
+      newZoom = Math.max(0.5, Math.min(15, newZoom));
       vnode.state.zoomLevel = newZoom;
       state.previewCanvasZoomLevel = newZoom;
       setPreviewCanvasZoom(newZoom);

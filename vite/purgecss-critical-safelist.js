@@ -98,6 +98,13 @@ export function getPurgeSafelist() {
       /^category-tree/,
       /^desktop-/,
       /^part-editor-/,
+      /^studio-/,
+      /^workflow-/,
+      /^onboarding-/,
+      /^about-/,
+      /^command-palette/,
+      /^shortcut-help/,
+      /^confirm-dialog/,
     ],
   };
 }

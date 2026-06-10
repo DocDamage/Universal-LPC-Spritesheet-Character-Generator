@@ -1,0 +1,190 @@
+html,
+body,
+#desktop-app-root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #11100f;
+}
+
+.desktop-app {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(89, 48, 27, 0.28), transparent 36rem),
+    #11100f !important;
+  color: #4a2617;
+  font-family: "CuteFantasy", monospace !important;
+}
+
+.desktop-title-bar,
+.desktop-palette-bar,
+.desktop-action-bar {
+  background: #11100f !important;
+  border-color: #4d2818 !important;
+}
+
+.desktop-content {
+  align-items: stretch;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 14px 12px;
+  background: #11100f;
+}
+
+.desktop-panel {
+  background: #f4c494 !important;
+  border-image-repeat: stretch !important;
+  color: #4a2617;
+}
+
+.desktop-panel-body {
+  background-color: #f7c99a !important;
+  background-image:
+    linear-gradient(90deg, rgba(184, 94, 51, 0.13) 1px, transparent 1px),
+    linear-gradient(rgba(184, 94, 51, 0.13) 1px, transparent 1px) !important;
+  background-size: 44px 44px !important;
+  color: #4a2617;
+}
+
+.desktop-panel-left,
+.desktop-panel-center {
+  min-height: 360px;
+}
+
+.desktop-panel-left {
+  flex-basis: clamp(250px, 25vw, 340px) !important;
+}
+
+.desktop-panel-center {
+  flex: 1 1 min(58vw, 760px) !important;
+  max-width: 760px;
+}
+
+.desktop-panel-right {
+  flex-basis: clamp(240px, 22vw, 340px) !important;
+}
+
+.desktop-panel-layout-bar,
+.desktop-tabs-bar,
+.desktop-preview-header {
+  background: #ffd0a1 !important;
+  border-color: #d98152 !important;
+  color: #7a3e24 !important;
+}
+
+.desktop-preview-canvas,
+.desktop-slot-import-preview-canvas {
+  background: #f6cca1 !important;
+  border-color: #d98152 !important;
+}
+
+.desktop-action-bar {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-height: 64px;
+  padding: 8px 14px !important;
+}
+
+.desktop-toggles {
+  flex: 0 1 100%;
+  order: 2;
+  gap: 12px 24px;
+}
+
+.desktop-buttons {
+  flex: 1 1 auto;
+  max-width: min(100%, 900px);
+}
+
+.desktop-btn,
+.studio-panel .button,
+.workflow-tool-button,
+.part-editor-pro-button,
+.onboarding-modal button,
+.about-modal button {
+  background-color: #e99b63 !important;
+  color: #fff8df !important;
+  text-shadow: 0 1px 1px rgba(80, 32, 16, 0.8);
+  border-color: transparent !important;
+  box-shadow: 0 2px 0 #8b4427;
+}
+
+.desktop-btn:hover,
+.studio-panel .button:hover,
+.workflow-tool-button:hover,
+.part-editor-pro-button:hover,
+.onboarding-modal button:hover,
+.about-modal button:hover {
+  filter: brightness(1.08);
+}
+
+.studio-panel,
+.workflow-tools-panel,
+.onboarding-step,
+.about-section {
+  background: #f7c99a !important;
+  border: 2px dashed #d98152 !important;
+  border-radius: 4px !important;
+  color: #4a2617 !important;
+}
+
+.studio-panel p,
+.studio-panel li,
+.workflow-tools-panel p,
+.onboarding-copy,
+.about-copy {
+  color: #6d3a22 !important;
+}
+
+.studio-panel-pill,
+.desktop-preview-zoom {
+  background: #e89b63 !important;
+  border-color: #b85e33 !important;
+  color: #fff8df !important;
+}
+
+.command-palette-overlay,
+.shortcut-help-overlay,
+.confirm-dialog-overlay,
+.onboarding-overlay,
+.about-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2200 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  background: rgba(17, 16, 15, 0.78) !important;
+  backdrop-filter: blur(3px);
+}
+
+.command-palette,
+.shortcut-help,
+.confirm-dialog,
+.onboarding-modal,
+.about-modal {
+  background: #f4c494 !important;
+  color: #4a2617 !important;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  box-shadow:
+    0 0 0 2px #7a3e24,
+    10px 10px 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+@media (max-width: 900px) {
+  .desktop-content {
+    justify-content: flex-start;
+  }
+
+  .desktop-panel-left,
+  .desktop-panel-center,
+  .desktop-panel-right {
+    flex-basis: auto !important;
+    max-width: none;
+  }
+}

@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Runs PurgeCSS on emitted CSS assets except the async deferred stylesheet
- * (`*load-deferred-styles*.css`), so the full Bulma + app bundle stays intact.
+ * (`*deferred-entry*.css`), so the full Bulma + app bundle stays intact.
  */
 export function vitePluginPurgeCriticalCss() {
   const repoRoot = path.resolve(__dirname, "..");
@@ -28,7 +28,7 @@ export function vitePluginPurgeCriticalCss() {
         if (asset.type !== "asset" || !asset.fileName?.endsWith(".css")) {
           continue;
         }
-        if (asset.fileName.includes("load-deferred")) {
+        if (asset.fileName.includes("deferred-entry")) {
           continue;
         }
 

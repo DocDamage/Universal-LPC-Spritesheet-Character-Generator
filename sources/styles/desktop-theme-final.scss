@@ -199,6 +199,8 @@ body,
   --book-shadow: rgba(0, 0, 0, 0.72);
   --book-page-url: url("../../styles/rpg-ui-assets/Page + Animation/Page1.png");
   --book-bookmarks-url: url("../../styles/rpg-ui-assets/Bookmarks/1 22x20.png");
+  --book-tabs-url: url("../../styles/rpg-ui-assets/Unique/1 36x13.png");
+  --book-icons-url: url("../../styles/rpg-ui-assets/Buttons & Icons/Icons 16x16.png");
   --book-box-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/23.png");
   --book-box-soft-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/25.png");
   --book-title-url: url("../../styles/rpg-ui-assets/Titles/24.png");
@@ -249,42 +251,86 @@ body,
 
 .book-tabs {
   position: absolute !important;
-  top: -3.5% !important;
-  left: 9.4% !important;
+  top: -2.7% !important;
+  left: 9.3% !important;
   display: flex !important;
-  gap: 0.7% !important;
+  gap: clamp(6px, 0.85vw, 10px) !important;
   z-index: 8 !important;
 }
 
 .book-tab {
-  width: clamp(52px, 6.8vw, 78px) !important;
-  height: clamp(34px, 4.1vw, 47px) !important;
+  --tab-index: 0;
+  width: clamp(66px, 7.1vw, 82px) !important;
+  height: clamp(24px, 2.55vw, 31px) !important;
   padding: 0 !important;
   display: grid !important;
   place-items: center !important;
   gap: 0 !important;
-  border: 7px solid transparent !important;
-  border-image: var(--book-box-soft-url) 7 fill repeat !important;
-  background: transparent !important;
+  border: 0 !important;
+  border-image: none !important;
+  background-color: transparent !important;
+  background-image: var(--book-tabs-url) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 500% !important;
+  background-position: 0 calc(var(--tab-index) * 25%) !important;
   color: var(--book-ink) !important;
   image-rendering: pixelated;
   transition: transform 120ms ease, filter 120ms ease !important;
 }
 
+.book-tab.tab-book {
+  --tab-index: 0;
+}
+
+.book-tab.tab-swords {
+  --tab-index: 1;
+}
+
+.book-tab.tab-floppy {
+  --tab-index: 2;
+}
+
+.book-tab.tab-gear {
+  --tab-index: 3;
+}
+
 .book-tab:hover,
 .book-tab.active {
-  transform: translateY(-5px) !important;
+  transform: translateY(-4px) !important;
   filter: brightness(1.07);
 }
 
 .book-tab.active {
-  border-image-source: var(--book-box-url) !important;
+  filter: brightness(1.15) saturate(1.08);
 }
 
 .book-tab .tab-icon {
-  font-size: clamp(16px, 2vw, 24px) !important;
-  line-height: 1 !important;
-  text-shadow: 0 1px 0 rgba(255, 238, 197, 0.7);
+  width: clamp(17px, 1.75vw, 22px);
+  height: clamp(17px, 1.75vw, 22px);
+  display: block;
+  overflow: hidden;
+  color: transparent;
+  text-shadow: none;
+  background-image: var(--book-icons-url);
+  background-repeat: no-repeat;
+  background-size: 1400% 500%;
+  image-rendering: pixelated;
+}
+
+.book-tab.tab-book .tab-icon {
+  background-position: 38.46% 0;
+}
+
+.book-tab.tab-swords .tab-icon {
+  background-position: 30.76% 0;
+}
+
+.book-tab.tab-floppy .tab-icon {
+  background-position: 46.15% 0;
+}
+
+.book-tab.tab-gear .tab-icon {
+  background-position: 92.3% 75%;
 }
 
 .book-tab .tab-label {

@@ -201,8 +201,11 @@ body,
   --book-bookmarks-url: url("../../styles/rpg-ui-assets/Bookmarks/1 22x20.png");
   --book-tabs-url: url("../../styles/rpg-ui-assets/Unique/1 36x13.png");
   --book-icons-url: url("../../styles/rpg-ui-assets/Buttons & Icons/Icons 16x16.png");
-  --book-box-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/23.png");
-  --book-box-soft-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/25.png");
+  --book-frame-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/23.png");
+  --book-box-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/68.png");
+  --book-box-soft-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/69.png");
+  --book-control-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/45.png");
+  --book-card-url: url("../../styles/rpg-ui-assets/Sizeable Boxes/21.png");
   --book-title-url: url("../../styles/rpg-ui-assets/Titles/24.png");
 
   width: 100vw;
@@ -419,12 +422,18 @@ body,
 .book-frame {
   position: relative;
   min-height: 0;
-  padding: clamp(8px, 1vw, 12px) !important;
-  border: 8px solid transparent !important;
-  border-image: var(--book-box-soft-url) 8 fill repeat !important;
-  background: rgba(239, 215, 175, 0.16) !important;
+  padding: clamp(10px, 1.15vw, 14px) !important;
+  border: 10px solid transparent !important;
+  border-image: var(--book-frame-url) 8 fill stretch !important;
+  background: transparent !important;
   color: var(--book-ink) !important;
-  box-shadow: inset 0 0 0 1px rgba(146, 76, 44, 0.24);
+  box-shadow: none !important;
+  image-rendering: pixelated;
+}
+
+.book-frame.frame-inset,
+.active-slot-editor.book-frame {
+  border-image-source: var(--book-frame-url) !important;
 }
 
 .book-frame-title {
@@ -445,6 +454,16 @@ body,
   letter-spacing: 0 !important;
 }
 
+.book-page-left .desktop-tabs-bar,
+.book-page-right .desktop-tabs-bar {
+  padding: 4px !important;
+  border: 10px solid transparent !important;
+  border-image: var(--book-frame-url) 8 fill stretch !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  image-rendering: pixelated;
+}
+
 .slot-grid-container {
   margin: 0 !important;
   padding: 0 2px 0 0 !important;
@@ -461,12 +480,13 @@ body,
 .active-slot-randomize-btn,
 .desktop-preview-playback-btn,
 .desktop-preview-export-btn {
-  border: 7px solid transparent !important;
-  border-image: var(--book-box-soft-url) 7 fill repeat !important;
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
   background: transparent !important;
   color: var(--book-ink) !important;
   text-shadow: none !important;
   box-shadow: none !important;
+  image-rendering: pixelated;
 }
 
 .slot-grid-btn {
@@ -484,6 +504,24 @@ body,
 .desktop-preview-export-btn:hover {
   border-image-source: var(--book-box-url) !important;
   transform: translateY(-1px);
+}
+
+.book-page-left .desktop-slot-search,
+.book-page-right .desktop-slot-search,
+.book-page-left .desktop-slot-select,
+.book-page-right .desktop-slot-select {
+  border: 6px solid transparent !important;
+  border-image: var(--book-control-url) 5 fill stretch !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--book-ink) !important;
+  box-shadow: none !important;
+  image-rendering: pixelated;
+}
+
+.book-page-left .desktop-slot-search::placeholder,
+.book-page-right .desktop-slot-search::placeholder {
+  color: var(--book-ink-soft) !important;
 }
 
 .slot-grid-label,
@@ -519,9 +557,10 @@ body,
 .desktop-preview-canvas-wrapper {
   flex: 1 1 auto;
   min-height: 180px;
-  border: 8px solid transparent;
-  border-image: var(--book-box-soft-url) 8 fill repeat;
-  background: rgba(218, 158, 96, 0.32) !important;
+  border: 7px solid transparent;
+  border-image: var(--book-card-url) 5 fill stretch;
+  background: transparent !important;
+  image-rendering: pixelated;
 }
 
 .desktop-action-bar {

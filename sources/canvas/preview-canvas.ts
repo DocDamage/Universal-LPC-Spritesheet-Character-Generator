@@ -95,10 +95,7 @@ export function copyToPreviewCanvas(
     previewCtx.drawImage(canvas, 0, 0);
   }
 
-  // Apply zoom via CSS
-  if (zoomLevel !== 1) {
-    previewCanvasElement.style.zoom = zoomLevel.toString();
-  }
+  applyPreviewCanvasDisplayZoom(previewCanvasElement, zoomLevel);
 }
 
 /** Initialize the preview canvas. */
@@ -122,9 +119,27 @@ export function initPreviewCanvas(
   previewCanvas.height = frameSize; // 1 frame tall
 }
 
-/** Set preview canvas zoom level (0.5 to 2). */
+function applyPreviewCanvasDisplayZoom(
+  previewCanvasElement: HTMLCanvasElement,
+  zoomLevel: number,
+): void {
+  const safeZoom = Number.isFinite(zoomLevel) && zoomLevel > 0 ? zoomLevel : 1;
+  previewCanvasElement.style.zoom = "";
+  previewCanvasElement.style.maxWidth = "none";
+  previewCanvasElement.style.maxHeight = "none";
+  previewCanvasElement.style.width = `${Math.max(
+    1,
+    Math.round(previewCanvasElement.width * safeZoom),
+  )}px`;
+  previewCanvasElement.style.height = `${Math.max(
+    1,
+    Math.round(previewCanvasElement.height * safeZoom),
+  )}px`;
+}
+
+/** Set preview canvas zoom level. */
 export function setPreviewCanvasZoom(zoomLevel: number): void {
   if (previewCanvas) {
-    previewCanvas.style.zoom = zoomLevel.toString();
+    applyPreviewCanvasDisplayZoom(previewCanvas, zoomLevel);
   }
 }

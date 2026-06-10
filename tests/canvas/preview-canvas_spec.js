@@ -72,11 +72,15 @@ describe("canvas/preview-canvas.ts", () => {
       expect(previewCanvas.height).to.equal(SHEET_HEIGHT);
     });
 
-    it("applies CSS zoom when zoomLevel !== 1", () => {
+    it("applies zoom through explicit display dimensions", () => {
       initCanvas();
       const previewCanvas = document.createElement("canvas");
       copyToPreviewCanvas(previewCanvas, false, false, 1.5);
-      expect(previewCanvas.style.zoom).to.equal("1.5");
+      expect(previewCanvas.style.zoom).to.equal("");
+      expect(previewCanvas.style.maxWidth).to.equal("none");
+      expect(previewCanvas.style.maxHeight).to.equal("none");
+      expect(previewCanvas.style.width).to.equal(`${SHEET_WIDTH * 1.5}px`);
+      expect(previewCanvas.style.height).to.equal(`${SHEET_HEIGHT * 1.5}px`);
     });
   });
 });

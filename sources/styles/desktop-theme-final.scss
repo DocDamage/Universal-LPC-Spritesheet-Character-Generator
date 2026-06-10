@@ -1080,8 +1080,18 @@ body,
 }
 
 .animation-preview-frame .desktop-preview-canvas-wrapper {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
   min-height: 0 !important;
   height: 100%;
+  overflow: auto !important;
+}
+
+.animation-preview-frame #desktop-preview-canvas {
+  flex: 0 0 auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
 }
 
 .animation-preview-frame .desktop-animation-status {
